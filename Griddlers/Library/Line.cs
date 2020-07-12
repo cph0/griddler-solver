@@ -81,6 +81,12 @@ namespace Griddlers.Library
             _Isolations = new Dictionary<(int, int, int), (bool, bool, IDictionary<int, int>)>();
         }
 
+        /// <summary>
+        /// Gets the possible items at a position along the line working forwards
+        /// </summary>
+        /// <param name="position">The position of the line to start at</param>
+        /// <param name="untilDot">Position is on a dot</param>
+        /// <returns></returns>
         private LineSegment GetItemAtPosition(int position, bool untilDot = true)
         {
             Logic.AddMethodCount("GetItemAtPosition");
@@ -238,6 +244,15 @@ namespace Griddlers.Library
             return new LineSegment(Next, true, TheItem, Equality, Before, After, RightBefore, Gap, ItemAtLastGap, ItemAtEquality);
         }
 
+        /// <summary>
+        /// Finds the possible solids from the start to the next dot
+        /// </summary>
+        /// <param name="start">The position in the line to start</param>
+        /// <param name="onlyFirstSolid">If true the solids must consume the first block</param>
+        /// <returns>
+        /// A dictionary of 
+        /// 
+        /// </returns>
         private Dictionary<int, Dictionary<(int, bool), int>> FindPossibleSolidsI(int start, bool onlyFirstSolid = true)
         {
             Logic.AddMethodCount("FindPossibleSolids");
@@ -329,6 +344,15 @@ namespace Griddlers.Library
 
             return PossibleSolids;
         }
+        /// <summary>
+        /// Finds the possible solids from the start to the next dot
+        /// <para>Uses: <see cref="FindPossibleSolidsI(int, bool)"/></para>
+        /// </summary>
+        /// <param name="start">The position in the line to start</param>
+        /// <param name="onlyFirstSolid">If true the solids must consume the first block</param>
+        /// <returns>
+        /// A HashSet of the possible item values and colours
+        /// </returns>        
         private HashSet<(int, bool)> FindPossibleSolids(int start, bool onlyFirstSolid = true)
         {
             Dictionary<int, Dictionary<(int, bool), int>> PossibleSolids = FindPossibleSolidsI(start, onlyFirstSolid);
@@ -339,6 +363,17 @@ namespace Griddlers.Library
 
             return Return;
         }
+        /// <summary>
+        /// Determines if the items from start are the only ones that consume the blocks
+        /// until the next dot
+        /// <para>Uses: <see cref="FindPossibleSolidsI(int, bool)"/></para>
+        /// </summary>
+        /// <param name="start">The position in the line to start</param>
+        /// <param name="items">The items to use from start to dot</param>
+        /// <param name="newItem">The first item index</param>
+        /// <returns>
+        /// A boolean if the items consume the blocks.
+        /// </returns>
         private bool FindPossibleSolids(int start, IEnumerable<Item> items, out int newItem)
         {
             Dictionary<int, Dictionary<(int, bool), int>> PossibleSolids = FindPossibleSolidsI(start, false);
@@ -400,6 +435,12 @@ namespace Griddlers.Library
             return Consume;
         }
 
+        /// <summary>
+        /// Gets the possible items at a position along the line working backwards
+        /// </summary>
+        /// <param name="position">The position of the line to start at</param>
+        /// <param name="untilDot">Position is on a dot</param>
+        /// <returns></returns>
         private LineSegment GetItemAtPositionB(int position, bool untilDot = true)
         {
             Logic.AddMethodCount("GetItemAtPositionB");
@@ -610,21 +651,15 @@ namespace Griddlers.Library
             }
         }
 
-        public bool UniqueCount(int solidCount) => UniqueCount(null, solidCount);
-        public bool UniqueCount(Block? block = null, int? solidCount = null)
+        public bool UniqueCount(Block block)
         {
             bool Retval = false;
-            int SolidCount = block != (object?)null ? block.SolidCount : solidCount.Value;
 
             //if (_UniqueCounts.TryGetValue(SolidCount, out bool Out))
             //    Retval = Out;
             //else
             //{
-            if (block != (object?)null)
-                Retval = this.Count(c => c >= block) == 1;
-            else
-                Retval = this.Count(c => c.Value >= SolidCount) == 1;
-
+            Retval = this.Count(c => c >= block) == 1;
             // _UniqueCounts[SolidCount] = Retval;
             //}
 
@@ -771,6 +806,22 @@ namespace Griddlers.Library
             return Ls;
         }
 
+        /// <summary>
+        /// Determines if the block index is equivalent to the item index by:
+        /// <list type="number">
+        ///     <item>Starting from a position and item index</item>
+        ///     <item>Taking each block and item in turn</item>
+        ///     <item>See if any item consumes two blocks</item>
+        ///     <item>If not and the item count equals the block count then the part is isolated</item>
+        /// </list>
+        /// </summary>
+        /// <param name="position">The position of the line to start at</param>
+        /// <param name="startItem">The item index to start from</param>
+        /// <param name="endItem">The item index to end with</param>
+        /// <returns>
+        /// A boolean if the part is isolated.  A boolean if the dictionary is valid.  
+        /// A dictionary of item index by block index
+        /// </returns>
         private (bool, bool, IDictionary<int, int>) IsolatedPart(int position, int startItem, int endItem)
         {
             Logic.AddMethodCount("IsolatedPart");
@@ -1061,8 +1112,28 @@ namespace Griddlers.Library
 
             return (IsIsolated, Valid, IsolatedItems);
         }
+        /// <summary>
+        /// Determines if the block index is equivalent to the item index
+        /// <para>
+        /// Uses: <see cref="IsolatedPart(int, int, int)"/>
+        /// </para>
+        /// </summary>
+        /// <returns>
+        /// A boolean if the part is isolated.  A boolean if the dictionary is valid.  
+        /// A dictionary of item index by block index
+        /// </returns>
         public (bool, bool, IDictionary<int, int>) IsLineIsolated()
             => GetIsolatedPart(0, 0, LineItems - 1);
+        /// <summary>
+        /// Determines if the block index is equivalent to the item index
+        /// <para>
+        /// Uses: <see cref="IsolatedPart(int, int, int)"/>
+        /// </para>
+        /// </summary>
+        /// <returns>
+        /// A boolean if the part is isolated.  A boolean if the dictionary is valid.  
+        /// A dictionary of item index by block index
+        /// </returns>
         public (bool, bool, IDictionary<int, int>) GetIsolatedPart(int pos, int startItem, int endItem)
         {
             (bool, bool, IDictionary<int, int>) ItemKey;
@@ -1087,6 +1158,10 @@ namespace Griddlers.Library
             return ItemKey;
         }
 
+        /// <summary>
+        /// Finds the minimum and maximum items at each position along the line
+        /// </summary>
+        /// <returns>A dictionary of the minimum/maximum items by position</returns>
         public IDictionary<int, (Item, Item)> GetMinMaxItems()
         {
             Logic.AddMethodCount("GetLineMinMaxItems2");

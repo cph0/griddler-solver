@@ -298,6 +298,13 @@ namespace Griddlers.Library
             }
         }
 
+        /// <summary>
+        /// For each line add up the items and if the sum equals the line length fill them in
+        /// <para>
+        /// Note: Two adjacent items of the same colour must have a dot between them
+        /// </para>
+        /// </summary>
+        /// <param name="lines">The rows or colums</param>
         private static void FullLine(IEnumerable<Line> lines)
         {
             ForEachLine(lines, (Line line) =>
@@ -308,6 +315,13 @@ namespace Griddlers.Library
             }, (line) => line.LineValue == line.LineLength);
         }
 
+        /// <summary>
+        /// For each line add up the items and if the sum is greater than half the line length do an overlap
+        /// <para>
+        /// Note: Two adjacent items of the same colour must have a dot between them
+        /// </para>
+        /// </summary>
+        /// <param name="lines">The rows or colums</param>
         private static void OverlapLine(IEnumerable<Line> lines)
         {
             ForEachLine(lines, (Line line) =>
@@ -317,6 +331,13 @@ namespace Griddlers.Library
             }, (line) => line.LineValue < line.LineLength && line.LineValue > line.LineLength / 2);
         }
 
+        /// <summary>
+        /// For each line add up the points and if the sum equals the sum of the items fill the gaps with dots
+        /// <para>
+        /// Note: Two adjacent items of the same colour must have a dot between them
+        /// </para>
+        /// </summary>
+        /// <param name="lines">The rows or colums</param>
         private static void FullLineDots(IEnumerable<Line> lines)
         {
             ForEachLine(lines, (Line line) =>
@@ -331,6 +352,18 @@ namespace Griddlers.Library
             }, (line) => line.LineValue - line.GetDotCount() == line.GetLinePointsValue(), minLineValue: 0);
         }
 
+        /// <summary>
+        /// For each line do the following:        
+        /// <list type="number">
+        /// <item>For the start of each block compare the position to the line position</item>
+        /// <item>If the difference is less than the value of item</item>
+        /// <item>Fill in the remainder</item>
+        /// </list>
+        /// <para>
+        /// Note: Two adjacent items of the same colour must have a dot between them
+        /// </para> 
+        /// </summary>
+        /// <param name="lines">The rows or colums</param>
         private static void LineEdgeTL(IEnumerable<Line> lines)
         {
             ForEachLine(lines, (Line line) =>
@@ -503,6 +536,18 @@ namespace Griddlers.Library
             });
         }
 
+        /// <summary>
+        /// For each line working backwards do the following:        
+        /// <list type="number">
+        /// <item>For the start of each block compare the position to the line position</item>
+        /// <item>If the difference is less than the value of item</item>
+        /// <item>Fill in the remainder</item>
+        /// </list>
+        /// <para>
+        /// Note: Two adjacent items of the same colour must have a dot between them
+        /// </para>
+        /// </summary>
+        /// <param name="lines">The rows or colums</param>
         private static void LineEdgeBR(IEnumerable<Line> lines)
         {
             ForEachLine(lines, (Line line) =>
@@ -644,6 +689,43 @@ namespace Griddlers.Library
             });
         }
 
+        /// <summary>
+        /// For each line do the following:        
+        /// <list type="number">
+        /// <item>After each gap calculate the possible items in the gap</item>
+        /// <item>
+        ///     The gap is filled with dots if any of the following are true
+        ///     <para>
+        ///         <list type="bullet">
+        ///             <item>All the items are bigger than the gap size</item>
+        ///             <item></item>
+        ///         </list> 
+        ///     </para>
+        /// </item>
+        /// <item>
+        ///     The gap is filled with points if any of the following are true
+        ///     <para>
+        ///         <list type="bullet">
+        ///             <item>The sum of the items equals the gap size</item>
+        ///             <item></item>
+        ///         </list> 
+        ///     </para>
+        /// </item>
+        /// <item>
+        ///     The gap is partially filled with points if any of the following are true
+        ///     <para>
+        ///         <list type="bullet">
+        ///             <item>The sum of the items is greater than half the gap size</item>
+        ///             <item></item>
+        ///         </list> 
+        ///     </para>
+        /// </item>
+        /// </list>
+        /// <para>
+        /// Note: Two adjacent items of the same colour must have a dot between them
+        /// </para>
+        /// </summary>
+        /// <param name="lines">The rows or colums</param>
         private static void LineGaps(IEnumerable<Line> lines)
         {
             ForEachLine(lines, (Line line) =>
@@ -742,6 +824,28 @@ namespace Griddlers.Library
             });
         }
 
+        /// <summary>
+        /// For each line do the following:        
+        /// <list type="number">
+        ///     <item>After each block try the following</item>
+        ///     <item>No Join</item>
+        ///     <item>Minimum Item Fowards</item>
+        ///     <item>Minimum Item Backwards</item>
+        ///     <item>Single Item Forwards</item>
+        ///     <item>Singlel Item Backwards</item>
+        ///     <item>Sum dots forward</item>
+        ///     <item>Sum dots backward</item>
+        ///     <item>Half Gap Overlap Forwards</item>
+        ///     <item>Half Gap Overlap Backwards</item>
+        ///     <item>Half Gap Full Part</item>
+        ///     <item>Isolated Gap Dots</item>
+        ///     <item>Complete Item</item>
+        /// </list>
+        /// <para>
+        ///     Note: Two adjacent items of the same colour must have a dot between them
+        /// </para>
+        /// </summary>
+        /// <param name="lines">The rows or colums</param>
         private static void LineDots(IEnumerable<Line> lines)
         {
             ForEachLine(lines, (Line line) =>
