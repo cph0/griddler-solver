@@ -9,7 +9,7 @@ namespace Griddlers.Library
     public class Line : ItemRange, IEnumerable<Item>
     {
         private Item[] _Items => _ItemsArray;
-        private readonly IDictionary<int, bool> _UniqueCounts;
+        private readonly IDictionary<(int, bool), bool> _UniqueCounts;
         private readonly IDictionary<int, Block> _Blocks;
         private readonly IDictionary<int, Block> _BlocksByStart;
         private readonly IDictionary<int, Block> _BlocksByEnd;
@@ -72,7 +72,7 @@ namespace Griddlers.Library
             IsRow = isRow;
             LineLength = lL;
             LineIndex = index;
-            _UniqueCounts = new Dictionary<int, bool>(items.Length);
+            _UniqueCounts = new Dictionary<(int, bool), bool>(items.Length);
             _Blocks = new Dictionary<int, Block>(items.Length);
             _BlocksByStart = new Dictionary<int, Block>(items.Length);
             _BlocksByEnd = new Dictionary<int, Block>(items.Length);
@@ -655,13 +655,13 @@ namespace Griddlers.Library
         {
             bool Retval = false;
 
-            //if (_UniqueCounts.TryGetValue(SolidCount, out bool Out))
-            //    Retval = Out;
-            //else
-            //{
-            Retval = this.Count(c => c >= block) == 1;
-            // _UniqueCounts[SolidCount] = Retval;
-            //}
+            if (_UniqueCounts.TryGetValue((block.SolidCount, block.Green), out bool Out))
+                Retval = Out;
+            else
+            {
+                Retval = this.Count(c => c >= block) == 1;
+                _UniqueCounts[(block.SolidCount, block.Green)] = Retval;
+            }
 
             return Retval;
         }
