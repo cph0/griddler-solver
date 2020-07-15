@@ -744,8 +744,8 @@ namespace Griddlers.Library
         {
             LineSegment Ls;
 
-            //if (_ItemsAtPos.TryGetValue(pos, out LineSegment? Out))
-            //    Ls = Out;
+            if (_ItemsAtPos.TryGetValue(pos, out LineSegment? Out))
+                Ls = Out;
             //else if (_BlocksByEnd.TryGetValue(pos - 2, out Block? BlkOut))
             //{
             //    bool Valid = BlkOut.BlockIndex + 1 < LineItems;
@@ -763,11 +763,11 @@ namespace Griddlers.Library
             //    HashSet<Block> RightBefore = new HashSet<Block>() { BlkOut };
             //    Ls = new LineSegment(Next, true, TheItem, BlkOut.BlockIndex + 1, untilDot, Before, After, RightBefore, new Item[] { });
             //}
-            //else
-            //{
-            Ls = GetItemAtPosition(pos, untilDot);
-            _ItemsAtPos.TryAdd(pos, Ls);
-            //}
+            else
+            {
+                Ls = GetItemAtPosition(pos, untilDot);
+                _ItemsAtPos.TryAdd(pos, Ls);
+            }
 
             return Ls;
         }
@@ -776,8 +776,8 @@ namespace Griddlers.Library
         {
             LineSegment Ls;
 
-            //if (_ItemsAtPosB.TryGetValue(pos, out LineSegment? Out))
-            //    Ls = Out;
+            if (_ItemsAtPosB.TryGetValue(pos, out LineSegment? Out))
+                Ls = Out;
             //else if (untilDot && _BlocksByStart.TryGetValue(pos + 2, out Block? BlkOut))
             //{
             //    bool Valid = BlkOut.BlockIndex - 1 >= 0;
@@ -797,11 +797,11 @@ namespace Griddlers.Library
             //}
 
             //    Ls = (BlkOut.BlockIndex - 1, BlkOut.BlockIndex - 1 >= 0, true, BlkOut.SolidCount, true);
-            //else
-            //{
-            Ls = GetItemAtPositionB(pos, untilDot);
-            _ItemsAtPosB.TryAdd(pos, Ls);
-            //}
+            else
+            {
+                Ls = GetItemAtPositionB(pos, untilDot);
+                _ItemsAtPosB.TryAdd(pos, Ls);
+            }
 
             return Ls;
         }
@@ -1401,8 +1401,11 @@ namespace Griddlers.Library
             foreach (int Key in _ItemsAtPos.Keys.Where(w => w >= pos))
                 _ItemsAtPos.Remove(Key);
 
-            foreach (int Key in _ItemsAtPosB.Keys.Where(w => w <= pos))
-                _ItemsAtPosB.Remove(Key);
+            _ItemsAtPosB.Clear();
+
+            //breaks Highlights20x20
+            //foreach (int Key in _ItemsAtPosB.Keys.Where(w => w <= pos))
+            //    _ItemsAtPosB.Remove(Key);
         }
 
         public IEnumerator<Item> GetEnumerator()
