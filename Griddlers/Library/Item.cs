@@ -16,7 +16,7 @@ namespace Griddlers.Library
 
             string[] Parts = v.Split(".");
             Value = int.Parse(Parts[0]);
-            Green = Parts.Length > 1;
+            Green = Parts.Length > 1 && Parts[1] == "1";
         }
         public Item(GriddlerItem item)
         {

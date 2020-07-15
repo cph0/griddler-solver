@@ -32,7 +32,7 @@ interface HomeState {
     width: number;
     height: number;
     depth: number;
-    sG: number;
+    sG: string;
     points: { x: number, y: number, green: boolean }[];
     dots: { x: number, y: number }[];
     paths: GriddlerPathGroup[];
@@ -55,7 +55,7 @@ export class Home extends React.Component<RouteComponentProps<{}>, HomeState> {
             width: 10,
             height: 10,
             depth: 4,
-            sG: 1,
+            sG: "Bird10x10",
             points: [] as { x: number, y: number, green: boolean }[],
             dots: [] as { x: number, y: number }[],
             paths: []
@@ -135,7 +135,7 @@ export class Home extends React.Component<RouteComponentProps<{}>, HomeState> {
     }
 
     private onSelectGriddler(event: React.ChangeEvent<HTMLSelectElement>) {
-        this.setState({ sG: parseInt(event.target.value, 10) });
+        this.setState({ sG: event.target.value });
     }
 
     private get(e: React.MouseEvent<HTMLButtonElement>) {
@@ -186,6 +186,20 @@ export class Home extends React.Component<RouteComponentProps<{}>, HomeState> {
 
     private listGriddlers() {
         fetch("/Home/ListGriddlers", {
+            method: "GET", headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+            .then(responce => responce.json() as Promise<any>)
+            .then(data => {
+                this.setState({
+                    griddlers: data
+                });
+            });
+    }
+
+    private listGriddlersDb() {
+        fetch("/Home/ListGriddlersDb", {
             method: "GET", headers: {
                 'Content-Type': 'application/json'
             }
@@ -374,10 +388,10 @@ export class Home extends React.Component<RouteComponentProps<{}>, HomeState> {
         let html = null;
         let items = [];
 
-        items = this.state.griddlers.map(g => <option key={g.id} value={g.id}>{g.name}</option>);
+        items = this.state.griddlers.map(g => <option key={g.name} value={g.name}>{g.name}</option>);
 
         html = (
-            <select onChange={(e) => this.onSelectGriddler(e)} value={this.state.sG}>
+            <select className="form-control" onChange={(e) => this.onSelectGriddler(e)} value={this.state.sG}>
                 {items}
             </select>
         );
@@ -507,7 +521,7 @@ export class Home extends React.Component<RouteComponentProps<{}>, HomeState> {
                             top: c * 20,
                             backgroundColor: item.green ? "lightgreen" : ""
                         }} />
-                    )
+                )
                 );
             }
         }
@@ -529,7 +543,7 @@ export class Home extends React.Component<RouteComponentProps<{}>, HomeState> {
                                 position: "absolute",
                                 left: c * 20,
                                 top: top,
-                                backgroundColor: item.green ? "lightgreen": ""
+                                backgroundColor: item.green ? "lightgreen" : ""
                             }} />
                     )
                 );
@@ -540,17 +554,23 @@ export class Home extends React.Component<RouteComponentProps<{}>, HomeState> {
 
         html = (
             <div>
-                <div style={{ marginTop: "10px", marginBottom: "10px" }}>
-                    <button onClick={(e) => this.getDb(e)}>Get</button>
-                    {this.renderGriddlerList()}
-                    <button onClick={(e) => this.upload()}>Upload</button>
-                    <input type="file" ref={el => this.uploadRef = el}></input>
+                <div className="row" style={{ marginTop: "10px", marginBottom: "10px" }}>
+                    <div className="col-md-6">
+                        <div className="input-group">
+                            <div className="input-group-btn">
+                                <button className="btn btn-primary" onClick={(e) => this.get(e)}>Get</button>
+                            </div>
+                            {this.renderGriddlerList()}
+                        </div>
+                    </div>
                 </div>
+                <button className="btn btn-primary btn-sm" onClick={(e) => this.upload()}>Upload</button>
+                <input type="file" ref={el => this.uploadRef = el}></input>
                 <div style={{ marginTop: "5px", marginBottom: "10px" }}>
                     <input onChange={(e) => this.onWidthChange(e)} value={this.state.width} />
                     <input onChange={(e) => this.onHeightChange(e)} value={this.state.height} />
                     <input onChange={(e) => this.onDepthChange(e)} value={this.state.depth} />
-                    <button onClick={(e) => this.run(e)}>Run</button>
+                    <button className="btn btn-primary btn-sm" onClick={(e) => this.run(e)}>Run</button>
                 </div>
                 <div className="row">
                     <div className="col-lg-2">

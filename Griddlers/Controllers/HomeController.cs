@@ -43,6 +43,11 @@ namespace Griddlers.Controllers
             public int id { get; set; }
             public string name { get; set; }
 
+            public ClientGriddler(string n)
+            {
+                name = n;
+            }
+
             public ClientGriddler(Griddler g) 
             {
                 id = g.griddler_id;
@@ -119,21 +124,13 @@ namespace Griddlers.Controllers
             SG Data = JsonConvert.DeserializeObject<SG>(dt.ToString(Formatting.None));
             Dictionary<(int, int), Point> Points = new Dictionary<(int, int), Point>();
             Dictionary<(int, int), Point> Dots = new Dictionary<(int, int), Point>();
-            (int?[][] R, int?[][] C) = (new int?[][] { }, new int?[][] { });
-            Type? L = Type.GetType("Griddlers.Library.Library");
-
+            (Item[][] R, Item[][] C) = (new Item[][] { }, new Item[][] { });
+            
             //inputs
-            MethodInfo? Input = L?.GetMethod($"{Data.sG}Source");
-            object? InputObject = Input?.Invoke(null, null);
-            if (InputObject != null)
-                (R, C) = await (Task<(int?[][], int?[][])>)InputObject;
+            (R, C) = await Library.Library.GetSourceData(Data.sG);
 
             //outputs
-            MethodInfo? Output = L?.GetMethod(Data.sG);
-            object? OutputObject = Output?.Invoke(null, null);
-            if (OutputObject != null)
-                (Points, Dots) = await (Task<(Dictionary<(int, int), Point>,
-                                Dictionary<(int, int), Point>)>)OutputObject;
+            (Points, Dots) = Logic.Run(R, C);
 
             Point[] pts = Points.Keys.Select(s => new Point(s.Item1, s.Item2, false)).ToArray();
 
@@ -154,7 +151,18 @@ namespace Griddlers.Controllers
         }
 
         [HttpGet]
-        public async Task<JsonResult> ListGriddlers()
+        public JsonResult ListGriddlers()
+        {
+            string[] Griddlers = Library.Library.ListGriddlers();
+
+            ClientGriddler[] ClientGriddlers = Griddlers.Select(s => new ClientGriddler(s))
+                                                    .ToArray();
+
+            return Json(ClientGriddlers);
+        }
+
+        [HttpGet]
+        public async Task<JsonResult> ListGriddlersDb()
         {
             Griddler[] Griddlers = await db.ListGriddlers();
 
@@ -172,8 +180,7 @@ namespace Griddlers.Controllers
             
             Griddler Griddler = await db.GetGriddler(id, "");
 
-            (points, dots) = Logic.Run(Griddler.width, Griddler.height, 
-                                        Griddler.Rows, Griddler.Cols);
+            (points, dots) = Logic.Run(Griddler.Rows, Griddler.Cols);
 
             List<Point> Ordered = points.Values.ToList();
             Ordered.AddRange(dots.Values);

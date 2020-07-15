@@ -3,7 +3,6 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Runtime.CompilerServices;
 
 namespace Griddlers.Library
 {
@@ -23,19 +22,18 @@ namespace Griddlers.Library
                 MethodCounts[key] = 1;
         }
 
-        public static (Dictionary<(int, int), Point>, Dictionary<(int, int), Point>) Run(int width, int height, (Item[][], Item[][]) data)
-            => Run(width, height, data.Item1, data.Item2);
-
-        public static (Dictionary<(int, int), Point>, Dictionary<(int, int), Point>) Run(int width, int height, Item[][] rows, Item[][] columns)
+        public static (Dictionary<(int, int), Point>, Dictionary<(int, int), Point>) Run(Item[][] rows, Item[][] columns)
         {
-            points = new Dictionary<(int, int), Point>(width * height);
-            dots = new Dictionary<(int, int), Point>(width * height);
+            int Width = columns.Length;
+            int Height = rows.Length;
+            points = new Dictionary<(int, int), Point>(Width * Height);
+            dots = new Dictionary<(int, int), Point>(Width * Height);
             Point.Group = 0;
             int Count = 0;
             int LoopCount = -1;
 
-            Rows = rows.Select((s, si) => new Line(si, true, width, s)).ToDictionary(k => k.LineIndex);
-            Cols = columns.Select((s, si) => new Line(si, false, height, s)).ToDictionary(k => k.LineIndex);
+            Rows = rows.Select((s, si) => new Line(si, true, Width, s)).ToDictionary(k => k.LineIndex);
+            Cols = columns.Select((s, si) => new Line(si, false, Height, s)).ToDictionary(k => k.LineIndex);
 
             //full rows <5ms
             FullLine(Rows.Values);
