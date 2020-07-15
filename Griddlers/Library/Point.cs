@@ -10,10 +10,10 @@ namespace Griddlers.Library
 
         public int X { get; private set; }
         public int Y { get; private set; }
-        public bool Green { get; private set; }
+        public bool Green { get; set; }
 
-        public int Xpos { get; private set; }
-        public int Ypos { get; private set; }
+        public int Xpos { get; set; }
+        public int Ypos { get; set; }
         public GriddlerPath.Action Action { get; private set; }
         public DateTime Time { get; private set; }
         public short Grp { get; private set; }
