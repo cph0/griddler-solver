@@ -15,11 +15,13 @@ namespace Griddlers.Controllers
 {
     public class HomeController : Controller
     {
-        private GriddlerDbContext db;
+        //private GriddlerDbContext db;
 
-        public HomeController(GriddlerDbContext theDb)
+        public HomeController(
+            //GriddlerDbContext theDb
+            )
         {
-            db = theDb;
+            //db = theDb;
         }
 
         private class Data
@@ -161,60 +163,60 @@ namespace Griddlers.Controllers
             return Json(ClientGriddlers);
         }
 
-        [HttpGet]
-        public async Task<JsonResult> ListGriddlersDb()
-        {
-            Griddler[] Griddlers = await db.ListGriddlers();
+        //[HttpGet]
+        //public async Task<JsonResult> ListGriddlersDb()
+        //{
+        //    Griddler[] Griddlers = await db.ListGriddlers();
 
-            ClientGriddler[] ClientGriddlers = Griddlers.Select(s=>new ClientGriddler(s))
-                                                    .ToArray();
+        //    ClientGriddler[] ClientGriddlers = Griddlers.Select(s=>new ClientGriddler(s))
+        //                                            .ToArray();
 
-            return Json(ClientGriddlers);
-        }
+        //    return Json(ClientGriddlers);
+        //}
 
-        [HttpGet]
-        public async Task<JsonResult> GetGriddlerDb(short id)
-        {
-            Dictionary<(int, int), Point> points = new Dictionary<(int, int), Point>();
-            Dictionary<(int, int), Point> dots = new Dictionary<(int, int), Point>();
+        //[HttpGet]
+        //public async Task<JsonResult> GetGriddlerDb(short id)
+        //{
+        //    Dictionary<(int, int), Point> points = new Dictionary<(int, int), Point>();
+        //    Dictionary<(int, int), Point> dots = new Dictionary<(int, int), Point>();
             
-            Griddler Griddler = await db.GetGriddler(id, "");
+        //    Griddler Griddler = await db.GetGriddler(id, "");
 
-            (points, dots) = Logic.Run(Griddler.Rows, Griddler.Cols);
+        //    (points, dots) = Logic.Run(Griddler.Rows, Griddler.Cols);
 
-            List<Point> Ordered = points.Values.ToList();
-            Ordered.AddRange(dots.Values);
+        //    List<Point> Ordered = points.Values.ToList();
+        //    Ordered.AddRange(dots.Values);
 
-            if(Griddler.Paths.Length == 0 && false)
-                await db.SaveGriddlerPath(id, Ordered.OrderBy(o => o.Time).ToArray());
+        //    if(Griddler.Paths.Length == 0 && false)
+        //        await db.SaveGriddlerPath(id, Ordered.OrderBy(o => o.Time).ToArray());
 
-            ClientGriddlerPathGroup[] Groups = (from p in Griddler.Paths
-                                                group p by p.group_num into grp
-                                                select new
-                                                {
-                                                    key = new ClientGriddlerPath(grp.First()),
-                                                    items = grp.Select(s => new ClientGriddlerPath(s)).ToArray()
-                                                }).Select(s => new ClientGriddlerPathGroup(s.key, s.items))
-                                                .ToArray();
+        //    ClientGriddlerPathGroup[] Groups = (from p in Griddler.Paths
+        //                                        group p by p.group_num into grp
+        //                                        select new
+        //                                        {
+        //                                            key = new ClientGriddlerPath(grp.First()),
+        //                                            items = grp.Select(s => new ClientGriddlerPath(s)).ToArray()
+        //                                        }).Select(s => new ClientGriddlerPathGroup(s.key, s.items))
+        //                                        .ToArray();
 
-            Point[] Pts = points.Keys.Select(s => new Point(s.Item1, s.Item2, false)).ToArray();
+        //    Point[] Pts = points.Keys.Select(s => new Point(s.Item1, s.Item2, false)).ToArray();
 
-            string Jsn = JsonConvert.SerializeObject(Pts);
+        //    string Jsn = JsonConvert.SerializeObject(Pts);
 
-            var RetVal = new
-            {
-                w = Griddler.width,
-                h = Griddler.height,
-                d = Math.Max(Griddler.Cols.Max(m => m.Length), Griddler.Rows.Max(m => m.Length)),
-                r = Griddler.Rows,
-                c = Griddler.Cols,
-                pts = points.Values.ToArray(),
-                dots = dots.Values.ToArray(),
-                paths = Groups
-            };
+        //    var RetVal = new
+        //    {
+        //        w = Griddler.width,
+        //        h = Griddler.height,
+        //        d = Math.Max(Griddler.Cols.Max(m => m.Length), Griddler.Rows.Max(m => m.Length)),
+        //        r = Griddler.Rows,
+        //        c = Griddler.Cols,
+        //        pts = points.Values.ToArray(),
+        //        dots = dots.Values.ToArray(),
+        //        paths = Groups
+        //    };
 
-            return Json(RetVal);
-        }
+        //    return Json(RetVal);
+        //}
 
 
 
