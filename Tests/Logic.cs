@@ -3400,6 +3400,30 @@ namespace Tests
             Assert.True(Same);
         }
 
+        //[Fact]
+        //hanjie super - issue 27
+        private async Task FourCallingBirds25x35()
+        {
+            //inputs
+            (Item[][] Rows, Item[][] Cols) = await Library.GetSourceData(nameof(FourCallingBirds25x35));
+
+            //outputs
+            Dictionary<(int, int), Point> Points = new Dictionary<(int, int), Point>();
+            Dictionary<(int, int), Point> Dots = new Dictionary<(int, int), Point>();
+
+            (Points, Dots) = await Library.GetOutputData(nameof(FourCallingBirds25x35), 25, 35);
+
+            (Dictionary<(int, int), Point> PtsOut, Dictionary<(int, int), Point> DtsOut)
+                = Logic.Run(Rows, Cols);
+
+            await Save(nameof(FourCallingBirds25x35), Rows, Cols, Points);
+
+            bool Same = (Points.Count == PtsOut.Count && !Points.Keys.Except(PtsOut.Keys).Any()
+                && Dots.Count == DtsOut.Count && !Dots.Keys.Except(DtsOut.Keys).Any());
+
+            Assert.True(Same);
+        }
+
         [Fact]
         //https://nonogramskatana.files.wordpress.com/2017/01/wp-1483882808999.png
         public async Task Elephant30x30()
@@ -4051,9 +4075,9 @@ namespace Tests
             Assert.True(Same);
         }
 
-        [Fact]
+        //[Fact]
         //hanjie super - issue 27
-        public async Task RoundTheTree35x35()
+        private async Task RoundTheTree35x35()
         {
             //inputs
             (Item[][] Rows, Item[][] Cols) = await Library.GetSourceData(nameof(RoundTheTree35x35));
