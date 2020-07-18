@@ -109,6 +109,10 @@ namespace Griddlers.Library
                 //dots.TryAdd((9, 26), new Point(9, 26, false));
                 //dots.TryAdd((10, 26), new Point(10, 26, false));
 
+                //FiveGoldRing25x35 - does not solve
+                //dots.TryAdd((9, 11), new Point(9, 11, false));
+                //dots.TryAdd((9, 13), new Point(9, 13, false));
+
                 if (PointsChange == points.Count && DotsChange == dots.Count)
                     break;
 
