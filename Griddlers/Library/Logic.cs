@@ -105,6 +105,10 @@ namespace Griddlers.Library
                 //points.TryAdd((7, 23), new Point(7, 23, true));
                 //points.TryAdd((7, 25), new Point(7, 25, false)); //bug
 
+                //FourCallingBirds25x35 - does not solve
+                //dots.TryAdd((9, 26), new Point(9, 26, false));
+                //dots.TryAdd((10, 26), new Point(10, 26, false));
+
                 if (PointsChange == points.Count && DotsChange == dots.Count)
                     break;
 
