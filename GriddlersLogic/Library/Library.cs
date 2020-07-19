@@ -8,7 +8,7 @@ namespace Griddlers.Library
 {
     public class Library
     {
-        private static readonly string FileRoot = $"{TryGetSolutionDirectoryInfo().FullName}\\Griddlers\\Data\\";
+        private static readonly string FileRoot = $"{TryGetSolutionDirectoryInfo().FullName}\\GriddlersLogic\\Data\\";
 
         public static DirectoryInfo TryGetSolutionDirectoryInfo(string currentPath = null)
         {

@@ -1,11 +1,13 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.27428.2005
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.30309.148
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Griddlers", "Griddlers\Griddlers.csproj", "{B29C9C33-04AD-454C-B97E-86B0F349FE17}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tests", "Tests\Tests.csproj", "{461E29E1-BEA2-400B-9C79-5C835001CECD}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Tests", "Tests\Tests.csproj", "{461E29E1-BEA2-400B-9C79-5C835001CECD}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GriddlersLogic", "GriddlersLogic\GriddlersLogic.csproj", "{C4EEDB7F-9445-4878-816B-F24DEB0361E3}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -21,6 +23,10 @@ Global
 		{461E29E1-BEA2-400B-9C79-5C835001CECD}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{461E29E1-BEA2-400B-9C79-5C835001CECD}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{461E29E1-BEA2-400B-9C79-5C835001CECD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C4EEDB7F-9445-4878-816B-F24DEB0361E3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C4EEDB7F-9445-4878-816B-F24DEB0361E3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C4EEDB7F-9445-4878-816B-F24DEB0361E3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C4EEDB7F-9445-4878-816B-F24DEB0361E3}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

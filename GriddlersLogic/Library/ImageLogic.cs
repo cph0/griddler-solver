@@ -57,7 +57,7 @@ namespace Griddlers.Library
 
             using (FileStream s = File.OpenRead(Base + "/Images/" + fileName + ".png"))
             {
-                Image<Rgba32> Im = Image.Load(s);
+                Image<Rgba32> Im = (Image<Rgba32>)Image.Load(s);
                 ProcessImageLine(true, Im, rows, Im.Height, Im.Width);
                 ProcessImageLine(false, Im, columns, Im.Width, Im.Height);
             }
