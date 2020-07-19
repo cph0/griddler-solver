@@ -804,7 +804,7 @@ namespace Griddlers.Library
                                     || (Ls.Eq && Ls.Index > 0 && LsEnd.ScV && line[Ls.Index].Value != LsEnd.Sc)
                                     ) && Sum == gapSize)
                                     FullPart(line, c - gapSize + IsEnd, Ls.Index, LsEnd.Index, GriddlerPath.Action.GapFull);
-                                else if (Ls.Valid && FirstSolid && Ls.Index <= LsEnd.Index && Ls.GroupBy(g => g.Value).Count() == 1)
+                                else if (Ls.Valid && FirstSolid && Ls.Index <= LsEnd.Index && Ls.ItemsOneValue)
                                     FullPart(line, c - gapSize + IsEnd, Ls.Index, Ls.Index, GriddlerPath.Action.GapFull, false);
                                 else if (Ls.Valid && LsEnd.Valid && (Ls.Index == LsEnd.Index || Ls.Eq || LsEnd.Eq)
                                     && Sum < gapSize && Sum > gapSize / 2)
@@ -946,7 +946,7 @@ namespace Griddlers.Library
                             }
                         }
 
-                        if (Ls.Valid && Ls.Gap.Any() && Ls.Before.Any() && Ls.Before.All(a => a.Value < block.SolidCount))
+                        if (Ls.Valid && Ls.Gap.Any() && Ls.Before.All(a => a.Value < block.SolidCount))
                         {
                             start = Ls.Gap.Sum() + line.GetDotCount(Ls.Index - 1);
                             return true;
@@ -969,7 +969,7 @@ namespace Griddlers.Library
                             return true;
                         }
 
-                        if (LsEnd.Valid && LsEnd.Gap.Any() && LsEnd.Before.Any() 
+                        if (LsEnd.Valid && LsEnd.Gap.Any()
                                 && LsEnd.Before.All(a => a < block))
                         {
                             end = LsEnd.Gap.Sum() + line.GetDotCountB(LsEnd.Index + 1);
@@ -1078,12 +1078,11 @@ namespace Griddlers.Library
                             return true;
                         }
 
-                        IEnumerable<Item> R = line.Where(w => w.Index >= LsEnd.Index && w.Index <= LsEnd.LastItemAtEquality);
                         if (LsEnd.Valid && LsEnd.Before.Any()
-                            && R.Count(c => c.Green == block.Green) == 1
+                            && LsEnd.UniqueCount(block)
                             && line.IsEqB(LsEnd.Gap, LsEnd.Index + 1, c, EndOfGap))
                         {
-                            Item Match = R.First(f => f.Green == block.Green);
+                            Item Match = LsEnd.First(f => f >= block);
                             if (Match.Index == line.LineItems - 1)
                             { 
                                 m = Match.Value;
@@ -1120,7 +1119,7 @@ namespace Griddlers.Library
                     }
 
                     //Sum Dots Forward//1,1,1,4,...//|------0--// to |-----.0--
-                    if (Ls.Valid && c - block.SolidCount - 1 >= 0 && Ls.Before.Any()
+                    if (Ls.Valid && c - block.SolidCount - 1 >= 0
                             && Ls.Before.All(a => block == a)
                             && Ls.Gap.Any() && line.IsEq(Ls.Gap, Ls.Index - 1, StartOfGap, c - block.SolidCount - 1))
                     {
@@ -1129,7 +1128,7 @@ namespace Griddlers.Library
                     }
 
                     ///Sum Dot Backward//...,3,1,1,3//-0----.000.|// to -0.---.000.|
-                    if (LsEnd.Valid && LsEnd.Before.Any() && LsEnd.Before.All(a => block == a)
+                    if (LsEnd.Valid && LsEnd.Before.All(a => block == a)
                             && LsEnd.Gap.Any() && line.IsEqB(LsEnd.Gap, LsEnd.Index + 1, c, EndOfGap))
                     {
                         Point.Group++;
