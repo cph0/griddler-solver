@@ -16,7 +16,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Griddlers\Griddlers.csproj" />
+    <ProjectReference Include="..\GriddlersLogic\GriddlersLogic.csproj" />
   </ItemGroup>
 
 </Project>

@@ -8,7 +8,6 @@ using Griddlers.Library;
 using Microsoft.AspNetCore.Http;
 using System;
 using System.Threading.Tasks;
-using System.Reflection;
 using Griddlers.Database;
 
 namespace Griddlers.Controllers
