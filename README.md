@@ -13,4 +13,5 @@ Notes
 Griddlers have been collected from these places:
 * https://nonogramskatana.wordpress.com/
 * Hanjie Books Issues 65 & 113
+* Super Hanjie Book Issue 27
 * Telegraph Newspapers
