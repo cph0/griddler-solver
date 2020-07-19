@@ -123,10 +123,10 @@ namespace Griddlers.Library
             }
 
             Console.WriteLine($"Loop Count: {Count}");
-            foreach (KeyValuePair<string, int> Method in MethodCounts)
-            {
-                Console.WriteLine($"{Method.Key}: {Method.Value}");
-            }
+            //foreach (KeyValuePair<string, int> Method in MethodCounts)
+            //{
+            //    Console.WriteLine($"{Method.Key}: {Method.Value}");
+            //}
 
             return (points, dots);
         }
