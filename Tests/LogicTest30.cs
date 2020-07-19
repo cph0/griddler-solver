@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Tests
 {
-    public class LogicTest30 : LogicTest
+    public partial class LogicTest : LogicTestBase
     {
         [Fact]
         //hanjie issue 65

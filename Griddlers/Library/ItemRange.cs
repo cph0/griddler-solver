@@ -7,6 +7,7 @@ namespace Griddlers.Library
     public class ItemRange
     {
         private readonly bool _UsingArray;
+        private readonly IDictionary<(int, bool), bool> _UniqueCounts;
         private bool? _ItemsOneValue;
         private bool? _ItemsOneColour;
         protected readonly IEnumerable<Item> _ItemsEnum;
@@ -42,6 +43,7 @@ namespace Griddlers.Library
             _UsingArray = false;
             _ItemsEnum = items;
             _ItemsArray = new Item[] { };
+            _UniqueCounts = new Dictionary<(int, bool), bool>(items.Count());
         }
 
         public ItemRange(Item[] items)
@@ -49,6 +51,7 @@ namespace Griddlers.Library
             _UsingArray = true;
             _ItemsEnum = items;
             _ItemsArray = items;
+            _UniqueCounts = new Dictionary<(int, bool), bool>(items.Length);
         }
 
         public IEnumerable<(Item, Item)> Pair()
@@ -79,6 +82,21 @@ namespace Griddlers.Library
             return Dots;
         }
 
+        public bool UniqueCount(Block block)
+        {
+            bool Retval = false;
+
+            if (_UniqueCounts.TryGetValue((block.SolidCount, block.Green), out bool Out))
+                Retval = Out;
+            else
+            {
+                Retval = _Items.Count(c => c >= block) == 1;
+                _UniqueCounts[(block.SolidCount, block.Green)] = Retval;
+            }
+
+            return Retval;
+        }
+
         public IEnumerable<Item> Reverse(int? start = null)
         {
             if (_UsingArray)
@@ -97,7 +115,7 @@ namespace Griddlers.Library
 
         public bool All(Func<Item, bool> func)
         {
-            return _Items.All(func);
+            return Any(func) && _Items.All(func);
         }
     }
 }

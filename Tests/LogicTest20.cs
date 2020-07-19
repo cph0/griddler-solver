@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Tests
 {
-    public class LogicTest20 : LogicTest
+    public partial class LogicTest : LogicTestBase
     {
 
         //not solvable!

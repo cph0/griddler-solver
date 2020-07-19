@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Tests
 {
-    public class LogicTest10 : LogicTest
+    public partial class LogicTest : LogicTestBase
     {
         [Fact]
         //https://www.google.co.uk/search?biw=1366&bih=651&tbm=isch&sa=1&ei=49eDW6qPJcadgAagq6eoBw&q=griddler+puzzle+bird+10x10&oq=griddler+puzzle+bird+10x10&gs_l=img.3...5270.7092.0.7246.8.7.1.0.0.0.101.469.6j1.7.0....0...1c.1.64.img..0.0.0....0.aNqK1hEfN-g#imgdii=t0h858VvE2gcqM:&imgrc=PNMm0vS0934YyM:

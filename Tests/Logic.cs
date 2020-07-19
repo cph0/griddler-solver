@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace Tests
 {
-    public class LogicTest
+    public class LogicTestBase
     {
         private readonly string FileRoot = $"{Library.TryGetSolutionDirectoryInfo().FullName}\\Griddlers\\Data\\";
         protected async Task Save(string fileName,

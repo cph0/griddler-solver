@@ -8,8 +8,7 @@ namespace Griddlers.Library
 {
     public class Line : ItemRange, IEnumerable<Item>
     {
-        private Item[] _Items => _ItemsArray;
-        private readonly IDictionary<(int, bool), bool> _UniqueCounts;
+        private Item[] _Items => _ItemsArray;        
         private readonly IDictionary<int, Block> _Blocks;
         private readonly IDictionary<int, Block> _BlocksByStart;
         private readonly IDictionary<int, Block> _BlocksByEnd;
@@ -31,7 +30,7 @@ namespace Griddlers.Library
             get
             {
                 if (!_LineValue.HasValue)
-                    _LineValue = _Items.Sum(s => s.Value) + GetDotCount();
+                    _LineValue = Sum();
 
                 return _LineValue.Value;
             }
@@ -71,8 +70,7 @@ namespace Griddlers.Library
         {
             IsRow = isRow;
             LineLength = lL;
-            LineIndex = index;
-            _UniqueCounts = new Dictionary<(int, bool), bool>(items.Length);
+            LineIndex = index;            
             _Blocks = new Dictionary<int, Block>(items.Length);
             _BlocksByStart = new Dictionary<int, Block>(items.Length);
             _BlocksByEnd = new Dictionary<int, Block>(items.Length);
@@ -650,22 +648,7 @@ namespace Griddlers.Library
                     _BlocksByEnd.TryAdd(Pos, Block);
             }
         }
-
-        public bool UniqueCount(Block block)
-        {
-            bool Retval = false;
-
-            if (_UniqueCounts.TryGetValue((block.SolidCount, block.Green), out bool Out))
-                Retval = Out;
-            else
-            {
-                Retval = this.Count(c => c >= block) == 1;
-                _UniqueCounts[(block.SolidCount, block.Green)] = Retval;
-            }
-
-            return Retval;
-        }
-
+        
         public int GetLinePointsValue(bool includeDots = false)
         {
             int LineValue = 0;
