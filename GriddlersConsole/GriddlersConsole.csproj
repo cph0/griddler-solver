@@ -6,6 +6,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\GriddlersDataContext\GriddlersDataContext.csproj" />
     <ProjectReference Include="..\GriddlersLogic\GriddlersLogic.csproj" />
   </ItemGroup>
 
