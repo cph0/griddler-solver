@@ -10,23 +10,30 @@ namespace GriddlersConsole
     {
         static async Task Main(string[] args)
         {
-            bool Exit = false;
-
-            while (!Exit)
+            while (true)
             {
                 Console.WriteLine("Enter griddler name or Y to exit:");
 
                 string Name = Console.ReadLine();
 
                 if (Name == "Y")
-                    Exit = true;                
+                    break;
                 else
-                    await DrawGriddler(Name);                
-            }            
+                {
+                    try
+                    {
+                        await DrawGriddler(Name);
+                    }
+                    catch (Exception)
+                    {
+                        Console.WriteLine("Not Found.");
+                    }
+                }
+            }
         }
 
         private static async Task DrawGriddler(string name) 
-        {
+        {            
             (Item[][] Rows, Item[][] Columns) = await Library.GetSourceData(name);
 
             (Dictionary<(int, int), Point> Points, Dictionary<(int, int), Point> Dots)
@@ -45,11 +52,15 @@ namespace GriddlersConsole
                 foreach (Item[] Column in Columns)
                 {
                     string Cell = " ";
+                    int Value = 0;
 
-                    if (Pos < Column.Length)
-                        Cell = Column[Pos].Value.ToString();
+                    if (Pos < Column.Length) 
+                    {
+                        Value = Column[Pos].Value;
+                        Cell = Value.ToString();                    
+                    }
 
-                    ColumnString = $"{ColumnString} {Cell} ";
+                    ColumnString = $"{ColumnString} {Cell}{(Value < 10 ? " " : string.Empty)}";
                 }
 
                 Console.WriteLine(ColumnString);
@@ -59,23 +70,40 @@ namespace GriddlersConsole
             foreach (Item[] Row in Rows)
             {
                 string RowString = string.Join(" ", Row.Select(s => s.Value));
-
+                int NumberOfTwoDigits = Row.Count(c => c.Value > 9);
+                
                 for (int Pos = Row.Length + 1; Pos <= MaxRowDepth + 1; Pos++)
                     RowString = $"{RowString}  ";
 
+                if(NumberOfTwoDigits > 0)
+                    RowString = RowString.Remove(RowString.Length - NumberOfTwoDigits);
+
+                Console.ResetColor();
+                Console.Write(RowString);
+                Console.BackgroundColor = ConsoleColor.White;
+                Console.ForegroundColor = ConsoleColor.Black;
+
                 for (int Pos = 0; Pos < Columns.Length; Pos++)
                 {
-                    string Cell = string.Empty;
+                    string Cell = "   ";                    
 
                     if (Points.TryGetValue((Pos, RowIndex), out Point Pt))
+                    { 
                         Cell = "███";
+
+                        if(Pt.Green)
+                            Console.ForegroundColor = ConsoleColor.Green;
+                    }
                     else if (Dots.ContainsKey((Pos, RowIndex)))
                         Cell = " . ";
 
-                    RowString = $"{RowString}{Cell}";
+                    Console.Write(Cell);
+                    Console.BackgroundColor = ConsoleColor.White;
+                    Console.ForegroundColor = ConsoleColor.Black;
                 }
 
-                Console.WriteLine(RowString);
+                Console.ResetColor();
+                Console.WriteLine();
                 RowIndex++;
             }
         }
