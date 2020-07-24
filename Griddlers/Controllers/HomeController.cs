@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Http;
 using System;
 using System.Threading.Tasks;
 using Griddlers.Database;
+using System.Text.Json.Serialization;
 
 namespace Griddlers.Controllers
 {
@@ -75,9 +76,25 @@ namespace Griddlers.Controllers
         {
             public string Name { get; set; }
             public short Group { get; set; }
+
+            [JsonProperty("xPos")]
             public byte Xpos { get; set; }
+
+            [JsonProperty("yPos")]
             public byte Ypos { get; set; }
-            public byte SortOrder { get; set; }
+
+            public ClientGriddlerPath(Point point) 
+            {
+                Name = string.Empty;
+
+                string? EnumValue = Enum.GetName(typeof(GriddlerPath.Action), point.Action);
+                if (EnumValue != null)
+                    Name = EnumValue;
+
+                Group = point.Grp;
+                Xpos = (byte)point.Xpos;
+                Ypos = (byte)point.Ypos;
+            }
 
             public ClientGriddlerPath(GriddlerPath p) 
             {
@@ -85,7 +102,6 @@ namespace Griddlers.Controllers
                 Group = p.group_num;
                 Xpos = p.x_position;
                 Ypos = p.y_position;
-                SortOrder = p.sort_order;
             }
         }
 
@@ -133,6 +149,17 @@ namespace Griddlers.Controllers
             //outputs
             (Points, Dots) = Logic.Run(R, C);
 
+            List<Point> Ordered = Points.Values.ToList();
+            Ordered.AddRange(Dots.Values);
+            ClientGriddlerPathGroup[] Groups = (from p in Ordered
+                                                group p by p.Grp into grp
+                                                select new
+                                                {
+                                                    key = new ClientGriddlerPath(grp.First()),
+                                                    items = grp.Select(s => new ClientGriddlerPath(s)).ToArray()
+                                                }).Select(s => new ClientGriddlerPathGroup(s.key, s.items))
+                                                .ToArray();
+
             Point[] pts = Points.Keys.Select(s => new Point(s.Item1, s.Item2, false)).ToArray();
 
             string json = JsonConvert.SerializeObject(pts);
@@ -145,7 +172,8 @@ namespace Griddlers.Controllers
                 R,
                 C,
                 pts = Points.Values.ToArray(),
-                dots = Dots.Values.ToArray()
+                dots = Dots.Values.ToArray(),
+                paths = Groups
             };
 
             return Json(retVal);

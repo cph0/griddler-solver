@@ -24,7 +24,6 @@ interface GriddlerPath {
     group: number;
     xPos: number;
     yPos: number;
-    sortOrder: number;
 }
 
 interface HomeState {
@@ -157,7 +156,8 @@ export class Home extends React.Component<RouteComponentProps<{}>, HomeState> {
                     height: data.h,
                     depth: data.d,
                     points: data.pts,
-                    dots: data.dots
+                    dots: data.dots,
+                    paths: data.paths
                 });
             });
     }
@@ -412,14 +412,20 @@ export class Home extends React.Component<RouteComponentProps<{}>, HomeState> {
                 <div key={g.group}>
                     <p style={{ cursor: "pointer" }} onClick={() => this.onPathClick(g)}>{g.name}</p>
                     <Collapse isOpen={open}>
-                        {g.items.map(m => <p key={m.sortOrder}>({m.xPos}, {m.yPos})</p>)}
+                        {g.items.map((m, i) => <p key={i}>({m.xPos}, {m.yPos})</p>)}
                     </Collapse>
                 </div>
             );
         });
 
         html = (
-            <div style={{ display: "inline-block", position: "relative", width: "150px" }}>
+            <div style={{
+                display: "inline-block",
+                position: "relative",
+                width: "150px",
+                height: "calc(70vh)",
+                overflowY: "auto"
+            }}>
                 {items}
             </div>
         );
@@ -460,6 +466,7 @@ export class Home extends React.Component<RouteComponentProps<{}>, HomeState> {
         for (let i = 0; i < this.state.width; i++) {
             for (let c = 0; c < this.state.height; c++) {
                 let brdL, brdT: string = "none";
+                let sClass = { ...gridStyle };
 
                 if (i % 5 == 0)
                     brdL = "1px solid black";
@@ -467,8 +474,12 @@ export class Home extends React.Component<RouteComponentProps<{}>, HomeState> {
                 if (c % 5 == 0)
                     brdT = "1px solid black";
 
+                if (this.state.selectedGroup
+                    && this.state.selectedGroup.items.some(e => e.xPos == i && e.yPos == c))
+                    sClass.backgroundColor = "red";
+
                 grid.push(
-                    <div style={{ ...gridStyle, borderLeft: brdL, borderTop: brdT, top: c * 20, left: i * 20 }}></div>
+                    <div style={{ ...sClass, borderLeft: brdL, borderTop: brdT, top: c * 20, left: i * 20 }}></div>
                 );
             }
         }
@@ -493,9 +504,7 @@ export class Home extends React.Component<RouteComponentProps<{}>, HomeState> {
             if (dot) {
                 let sClass = { ...dotStyle };
 
-                if (this.state.selectedGroup
-                    && this.state.selectedGroup.items.some(e => e.xPos * 20 == dot.x && e.yPos * 20 == dot.y))
-                    sClass.backgroundColor = "red";
+
 
                 dots.push(
                     <div style={{ ...sClass, top: dot.y + 8, left: dot.x + 8 }}></div>
