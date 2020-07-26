@@ -1,3 +1,4 @@
+using Griddlers.Hubs;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.SpaServices.Webpack;
@@ -18,10 +19,11 @@ namespace Griddlers
 
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
-        {
-            //services.AddMvc();
+        {   
             services.AddRazorPages()
                     .AddNewtonsoftJson();
+
+            services.AddSignalR();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -58,6 +60,7 @@ namespace Griddlers
             app.UseEndpoints(e =>
             {
                 e.MapRazorPages();
+                e.MapHub<GriddlerHub>("/griddlerhub");
                 e.MapControllerRoute("default", "{controller=Home}/{action=Index}/{id?}");
                 e.MapFallbackToController("Index", "Home");
             });

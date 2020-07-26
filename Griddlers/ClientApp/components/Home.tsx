@@ -1,11 +1,19 @@
 import * as React from 'react';
 import { RouteComponentProps } from 'react-router';
 import { CSSProperties } from 'react';
-import { Collapse } from 'reactstrap';
+import { Collapse, Progress } from 'reactstrap';
+import * as signalR from "@aspnet/signalr";
 
 interface Griddler {
     id: number;
     name: string;
+}
+
+interface Point {
+    isDot: boolean;
+    x: number;
+    y: number;
+    green: boolean;
 }
 
 interface Item {
@@ -32,16 +40,19 @@ interface HomeState {
     height: number;
     depth: number;
     sG: string;
-    points: { x: number, y: number, green: boolean }[];
-    dots: { x: number, y: number }[];
+    points: Point[];
+    dots: Point[];
     paths: GriddlerPathGroup[];
     selectedGroup?: GriddlerPathGroup;
+
+    streaming: boolean;
 }
 
 export class Home extends React.Component<RouteComponentProps<{}>, HomeState> {
     private rows: Item[][];
     private columns: Item[][];
     private uploadRef: HTMLInputElement | null = null;
+    private hubConnection: signalR.HubConnection | null = null;
 
     constructor(props: any) {
         super(props);
@@ -55,9 +66,10 @@ export class Home extends React.Component<RouteComponentProps<{}>, HomeState> {
             height: 10,
             depth: 4,
             sG: "Bird10x10",
-            points: [] as { x: number, y: number, green: boolean }[],
-            dots: [] as { x: number, y: number }[],
-            paths: []
+            points: [] as Point[],
+            dots: [] as Point[],
+            paths: [],
+            streaming: false
         };
     }
 
@@ -75,6 +87,28 @@ export class Home extends React.Component<RouteComponentProps<{}>, HomeState> {
 
     componentDidMount() {
         this.listGriddlers();
+
+        this.hubConnection = new signalR.HubConnectionBuilder().withUrl("/griddlerhub").build();
+
+        this.hubConnection.on("SendPoint", (pt) => {
+            if (pt.isDot) {
+                this.setState(prevState => ({
+                    dots: [...prevState.dots, pt]
+                }));
+            }
+            else {
+                this.setState(prevState => ({
+                    points: [...prevState.points, pt]
+                }));
+            }
+        });
+
+        this.hubConnection.start();
+    }
+
+    componentWillUnmount() {
+        if(this.hubConnection)
+            this.hubConnection.stop();
     }
 
     private run(event: React.MouseEvent<HTMLButtonElement>) {
@@ -162,6 +196,100 @@ export class Home extends React.Component<RouteComponentProps<{}>, HomeState> {
             });
     }
 
+    private stream(e: React.MouseEvent<HTMLButtonElement>) {
+        const body = {
+            sG: this.state.sG
+        };
+
+        fetch("/Home/StreamGriddler", {
+            method: "POST", headers: {
+                'Content-Type': 'application/json'
+            }, body: JSON.stringify(body)
+        })
+            .then(responce => responce.json() as Promise<any>)
+            .then(data => {
+                this.rows = data.r;
+                this.columns = data.c;
+                this.setState({
+                    width: data.w,
+                    height: data.h,
+                    depth: data.d,
+                    streaming: true,
+                    points: [],
+                    dots: []
+                });
+            });
+    }
+
+    private next(e: React.MouseEvent<HTMLButtonElement>) {
+        fetch("/Home/StreamGriddlerNext", {
+            method: "POST", headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+            .then(responce => responce.json() as Promise<any>)
+            .then(data => {
+                if (data.pt.isDot) {
+                    this.setState(prevState => ({
+                        dots: [...prevState.dots, data.pt]
+                    }));
+                }
+                else {
+                    this.setState(prevState => ({
+                        points: [...prevState.points, data.pt]
+                    }));
+                }
+            });
+    }
+
+    private previous(e: React.MouseEvent<HTMLButtonElement>) {
+        fetch("/Home/StreamGriddlerPrevious", {
+            method: "POST", headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+            .then(responce => responce.json() as Promise<any>)
+            .then(data => {
+                if (data.pt.isDot) {
+                    this.setState(prevState => {
+                        let prevDots = [...prevState.dots];
+                        prevDots.splice(prevDots.length - 1,1);
+
+                        return {
+                            dots: prevDots
+                        };
+                    });
+                }
+                else {
+                    this.setState(prevState => {
+                        let prevPts = [...prevState.points];
+                        prevPts.splice(prevPts.length - 1, 1);
+
+                        return {
+                            points: prevPts
+                        };
+                    });
+                }
+            });
+    }
+
+    private playStop(e: React.MouseEvent<HTMLButtonElement>) {
+        let url = "/Home/StreamGriddlerPlay";
+
+        if (this.state.streaming)
+            url = "/Home/StreamGriddlerStop";
+
+        fetch(url, {
+            method: "POST", headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+            .then(responce => responce.json() as Promise<any>)
+            .then(() => {
+                this.setState({streaming: !this.state.streaming});
+            });
+    }
+
     private getDb(e: React.MouseEvent<HTMLButtonElement>) {
 
         fetch("/Home/GetGriddlerDb?id=" + this.state.sG, {
@@ -212,7 +340,6 @@ export class Home extends React.Component<RouteComponentProps<{}>, HomeState> {
             });
     }
 
-
     private upload() {
         if (this.uploadRef && this.uploadRef.files && this.uploadRef.files.length > 0) {
             let file = this.uploadRef.files[0];
@@ -232,156 +359,6 @@ export class Home extends React.Component<RouteComponentProps<{}>, HomeState> {
 
     public onPathClick(g: GriddlerPathGroup) {
         this.setState({ selectedGroup: g });
-    }
-
-    public renderStaticList() {
-        let html = null;
-
-        html = (
-            <select onChange={(e) => this.onSelectGriddler(e)} value={this.state.sG}>
-                <option value="Bird10x10">Bird10x10</option>
-                <option value="Man10x10">Man10x10</option>
-                <option value="Rabbit10x10">Rabbit10x10</option>
-                <option value="Bug10x9">Bug10x9</option>
-                <option value="Snail10x10">Snail10x10</option>
-                <option value="Leaf10x10">Leaf10x10</option>
-                <option value="Notes10x10">Notes10x10</option>
-                <option value="Tree10x10">Tree10x10</option>
-                <option value="TV10x10">TV10x10</option>
-                <option value="Heart10x10">Heart10x10</option>
-                <option value="Mouse10x10">Mouse10x10</option>
-                <option value="Face10x10">Face10x10</option>
-                <option value="Coffee10x10">Coffee10x10</option>
-                <option value="IceCream11x20">IceCream11x20</option>
-                <option value="ChessKnight13x20">ChessKnight13x20</option>
-                <option value="Matryoshka13x20">Matryoshka13x20</option>
-                <option value="StripedFish20x14">StripedFish20x14</option>
-                <option value="Necklace14x20">Necklace14x20</option>
-                <option value="Pineapple14x20">Pineapple14x20</option>
-                <option value="Cheburashka20x14">Cheburashka20x14</option>
-                <option value="Apple16x15">Apple16x15</option>
-                <option value="Jar17x16">Jar17x16</option>
-                <option value="Sakura17x15">Sakura17x15</option>
-                <option value="Goose18x15">Goose18x15</option>
-                <option value="PolarBear19x14">PolarBear19x14</option>
-                <option value="Flower15x15">Flower15x15</option>
-                <option value="Yoga15x15">Yoga15x15</option>
-                <option value="Swan15x15">Swan15x15</option>
-                <option value="Mouse15x15">Mouse15x15</option>
-                <option value="Turtles15x15">Turtles15x15</option>
-                <option value="Clock15x15">Clock15x15</option>
-                <option value="Moose15x15">Moose15x15</option>
-                <option value="Pelican15x15">Pelican15x15</option>
-                <option value="Girafe15x15">Girafe15x15</option>
-                <option value="Ski15x15">Ski15x15</option>
-                <option value="Shared15x15">Shared15x15</option>
-                <option value="Amphora15x15">Amphora15x15</option>
-                <option value="Itzy15x15">Itzy15x15</option>
-                <option value="Ostrich15x15">Ostrich15x15</option>
-                <option value="Bye15x15">Bye15x15</option>
-                <option value="Sparrow15x15">Sparrow15x15</option>
-                <option value="InTheGym15x15">InTheGym15x15</option>
-                <option value="Cook15x15">Cook15x15</option>
-                <option value="Bulb15x15">Bulb15x15</option>
-                <option value="Celebration15x15">Celebration15x15</option>
-                <option value="Spider15x15">Spider15x15</option>
-                <option value="Wet15x15">Wet15x15</option>
-                <option value="Wicked15x15">Wicked15x15</option>
-                <option value="Tropical15x15">Tropical15x15</option>
-                <option value="Creature15x15">Creature15x15</option>
-                <option value="Little15x15">Little15x15</option>
-                <option value="Liar15x15">Liar15x15</option>
-                <option value="Yawn15x15">Yawn15x15</option>
-                <option value="Bird15x15">Bird15x15</option>
-                <option value="Beer15x15">Beer15x15</option>
-                <option value="Sail15x17">Sail15x17</option>
-                <option value="GirlInSunglasses15x17">GirlInSunglasses15x17</option>
-                <option value="JollyRoger15x20">JollyRoger15x20</option>
-                <option value="Gun15x20">Gun15x20</option>
-                <option value="Glasses15x20">Glasses15x20</option>
-                <option value="Doggie15x20">Doggie15x20</option>
-                <option value="Boot15x20">Boot15x20</option>
-                <option value="Jeep15x20">Jeep15x20</option>
-                <option value="Goldfish15x20">Goldfish15x20</option>
-                <option value="Fencer15x20">Fencer15x20</option>
-                <option value="Diplodocus15x20">Diplodocus15x20</option>
-                <option value="HereDaisy15x20">HereDaisy15x20</option>
-                <option value="CountryLodge15x20">CountryLodge15x20</option>
-                <option value="Pig15x20">Pig15x20</option>
-                <option value="Pumpkin15x20">Pumpkin15x20</option>
-                <option value="NightLight15x20">NightLight15x20</option>
-                <option value="Vampire15x20">Vampire15x20</option>
-                <option value="Bonfire15x20">Bonfire15x20</option>
-                <option value="Poodle15x20">Poodle15x20</option>
-                <option value="Teapot17x14">Teapot17x14</option>
-                <option value="Fishes17x15">Fishes17x15</option>
-                <option value="Mortarboard17x15">Mortarboard17x15</option>
-                <option value="Sushi19x13">Sushi19x13</option>
-                <option value="Ninja22x12">Ninja22x12</option>
-                <option value="Landfall20x15">Landfall20x15</option>
-                <option value="Centaur20x15">Centaur20x15</option>
-                <option value="Tomahawk20x20">Tomahawk20x20</option>
-                <option value="Dino20x20">Dino20x20</option>
-                <option value="Butterfly20x20">Butterfly20x20</option>
-                <option value="Teapot20x20">Teapot20x20</option>
-                <option value="Kitty20x20">Kitty20x20</option>
-                <option value="Bus20x20">Bus20x20</option>
-                <option value="Peacock20x20">Peacock20x20</option>
-                <option value="Portable20x20">Portable20x20</option>
-                <option value="Dragon20x20">Dragon20x20</option>
-                <option value="Worzel20x20">Worzel20x20</option>
-                <option value="Mask20x20">Mask20x20</option>
-                <option value="Highlights20x20">Highlights20x20</option>
-                <option value="FastFood20x20">FastFood20x20</option>
-                <option value="Beg20x20">Beg20x20</option>
-                <option value="WhatsThat20x20">WhatsThat20x20</option>
-                <option value="Volley20x20">Volley20x20</option>
-                <option value="Budgie20x20">Budgie20x20</option>
-                <option value="Lion20x20">Lion20x20</option>
-                <option value="Swing20x20">Swing20x20</option>
-                <option value="Phone20x20">Phone20x20</option>
-                <option value="Flower20x20">Flower20x20</option>
-                <option value="Crash20x20">Crash20x20</option>
-                <option value="House20x20">House20x20</option>
-                <option value="Man20x20">Man20x20</option>
-                <option value="Girl20x20">Girl20x20</option>
-                <option value="Knight20x20">Knight20x20</option>
-                <option value="Ninja20x20">Ninja20x20</option>
-                <option value="Chick20x20">Chick20x20</option>
-                <option value="Edible20x20">Edible20x20</option>
-                <option value="Little20x20">Little20x20</option>
-                <option value="Large20x20">Large20x20</option>
-                <option value="Agile20x30">Agile20x30</option>
-                <option value="Victory20x30">Victory20x30</option>
-                <option value="Lion25x25">Lion25x25</option>
-                <option value="Train25x25">Train25x25</option>
-                <option value="Raccoon25x25">Raccoon25x25</option>
-                <option value="UFO25x25">UFO25x25</option>
-                <option value="Santa25x25">Santa25x25</option>
-                <option value="Pegasus25x25">Pegasus25x25</option>
-                <option value="Tea25x25">Tea25x25</option>
-                <option value="Crab25x25">Crab25x25</option>
-                <option value="Zen25x25">Zen25x25</option>
-                <option value="Cock25x25">Cock25x25</option>
-                <option value="Goblin25x25">Goblin25x25</option>
-                <option value="Koala25x25">Koala25x25</option>
-                <option value="Acorns25x25">Acorns25x25</option>
-                <option value="LittleDevil25x25">LittleDevil25x25</option>
-                <option value="Girl25x25">Girl25x25</option>
-                <option value="Boy25x25">Boy25x25</option>
-                <option value="Elephant30x30">Elephant30x30</option>
-                <option value="Lovers30x30">Lovers30x30</option>
-                <option value="Woman30x30">Woman30x30</option>
-                <option value="Pumpkin30x30">Pumpkin30x30</option>
-                <option value="Joker30x30">Joker30x30</option>
-                <option value="Pinapple30x30">Pinapple30x30</option>
-                <option value="Chaplin30x30">Chaplin30x30</option>
-                <option value="Cobra30x30">Cobra30x30</option>
-                <option value="KingKong30x30">KingKong30x30</option>
-            </select>
-        );
-
-        return html;
     }
 
     public renderGriddlerList() {
@@ -570,16 +547,30 @@ export class Home extends React.Component<RouteComponentProps<{}>, HomeState> {
                                 <button className="btn btn-primary" onClick={(e) => this.get(e)}>Get</button>
                             </div>
                             {this.renderGriddlerList()}
+                            <div className="input-group-btn">
+                                <button className="btn btn-primary" onClick={(e) => this.stream(e)}>Stream</button>
+                                <button className="btn btn-primary" onClick={(e) => this.previous(e)}>Back</button>
+                                <button className="btn btn-primary" onClick={(e) => this.playStop(e)}>
+                                    {this.state.streaming ? "Pause" : "Play"}
+                                </button>
+                                <button className="btn btn-primary" onClick={(e) => this.next(e)}>Forward</button>
+                            </div>
                         </div>
                     </div>
                 </div>
-                <button className="btn btn-primary btn-sm" onClick={(e) => this.upload()}>Upload</button>
-                <input type="file" ref={el => this.uploadRef = el}></input>
+                <div style={{ display: "none" }}>
+                    <button className="btn btn-primary btn-sm" onClick={(e) => this.upload()}>Upload</button>
+                    <input type="file" ref={el => this.uploadRef = el}></input>
+                </div>
                 <div style={{ marginTop: "5px", marginBottom: "10px" }}>
                     <input onChange={(e) => this.onWidthChange(e)} value={this.state.width} />
                     <input onChange={(e) => this.onHeightChange(e)} value={this.state.height} />
                     <input onChange={(e) => this.onDepthChange(e)} value={this.state.depth} />
                     <button className="btn btn-primary btn-sm" onClick={(e) => this.run(e)}>Run</button>
+                </div>
+                <div>
+                    <Progress max={this.state.width * this.state.height}
+                        value={this.state.points.length + this.state.dots.length} />
                 </div>
                 <div className="row">
                     <div className="col-lg-2">

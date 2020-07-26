@@ -10,18 +10,23 @@ using System;
 using System.Threading.Tasks;
 using Griddlers.Database;
 using System.Text.Json.Serialization;
+using Microsoft.AspNetCore.SignalR;
+using Griddlers.Hubs;
 
 namespace Griddlers.Controllers
 {
     public class HomeController : Controller
     {
         //private GriddlerDbContext db;
+        private IHubContext<GriddlerHub, IGriddlerHub> HubContext;
 
         public HomeController(
-            //GriddlerDbContext theDb
+            //GriddlerDbContext theDb,
+            IHubContext<GriddlerHub,IGriddlerHub> hubContext
             )
         {
             //db = theDb;
+            HubContext = hubContext;
         }
 
         private class Data
@@ -160,7 +165,7 @@ namespace Griddlers.Controllers
                                                 }).Select(s => new ClientGriddlerPathGroup(s.key, s.items))
                                                 .ToArray();
 
-            Point[] pts = Points.Keys.Select(s => new Point(s.Item1, s.Item2, false)).ToArray();
+            Point[] pts = Points.Keys.Select(s => new Point(false, s.Item1, s.Item2, false)).ToArray();
 
             string json = JsonConvert.SerializeObject(pts);
 
@@ -178,6 +183,72 @@ namespace Griddlers.Controllers
 
             return Json(retVal);
         }
+
+        public async Task<JsonResult> StreamGriddler([FromBody] JToken dt)
+        {
+            SG Data = JsonConvert.DeserializeObject<SG>(dt.ToString(Formatting.None));
+            (Item[][] R, Item[][] C) = (new Item[][] { }, new Item[][] { });
+
+            //inputs
+            (R, C) = await Library.Library.GetSourceData(Data.sG);
+
+            //outputs
+            //Logic.RunAsStream(R, C);
+            Logic.RunAsStream(R, C, async (Point Pt) =>
+            {
+                //signalr
+                await HubContext.Clients.All.SendPoint(Pt);
+            });
+
+            var RetVal = new
+            {
+                w = C.Length,
+                h = R.Length,
+                d = Math.Max(C.Max(m => m.Length), R.Max(m => m.Length)),
+                R,
+                C
+            };
+
+            return Json(RetVal);
+        }
+
+        public JsonResult StreamGriddlerPlay()
+        {
+            Logic.Play(async (Point Pt) => {
+                await HubContext.Clients.All.SendPoint(Pt);
+            });
+            return Json(true);
+        }
+
+        public JsonResult StreamGriddlerStop()
+        {
+            Logic.Stop();
+            return Json(true);
+        }
+
+        public JsonResult StreamGriddlerNext()
+        {
+            Point? Pt = Logic.Next();
+
+            var RetVal = new { 
+                pt = Pt
+            };
+
+            return Json(RetVal);
+        }
+
+        public JsonResult StreamGriddlerPrevious()
+        {
+            Point? Pt = Logic.Previous();
+
+            var RetVal = new
+            {
+                pt = Pt
+            };
+
+            return Json(RetVal);
+        }
+
 
         [HttpGet]
         public JsonResult ListGriddlers()

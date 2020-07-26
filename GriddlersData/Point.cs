@@ -8,6 +8,7 @@ namespace Griddlers.Library
         private const int sS = 20;
         public static short Group;
 
+        public bool IsDot { get; private set; }
         public int X { get; private set; }
         public int Y { get; private set; }
         public bool Green { get; set; }
@@ -19,8 +20,9 @@ namespace Griddlers.Library
         public short Grp { get; private set; }
 
         public Point() { }
-        public Point(int ex, int why, bool g)
+        public Point(bool isDot, int ex, int why, bool g)
         {
+            IsDot = isDot;
             X = ex * sS;
             Y = why * sS;
             Green = g;
@@ -28,8 +30,8 @@ namespace Griddlers.Library
             Xpos = ex;
             Ypos = why;
         }
-        public Point(GriddlerSolid gs) : this(gs.x_position, gs.y_position, gs.green) { }
-        public Point((int, int) xy, bool g, GriddlerPath.Action a) : this(xy.Item1, xy.Item2, g)
+        public Point(GriddlerSolid gs) : this(false, gs.x_position, gs.y_position, gs.green) { }
+        public Point(bool isDot, (int, int) xy, bool g, GriddlerPath.Action a) : this(isDot, xy.Item1, xy.Item2, g)
         {
             Action = a;
             Time = DateTime.Now;
