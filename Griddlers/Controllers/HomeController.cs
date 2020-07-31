@@ -249,6 +249,31 @@ namespace Griddlers.Controllers
             return Json(RetVal);
         }
 
+        public async Task<JsonResult> CreateTreeTest()
+        {
+            (Item[][] R, Item[][] C) = (new Item[][] { }, new Item[][] { });
+
+            //inputs
+            (R, C) = await Library.Library.GetSourceData("Bird10x10");
+
+            Tree Tree = Logic.CreateTree(R, C);
+
+            return Json(Tree);
+        }
+
+        public async Task<JsonResult> GetTreeTest([FromBody] JToken dt)
+        {
+            SG Data = JsonConvert.DeserializeObject<SG>(dt.ToString(Formatting.None));
+            (Item[][] R, Item[][] C) = (new Item[][] { }, new Item[][] { });
+
+            //inputs
+            (R, C) = await Library.Library.GetSourceData(Data.sG);
+
+            Tree Tree = Logic.CreateTree2(R, C);
+
+            return Json(Tree.Root);
+        }
+
 
         [HttpGet]
         public JsonResult ListGriddlers()

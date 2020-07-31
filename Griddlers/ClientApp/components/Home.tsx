@@ -3,6 +3,7 @@ import { RouteComponentProps } from 'react-router';
 import { CSSProperties } from 'react';
 import { Collapse, Progress } from 'reactstrap';
 import * as signalR from "@aspnet/signalr";
+import { Tree, ReactD3TreeItem } from "react-d3-tree";
 
 interface Griddler {
     id: number;
@@ -46,6 +47,20 @@ interface HomeState {
     selectedGroup?: GriddlerPathGroup;
 
     streaming: boolean;
+
+    showTree: boolean;
+    treeData: ReactD3TreeItem;
+}
+
+class NodeLabel extends React.PureComponent<any, {}> {
+    render() {
+        const { nodeData } = this.props
+        return (
+            <div style={{ border: "1px solid black", padding: "5px" }}>
+                <span>{nodeData.name}</span>
+            </div>
+        )
+    }
 }
 
 export class Home extends React.Component<RouteComponentProps<{}>, HomeState> {
@@ -69,7 +84,9 @@ export class Home extends React.Component<RouteComponentProps<{}>, HomeState> {
             points: [] as Point[],
             dots: [] as Point[],
             paths: [],
-            streaming: false
+            streaming: false,
+            showTree: false,
+            treeData: {} as ReactD3TreeItem
         };
     }
 
@@ -124,7 +141,7 @@ export class Home extends React.Component<RouteComponentProps<{}>, HomeState> {
         })
             .then(responce => responce.json() as Promise<any>)
             .then(data => {
-                this.setState({ points: data.pts, dots: data.dots });
+                this.setState({ points: data.pts, dots: data.dots, showTree: false });
             });
     }
 
@@ -191,7 +208,8 @@ export class Home extends React.Component<RouteComponentProps<{}>, HomeState> {
                     depth: data.d,
                     points: data.pts,
                     dots: data.dots,
-                    paths: data.paths
+                    paths: data.paths,
+                    showTree: false
                 });
             });
     }
@@ -214,6 +232,7 @@ export class Home extends React.Component<RouteComponentProps<{}>, HomeState> {
                     width: data.w,
                     height: data.h,
                     depth: data.d,
+                    showTree: false,
                     streaming: true,
                     points: [],
                     dots: []
@@ -290,6 +309,26 @@ export class Home extends React.Component<RouteComponentProps<{}>, HomeState> {
             });
     }
 
+    private getTree(e: React.MouseEvent<HTMLButtonElement>) {
+        const body = {
+            sG: this.state.sG
+        };
+
+        fetch("/Home/GetTreeTest", {
+            method: "POST", headers: {
+                'Content-Type': 'application/json'
+            }, body: JSON.stringify(body)
+        })
+            .then(responce => responce.json() as Promise<any>)
+            .then(data => {
+                this.setState({
+                    showTree: true,
+                    treeData: data
+                });
+            });
+    }
+
+
     private getDb(e: React.MouseEvent<HTMLButtonElement>) {
 
         fetch("/Home/GetGriddlerDb?id=" + this.state.sG, {
@@ -358,7 +397,11 @@ export class Home extends React.Component<RouteComponentProps<{}>, HomeState> {
     }
 
     public onPathClick(g: GriddlerPathGroup) {
-        this.setState({ selectedGroup: g });
+        let selectedGroup;
+        if (!this.state.selectedGroup || this.state.selectedGroup.group != g.group)
+            selectedGroup = g;
+
+        this.setState({ selectedGroup });
     }
 
     public renderGriddlerList() {
@@ -548,6 +591,7 @@ export class Home extends React.Component<RouteComponentProps<{}>, HomeState> {
                             </div>
                             {this.renderGriddlerList()}
                             <div className="input-group-btn">
+                                <button className="btn btn-primary" onClick={(e) => this.getTree(e)}>Tree</button>
                                 <button className="btn btn-primary" onClick={(e) => this.stream(e)}>Stream</button>
                                 <button className="btn btn-primary" onClick={(e) => this.previous(e)}>Back</button>
                                 <button className="btn btn-primary" onClick={(e) => this.playStop(e)}>
@@ -572,6 +616,11 @@ export class Home extends React.Component<RouteComponentProps<{}>, HomeState> {
                     <Progress max={this.state.width * this.state.height}
                         value={this.state.points.length + this.state.dots.length} />
                 </div>
+                {this.state.showTree && <div style={{ width: "100%", height: "calc(100vh)" }}>
+                    <Tree data={this.state.treeData} orientation="vertical"
+                        transitionDuration={0} allowForeignObjects={true}
+                        nodeLabelComponent={{ render: <NodeLabel /> }} />
+                </div>}
                 <div className="row">
                     <div className="col-lg-2">
                         {this.renderPathList()}
