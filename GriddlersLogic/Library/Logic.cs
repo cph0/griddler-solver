@@ -15,6 +15,13 @@ namespace Griddlers.Library
         private static List<Point> StreamCache = new List<Point>();
         private static int Current = 0;
 
+        private static bool Staging = false;
+        private static int TreeLevel = 0;
+        private static Dictionary<(int,int), Point> TreeStage = new Dictionary<(int, int), Point>();
+        private static List<TreeNode> Excludes = new List<TreeNode>();
+
+        
+
         public static Dictionary<(int, int), Point> dots = new Dictionary<(int, int), Point>();
         public static Dictionary<(int, int), Point> points = new Dictionary<(int, int), Point>();
         private static IReadOnlyDictionary<int, Line> Rows = new Dictionary<int, Line>();
@@ -33,6 +40,7 @@ namespace Griddlers.Library
         {
             Dictionary<(int, int), Point> Points = new Dictionary<(int, int), Point>();
             Dictionary<(int, int), Point> Dots = new Dictionary<(int, int), Point>();
+            Staging = false;
 
             IEnumerable<Point> All = RunI(rows, columns);
 
@@ -50,6 +58,7 @@ namespace Griddlers.Library
         public static void RunAsStream(Item[][] rows, Item[][] columns, Action<Point>? action = null)
         {
             Stream = RunI(rows, columns).GetEnumerator();
+            Staging = false;
             Current = 0;
             StreamCache = new List<Point>();
 
@@ -109,13 +118,116 @@ namespace Griddlers.Library
             return Pt;
         }
 
+        public static Tree CreateTree(Item[][] rows, Item[][] columns) 
+        {
+            Staging = true;
+            points.Clear();
+            dots.Clear();
+            Point.Group = 0;
+
+            IEnumerable<Point> Stage = RunI(rows, columns);
+
+            Tree Tree = new Tree(Stage);
+
+            AddChildren(rows, columns, Tree.Root);
+
+            return Tree;
+        }
+        private static void AddChildren(Item[][] rows, Item[][] columns, TreeNode parent) 
+        {
+            foreach (TreeNode Node in parent.Children)
+            {   
+                foreach (Point Point in Node.Points.Values)
+                {
+                    if (Point.IsDot)
+                        dots.TryAdd((Point.Xpos, Point.Ypos), Point);
+                    else
+                        points.TryAdd((Point.Xpos, Point.Ypos), Point);
+                }
+
+                IEnumerable<Point> Stage = RunI(rows, columns);
+                //Excludes.AddRange(parent.Children);
+                Node.SetNodes(Stage, Excludes);
+                AddChildren(rows, columns, Node);
+            }
+
+            //if (TreeLevel < 10)
+            //{
+                //foreach (Point Point in parent.Points.Values)
+                //{
+                //    if (Point.IsDot)
+                //        dots.Remove((Point.Xpos, Point.Ypos));
+                //    else
+                //        points.Remove((Point.Xpos, Point.Ypos));
+                //}
+            //}
+
+            //TreeLevel++;
+        }
+
+        public static Tree CreateTree2(Item[][] rows, Item[][] columns)
+        {
+            Staging = true;
+            points.Clear();
+            dots.Clear();
+            Point.Group = 0;
+
+            bool Complete = false;
+            Tree Tree = new Tree();
+            TreeNode Current = Tree.Root;
+
+            while (!Complete)
+            {
+                IEnumerable<Point> Stage = RunI(rows, columns);
+                Current.SetNodes(Stage);
+
+                if (Current.Children.Count > 0 && Current.CurrentNodePos < Current.Children.Count)
+                {
+                    TreeNode Child = Current.Children[Current.CurrentNodePos];
+                    Child.Parent = Current;
+                    Current = Child;
+
+                    foreach (Point Point in Current.Points.Values)
+                    {
+                        if (Point.IsDot)
+                            dots.TryAdd((Point.Xpos, Point.Ypos), Point);
+                        else
+                            points.TryAdd((Point.Xpos, Point.Ypos), Point);
+                    }
+                }
+                else if (Current.Parent != null)
+                {
+                    foreach (Point Point in Current.Points.Values)
+                    {
+                        if (Point.IsDot)
+                            dots.Remove((Point.Xpos, Point.Ypos));
+                        else
+                            points.Remove((Point.Xpos, Point.Ypos));
+                    }
+
+                    Current = Current.Parent;
+                    Current.CurrentNodePos++;
+                }
+                else
+                    Complete = true;
+            }
+
+            return Tree;
+        }
+
+        
         private static IEnumerable<Point> RunI(Item[][] rows, Item[][] columns)
         {
             int Width = columns.Length;
             int Height = rows.Length;
-            points = new Dictionary<(int, int), Point>(Width * Height);
-            dots = new Dictionary<(int, int), Point>(Width * Height);
-            Point.Group = 0;
+
+            if (!Staging)
+            {
+                points = new Dictionary<(int, int), Point>(Width * Height);
+                dots = new Dictionary<(int, int), Point>(Width * Height);
+                Point.Group = 0;
+            }
+
             int Count = 0;
             int LoopCount = -1;
 
@@ -274,11 +386,18 @@ namespace Griddlers.Library
                 var Xy = line.IsRow ? (Pos, line.LineIndex) : (line.LineIndex, Pos);
 
                 Point NewPoint = new Point(dot, Xy, green, action);
+                bool New = (dot && !dots.ContainsKey(Xy)) || (!dot && !points.ContainsKey(Xy));
 
-                if (dot)
-                    dots.TryAdd(Xy, NewPoint);
-                else
-                    points.TryAdd(Xy, NewPoint);
+                if (!Staging)
+                {
+                    if (dot)
+                        dots.TryAdd(Xy, NewPoint);
+                    else
+                        points.TryAdd(Xy, NewPoint);                
+                }
+
+                if(New)
+                    yield return NewPoint;
 
                 if (line.IsRow)
                 {
@@ -289,9 +408,7 @@ namespace Griddlers.Library
                 {
                     Cols[line.LineIndex].ClearCaches(start);
                     Rows[Pos].ClearCaches(line.LineIndex);
-                }
-
-                yield return NewPoint;
+                }                
             }
         }
 
