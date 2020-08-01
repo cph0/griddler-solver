@@ -20,15 +20,15 @@ namespace Griddlers.Library
         private static Dictionary<(int,int), Point> TreeStage = new Dictionary<(int, int), Point>();
         private static List<TreeNode> Excludes = new List<TreeNode>();
 
-        
+        private HashSet<byte> RemovedActions = new HashSet<byte>();
 
-        public static Dictionary<(int, int), Point> dots = new Dictionary<(int, int), Point>();
-        public static Dictionary<(int, int), Point> points = new Dictionary<(int, int), Point>();
-        private static IReadOnlyDictionary<int, Line> Rows = new Dictionary<int, Line>();
-        private static IReadOnlyDictionary<int, Line> Cols = new Dictionary<int, Line>();
-        private static readonly IDictionary<string, int> MethodCounts = new Dictionary<string, int>();
+        public Dictionary<(int, int), Point> dots = new Dictionary<(int, int), Point>();
+        public Dictionary<(int, int), Point> points = new Dictionary<(int, int), Point>();
+        private IReadOnlyDictionary<int, Line> Rows = new Dictionary<int, Line>();
+        private IReadOnlyDictionary<int, Line> Cols = new Dictionary<int, Line>();
+        private readonly IDictionary<string, int> MethodCounts = new Dictionary<string, int>();
 
-        public static void AddMethodCount(string key)
+        public void AddMethodCount(string key)
         {
             if (MethodCounts.ContainsKey(key))
                 MethodCounts[key]++;
@@ -38,10 +38,15 @@ namespace Griddlers.Library
 
         public static (Dictionary<(int, int), Point>, Dictionary<(int, int), Point>) Run(Item[][] rows, Item[][] columns)
         {
+            Logic L = new Logic();
+            return L.RunNonStatic(rows, columns);
+        }
+
+        private (Dictionary<(int, int), Point>, Dictionary<(int, int), Point>) RunNonStatic(Item[][] rows, Item[][] columns)
+        {
             Dictionary<(int, int), Point> Points = new Dictionary<(int, int), Point>();
             Dictionary<(int, int), Point> Dots = new Dictionary<(int, int), Point>();
             Staging = false;
-
             IEnumerable<Point> All = RunI(rows, columns);
 
             foreach (Point Point in All)
@@ -57,7 +62,8 @@ namespace Griddlers.Library
 
         public static void RunAsStream(Item[][] rows, Item[][] columns, Action<Point>? action = null)
         {
-            Stream = RunI(rows, columns).GetEnumerator();
+            Logic L = new Logic();
+            Stream = L.RunI(rows, columns).GetEnumerator();
             Staging = false;
             Current = 0;
             StreamCache = new List<Point>();
@@ -99,8 +105,8 @@ namespace Griddlers.Library
                     StreamCache.Add(Pt);
                 }
 
-                if (StreamCache.Count < points.Count + dots.Count)
-                    Current++;
+                //if (StreamCache.Count < points.Count + dots.Count)
+                Current++;
             }
 
             return Pt;
@@ -120,20 +126,19 @@ namespace Griddlers.Library
 
         public static Tree CreateTree(Item[][] rows, Item[][] columns) 
         {
+            Logic L = new Logic();
             Staging = true;
-            points.Clear();
-            dots.Clear();
             Point.Group = 0;
 
-            IEnumerable<Point> Stage = RunI(rows, columns);
+            IEnumerable<Point> Stage = L.RunI(rows, columns);
 
             Tree Tree = new Tree(Stage);
 
-            AddChildren(rows, columns, Tree.Root);
+            L.AddChildren(rows, columns, Tree.Root);
 
             return Tree;
         }
-        private static void AddChildren(Item[][] rows, Item[][] columns, TreeNode parent) 
+        private void AddChildren(Item[][] rows, Item[][] columns, TreeNode parent) 
         {
             foreach (TreeNode Node in parent.Children)
             {   
@@ -164,12 +169,10 @@ namespace Griddlers.Library
 
             //TreeLevel++;
         }
-
         public static Tree CreateTree2(Item[][] rows, Item[][] columns)
         {
+            Logic L = new Logic();
             Staging = true;
-            points.Clear();
-            dots.Clear();
             Point.Group = 0;
 
             bool Complete = false;
@@ -178,7 +181,7 @@ namespace Griddlers.Library
 
             while (!Complete)
             {
-                IEnumerable<Point> Stage = RunI(rows, columns);
+                IEnumerable<Point> Stage = L.RunI(rows, columns);
                 Current.SetNodes(Stage);
 
                 if (Current.Children.Count > 0 && Current.CurrentNodePos < Current.Children.Count)
@@ -190,9 +193,9 @@ namespace Griddlers.Library
                     foreach (Point Point in Current.Points.Values)
                     {
                         if (Point.IsDot)
-                            dots.TryAdd((Point.Xpos, Point.Ypos), Point);
+                            L.dots.TryAdd((Point.Xpos, Point.Ypos), Point);
                         else
-                            points.TryAdd((Point.Xpos, Point.Ypos), Point);
+                            L.points.TryAdd((Point.Xpos, Point.Ypos), Point);
                     }
                 }
                 else if (Current.Parent != null)
@@ -200,9 +203,9 @@ namespace Griddlers.Library
                     foreach (Point Point in Current.Points.Values)
                     {
                         if (Point.IsDot)
-                            dots.Remove((Point.Xpos, Point.Ypos));
+                            L.dots.Remove((Point.Xpos, Point.Ypos));
                         else
-                            points.Remove((Point.Xpos, Point.Ypos));
+                            L.points.Remove((Point.Xpos, Point.Ypos));
                     }
 
                     Current = Current.Parent;
@@ -215,8 +218,39 @@ namespace Griddlers.Library
             return Tree;
         }
 
-        
-        private static IEnumerable<Point> RunI(Item[][] rows, Item[][] columns)
+        public static IReadOnlyList<string> GetRequiredActions(Item[][] rows,
+                                                               Item[][] columns,
+                                                               IReadOnlyDictionary<(int, int), Point> points,
+                                                               IReadOnlyDictionary<(int, int), Point> dots)
+        {
+            string[] AllActions = Enum.GetNames(typeof(GriddlerPath.Action));
+            List<string> Actions = new List<string>(AllActions.Length);
+
+            Parallel.ForEach(AllActions, (Action) =>
+            {
+                Logic L = new Logic();
+                L.RemovedActions.Add((byte)Enum.Parse(typeof(GriddlerPath.Action), Action));
+
+                var Output = L.RunNonStatic(rows, columns);
+
+                if (Output.Item1.Count != points.Count || Output.Item1.Keys.Except(points.Keys).Any()
+                    && Output.Item2.Count != dots.Count || Output.Item2.Keys.Except(dots.Keys).Any())
+                    Actions.Add(Action);
+            });
+
+            return Actions;
+        }
+        public static IReadOnlyList<string> GetUsedActions(Item[][] rows, Item[][] columns)
+        {
+            Logic L = new Logic();
+            IEnumerable<Point> Points = L.RunI(rows, columns);
+            IEnumerable<string> Actions = (from p in Points
+                                           select Enum.GetName(typeof(GriddlerPath.Action), p.Action));
+            return Actions.Distinct().ToList();
+        }
+
+
+        private IEnumerable<Point> RunI(Item[][] rows, Item[][] columns)
         {
             int Width = columns.Length;
             int Height = rows.Length;
@@ -231,8 +265,8 @@ namespace Griddlers.Library
             int Count = 0;
             int LoopCount = -1;
 
-            Rows = rows.Select((s, si) => new Line(si, true, Width, s)).ToDictionary(k => k.LineIndex);
-            Cols = columns.Select((s, si) => new Line(si, false, Height, s)).ToDictionary(k => k.LineIndex);
+            Rows = rows.Select((s, si) => new Line(si, true, Width, s, this)).ToDictionary(k => k.LineIndex);
+            Cols = columns.Select((s, si) => new Line(si, false, Height, s, this)).ToDictionary(k => k.LineIndex);
 
             //full rows <5ms
             foreach (Point Point in FullLine(Rows.Values))
@@ -361,7 +395,7 @@ namespace Griddlers.Library
             //}
         }
 
-        private static bool IsComplete(IEnumerable<Line> lines)
+        private bool IsComplete(IEnumerable<Line> lines)
         {
             bool Complete = true;
 
@@ -379,7 +413,7 @@ namespace Griddlers.Library
             return Complete;
         }
 
-        public static IEnumerable<Point> AddPoints(Line line, int start, bool green, GriddlerPath.Action action, int? end = null, bool dot = false)
+        public IEnumerable<Point> AddPoints(Line line, int start, bool green, GriddlerPath.Action action, int? end = null, bool dot = false)
         {
             for (int Pos = start; Pos <= end.GetValueOrDefault(start); Pos++)
             {
@@ -388,7 +422,7 @@ namespace Griddlers.Library
                 Point NewPoint = new Point(dot, Xy, green, action);
                 bool New = (dot && !dots.ContainsKey(Xy)) || (!dot && !points.ContainsKey(Xy));
 
-                if (!Staging)
+                if (!Staging && !RemovedActions.Contains((byte)action))
                 {
                     if (dot)
                         dots.TryAdd(Xy, NewPoint);
@@ -396,7 +430,7 @@ namespace Griddlers.Library
                         points.TryAdd(Xy, NewPoint);                
                 }
 
-                if(New)
+                if(New && !RemovedActions.Contains((byte)action))
                     yield return NewPoint;
 
                 if (line.IsRow)
@@ -412,7 +446,7 @@ namespace Griddlers.Library
             }
         }
 
-        private static IEnumerable<Line> ForEachLine(IEnumerable<Line> lines, Func<Line, bool>? run = null, int minLineValue = 1)
+        private IEnumerable<Line> ForEachLine(IEnumerable<Line> lines, Func<Line, bool>? run = null, int minLineValue = 1)
         {
             foreach (Line L in lines)
             {
@@ -421,7 +455,7 @@ namespace Griddlers.Library
             }
         }
 
-        public static IEnumerable<(int, (int, int), Block, bool, int, int)> ForEachLinePos(Line line, Func<bool, bool, int, (int, int), int, bool>? run = null, Predicate<int>? stop = null, bool b = false, int start = 0, Func<int>? advance = null)
+        public IEnumerable<(int, (int, int), Block, bool, int, int)> ForEachLinePos(Line line, Func<bool, bool, int, (int, int), int, bool>? run = null, Predicate<int>? stop = null, bool b = false, int start = 0, Func<int>? advance = null)
         {
             bool WasSolid = false;
             int SolidBlockCount = 0, GapSize = 0, SolidCount = 0;
@@ -482,7 +516,7 @@ namespace Griddlers.Library
             }
         }
 
-        private static IEnumerable<Point> FullPart(Line line, int linePosition, int startItem, int endItem, GriddlerPath.Action action, bool complete = true)
+        private IEnumerable<Point> FullPart(Line line, int linePosition, int startItem, int endItem, GriddlerPath.Action action, bool complete = true)
         {
             Point.Group++;
 
@@ -504,7 +538,7 @@ namespace Griddlers.Library
             }
         }
 
-        private static IEnumerable<Point> OverlapPart(Line line, int position, int lineEnd, int startItem, int endItem, GriddlerPath.Action action)
+        private IEnumerable<Point> OverlapPart(Line line, int position, int lineEnd, int startItem, int endItem, GriddlerPath.Action action)
         {
             int LinePosition = position;
             bool[,] LineFlagsForward = new bool[lineEnd + 1, endItem + 1];
@@ -556,7 +590,7 @@ namespace Griddlers.Library
         /// </para>
         /// </summary>
         /// <param name="lines">The rows or colums</param>
-        private static IEnumerable<Point> FullLine(IEnumerable<Line> lines)
+        private IEnumerable<Point> FullLine(IEnumerable<Line> lines)
         {
             foreach (Line Line in ForEachLine(lines, (line) => line.LineValue == line.LineLength))
             {
@@ -573,7 +607,7 @@ namespace Griddlers.Library
         /// </para>
         /// </summary>
         /// <param name="lines">The rows or colums</param>
-        private static IEnumerable<Point> OverlapLine(IEnumerable<Line> lines)
+        private IEnumerable<Point> OverlapLine(IEnumerable<Line> lines)
         {
             static bool Run(Line line) =>
                 line.LineValue < line.LineLength && line.LineValue > line.LineLength / 2;
@@ -591,7 +625,7 @@ namespace Griddlers.Library
         /// </para>
         /// </summary>
         /// <param name="lines">The rows or colums</param>
-        private static IEnumerable<Point> FullLineDots(IEnumerable<Line> lines)
+        private IEnumerable<Point> FullLineDots(IEnumerable<Line> lines)
         {
             foreach (Line Line in ForEachLine(lines, (line) => line.LineValue - line.GetDotCount() == line.GetLinePointsValue(), 0))
             {
@@ -617,7 +651,7 @@ namespace Griddlers.Library
         /// </para> 
         /// </summary>
         /// <param name="lines">The rows or colums</param>
-        private static IEnumerable<Point> LineEdgeTL(IEnumerable<Line> lines)
+        private IEnumerable<Point> LineEdgeTL(IEnumerable<Line> lines)
         {
             foreach (Line Line in ForEachLine(lines))
             {
@@ -810,7 +844,7 @@ namespace Griddlers.Library
         /// </para>
         /// </summary>
         /// <param name="lines">The rows or colums</param>
-        private static IEnumerable<Point> LineEdgeBR(IEnumerable<Line> lines)
+        private IEnumerable<Point> LineEdgeBR(IEnumerable<Line> lines)
         {
             foreach (Line Line in ForEachLine(lines))
             {
@@ -998,7 +1032,7 @@ namespace Griddlers.Library
         /// </para>
         /// </summary>
         /// <param name="lines">The rows or colums</param>
-        private static IEnumerable<Point> LineGaps(IEnumerable<Line> lines)
+        private IEnumerable<Point> LineGaps(IEnumerable<Line> lines)
         {
             foreach (Line Line in ForEachLine(lines))
             {
@@ -1129,7 +1163,7 @@ namespace Griddlers.Library
         /// </para>
         /// </summary>
         /// <param name="lines">The rows or colums</param>
-        private static IEnumerable<Point> LineDots(IEnumerable<Line> lines)
+        private IEnumerable<Point> LineDots(IEnumerable<Line> lines)
         {
             foreach (Line Line in ForEachLine(lines))
             {

@@ -12,6 +12,7 @@ using Griddlers.Database;
 using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.SignalR;
 using Griddlers.Hubs;
+using System.Text.RegularExpressions;
 
 namespace Griddlers.Controllers
 {
@@ -274,6 +275,101 @@ namespace Griddlers.Controllers
             return Json(Tree.Root);
         }
 
+
+        public async Task<JsonResult> GetRequiredActionsTest()
+        {
+            (Item[][] R, Item[][] C) = (new Item[][] { }, new Item[][] { });
+
+            //inputs
+            (R, C) = await Library.Library.GetSourceData("Bird10x10");
+
+            Regex Regex = new Regex("([0-9]+)x([0-9]+)");
+            Match Match = Regex.Match("Bird10x10");
+            int Width = int.Parse(Match.Groups[1].Value);
+            int Height = int.Parse(Match.Groups[2].Value);
+            var Output = await Library.Library.GetOutputData("Bird10x10", Width, Height);
+
+            IReadOnlyList<string> Actions = Logic.GetRequiredActions(R, C, Output.Item1, Output.Item2);
+
+            return Json(Actions);
+        }
+
+        public class ChartData
+        {
+            public string Name { get; set; }
+            public decimal Used { get; set; }
+            public decimal Required { get; set; }
+
+            public ChartData(string name, decimal used = 0, decimal req = 0) 
+            {
+                Name = name;
+                Used = used;
+                Required = req;
+            }
+        }
+
+        public async Task<JsonResult> GetActionsChart([FromBody] JToken dt)
+        {
+            //SG Data = JsonConvert.DeserializeObject<SG>(dt.ToString(Formatting.None));
+            (Item[][] R, Item[][] C) = (new Item[][] { }, new Item[][] { });
+
+            string[] Griddlers = Library.Library.ListGriddlers();
+            List<string> UsedActions = new List<string>(Griddlers.Length * 30);
+            List<string> RequiredActions = new List<string>(Griddlers.Length * 30);
+            
+            int Count = 0;
+            HashSet<string> Exclude = (new string[] { "Acorns25x25", "Agile20x30", "Balanced20x30","Beg20x20", "Boy25x25"}).ToHashSet();
+
+            foreach (string Griddler in Griddlers.Where(w => !Exclude.Contains(w)))
+            {
+                (R, C) = await Library.Library.GetSourceData(Griddler);
+
+                if (Count < 8)
+                {
+                    IReadOnlyList<string> UseActions = Logic.GetUsedActions(R, C);
+                    UsedActions.AddRange(UseActions);                
+                }
+
+                if (Count < 3)
+                {
+                    Regex Regex = new Regex("([0-9]+)x([0-9]+)");
+                    Match Match = Regex.Match(Griddler);
+                    int Width = int.Parse(Match.Groups[1].Value);
+                    int Height = int.Parse(Match.Groups[2].Value);
+                    var Output = await Library.Library.GetOutputData(Griddler, Width, Height);
+
+                    IReadOnlyList<string> ReqActions = Logic.GetRequiredActions(R, C, Output.Item1, Output.Item2);
+                    RequiredActions.AddRange(ReqActions);
+                }
+
+                if (Count > 6)
+                    break;
+
+                Count++;
+            }
+
+            Dictionary<string, ChartData> ChartData = new Dictionary<string, ChartData>();
+
+            IEnumerable<(string, decimal)> A = (from a in UsedActions
+                                                group a by a into grp
+                                                select (grp.Key, (decimal)grp.Count()));
+
+            ChartData = A.ToDictionary(k => k.Item1, k => new ChartData(k.Item1, k.Item2));
+
+            IEnumerable<(string, decimal)> B = (from a in RequiredActions
+                                                group a by a into grp
+                                                select (grp.Key, (decimal)grp.Count()));
+
+            foreach ((string, decimal) Item in B)
+            {
+                if (ChartData.ContainsKey(Item.Item1))
+                    ChartData[Item.Item1].Required = Item.Item2;
+                else
+                    ChartData.Add(Item.Item1, new ChartData(Item.Item1, req: Item.Item2));
+            }
+
+            return Json(ChartData.Values.ToArray());
+        }
 
         [HttpGet]
         public JsonResult ListGriddlers()

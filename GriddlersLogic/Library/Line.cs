@@ -8,6 +8,9 @@ namespace Griddlers.Library
 {
     public class Line : ItemRange, IEnumerable<Item>
     {
+        //TEMP - until points/dots are in this class
+        private Logic Logic;
+
         private Item[] _Items => _ItemsArray;
         private readonly IDictionary<int, Block> _Blocks;
         private readonly IDictionary<int, Block> _BlocksByStart;
@@ -66,8 +69,9 @@ namespace Griddlers.Library
         }
 
 
-        public Line(int index, bool isRow, int lL, Item[] items) : base(items)
+        public Line(int index, bool isRow, int lL, Item[] items, Logic logic) : base(items)
         {
+            Logic = logic;
             IsRow = isRow;
             LineLength = lL;
             LineIndex = index;
