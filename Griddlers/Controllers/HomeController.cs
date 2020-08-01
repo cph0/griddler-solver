@@ -305,6 +305,24 @@ namespace Griddlers.Controllers
             return Json(TrueGriddler);
         }
 
+        public async Task<JsonResult> LineCountsTest(string g)
+        {
+            (Item[][] R, Item[][] C) = (new Item[][] { }, new Item[][] { });
+
+            //inputs
+            (R, C) = await Library.Library.GetSourceData(g);
+
+            (int, int) FullLineCounts = Logic.FullLineCounts(R, C);
+            (int, int) OverlapLineCounts = Logic.OverlapLineCounts(R, C);
+
+            var RetVal = new {
+                FullLineCounts,
+                OverlapLineCounts
+            };
+
+            return Json(RetVal);
+        }
+
 
         public class ChartData
         {
