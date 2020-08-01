@@ -1287,7 +1287,7 @@ namespace Griddlers.Library
                         Flag = Ls.All(a => a.Value < End - Start - 1 && (a.Value > 1 || a.Green == block.Green));
 
                         if (!Flag && Ls.All(a => a.Value > 1 || a.Green == block.Green)
-                            && Ls.Gap.Any() && Line.IsEq(Ls.Gap, Ls.Index - 1, StartOfGap, c - block.SolidCount)
+                            && Line.IsEq(Ls.Gap, Ls.Index - 1, StartOfGap, c - block.SolidCount)
                             && Ls.Before.All(a => a.Value < End - Start - 1 && (a.Value > 1 || a.Green == block.Green)))
                             Flag = true;
 
@@ -1310,7 +1310,7 @@ namespace Griddlers.Library
 
                         var PosXy = Line.IsRow ? (c - block.SolidCount - 1, Line.LineIndex) : (Line.LineIndex, c - block.SolidCount - 1);
                         if (points.TryGetValue(PosXy, out Pt) && Pt.Green != block.Green
-                            && Ls.Valid && Ls.Gap.Any() && Ls.Before.Any()
+                            && Ls.Valid && Ls.Before.Any()
                             && Line.IsEq(Ls.Gap, Ls.Index - 1, StartOfGap, c - block.SolidCount)
                             )
                         {
@@ -1342,7 +1342,6 @@ namespace Griddlers.Library
                         if (EndOfGap - (c - block.SolidCount - 1) - 1 < MinItem.Value)
                             return true;
 
-                        //xy = Line.IsRow ? (c, Line.LineIndex) : (Line.LineIndex, c);
                         if (points.TryGetValue(xy, out Pt) && Pt.Green != block.Green)
                         {
                             end = EndOfGap - c;
@@ -1446,7 +1445,7 @@ namespace Griddlers.Library
                         if (LsEnd.LastItemAtEquality == LsEnd.ItemAtStartOfGap)
                             End = LsEnd.ItemAtStartOfGap;
                         else if (Ls.Index < End && Ls.Index >= Start
-                                && Ls.Gap.Any() && Line.IsEq(Ls.Gap, Ls.Index - 1, StartOfGap, c - block.SolidCount))
+                                && Line.IsEq(Ls.Gap, Ls.Index - 1, StartOfGap, c - block.SolidCount))
                             End = Ls.Index;
 
                         if (Start == End && End > 0
@@ -1505,7 +1504,7 @@ namespace Griddlers.Library
                     //Sum Dots Forward//1,1,1,4,...//|------0--// to |-----.0--
                     if (Ls.Valid && c - block.SolidCount - 1 >= 0
                         && Ls.Before.All(a => block == a)
-                        && Ls.Gap.Any() && Line.IsEq(Ls.Gap, Ls.Index - 1, StartOfGap, c - block.SolidCount - 1))
+                        && Line.IsEq(Ls.Gap, Ls.Index - 1, StartOfGap, c - block.SolidCount - 1))
                     {
                         Point.Group++;
                         foreach (Point Point in AddPoints(Line, c - block.SolidCount - 1, false, GriddlerPath.Action.SumDotForward, dot: true))
@@ -1514,7 +1513,7 @@ namespace Griddlers.Library
 
                     ///Sum Dot Backward//...,3,1,1,3//-0----.000.|// to -0.---.000.|
                     if (LsEnd.Valid && LsEnd.Before.All(a => block == a)
-                        && LsEnd.Gap.Any() && Line.IsEqB(LsEnd.Gap, LsEnd.Index + 1, c, EndOfGap))
+                        && Line.IsEqB(LsEnd.Gap, LsEnd.Index + 1, c, EndOfGap))
                     {
                         Point.Group++;
                         foreach (Point Point in AddPoints(Line, c, false, GriddlerPath.Action.SumDotBackward, dot: true))
@@ -1528,7 +1527,7 @@ namespace Griddlers.Library
                                                                        //need to check if c is on Item
                         if (Ls.Index > Ls.ItemAtStartOfGap && Ls.Index <= LsEnd.ItemAtStartOfGap && ER.Any()
                         && ER.Sum() <= EndOfGap - (c + 1) && ER.Sum() > (EndOfGap - (c + 1)) / 2
-                        && Ls.Gap.Any() && Line.IsEq(Ls.Gap, Ls.Index - 1, StartOfGap, c - block.SolidCount)
+                        && Line.IsEq(Ls.Gap, Ls.Index - 1, StartOfGap, c - block.SolidCount)
                         )
                         {
                             Point.Group++;
@@ -1657,7 +1656,7 @@ namespace Griddlers.Library
                             return true;
                         }
 
-                        if (Ls.Valid && Ls.Before.ItemsOneValue && Ls.Gap.Any()
+                        if (Ls.Valid && Ls.Before.ItemsOneValue
                             && Line.IsEq(Ls.Gap, Ls.Index - 1, StartOfGap, c - block.SolidCount)
                             && block.SolidCount == Line[Ls.Index - 1].Value)
                         {
