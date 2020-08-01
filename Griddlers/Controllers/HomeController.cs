@@ -9,7 +9,6 @@ using Microsoft.AspNetCore.Http;
 using System;
 using System.Threading.Tasks;
 using Griddlers.Database;
-using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.SignalR;
 using Griddlers.Hubs;
 using System.Text.RegularExpressions;
@@ -293,6 +292,19 @@ namespace Griddlers.Controllers
 
             return Json(Actions);
         }
+
+        public async Task<JsonResult> IsTrueGriddlerTest(string g)
+        {
+            (Item[][] R, Item[][] C) = (new Item[][] { }, new Item[][] { });
+
+            //inputs
+            (R, C) = await Library.Library.GetSourceData(g);
+
+            bool TrueGriddler = Logic.IsTrueGriddler(R, C);
+
+            return Json(TrueGriddler);
+        }
+
 
         public class ChartData
         {
