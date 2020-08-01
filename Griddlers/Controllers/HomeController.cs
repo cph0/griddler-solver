@@ -2,8 +2,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using Microsoft.AspNetCore.Mvc;
-using Newtonsoft.Json.Linq;
-using Newtonsoft.Json;
 using Griddlers.Library;
 using Microsoft.AspNetCore.Http;
 using System;
@@ -12,6 +10,8 @@ using Griddlers.Database;
 using Microsoft.AspNetCore.SignalR;
 using Griddlers.Hubs;
 using System.Text.RegularExpressions;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace Griddlers.Controllers
 {
@@ -35,7 +35,7 @@ namespace Griddlers.Controllers
             public int?[][] columns { get; set; } = new int?[][] { };
         }
 
-        private class SG
+        public class SG
         {
             public string sG { get; set; } = "";
         }
@@ -82,10 +82,10 @@ namespace Griddlers.Controllers
             public string Name { get; set; }
             public short Group { get; set; }
 
-            [JsonProperty("xPos")]
+            [JsonPropertyName("xPos")]
             public byte Xpos { get; set; }
 
-            [JsonProperty("yPos")]
+            [JsonPropertyName("yPos")]
             public byte Ypos { get; set; }
 
             public ClientGriddlerPath(Point point) 
@@ -141,15 +141,14 @@ namespace Griddlers.Controllers
         //    return Json(retVal);
         //}
 
-        public async Task<JsonResult> GetGriddler([FromBody]JToken dt)
+        public async Task<JsonResult> GetGriddler([FromBody]SG data)
         {
-            SG Data = JsonConvert.DeserializeObject<SG>(dt.ToString(Formatting.None));
             Dictionary<(int, int), Point> Points = new Dictionary<(int, int), Point>();
             Dictionary<(int, int), Point> Dots = new Dictionary<(int, int), Point>();
             (Item[][] R, Item[][] C) = (new Item[][] { }, new Item[][] { });
             
             //inputs
-            (R, C) = await Library.Library.GetSourceData(Data.sG);
+            (R, C) = await Library.Library.GetSourceData(data.sG);
 
             //outputs
             (Points, Dots) = Logic.Run(R, C);
@@ -167,7 +166,7 @@ namespace Griddlers.Controllers
 
             Point[] pts = Points.Keys.Select(s => new Point(false, s.Item1, s.Item2, false)).ToArray();
 
-            string json = JsonConvert.SerializeObject(pts);
+            string json = JsonSerializer.Serialize(pts);
 
             var retVal = new
             {
@@ -184,13 +183,12 @@ namespace Griddlers.Controllers
             return Json(retVal);
         }
 
-        public async Task<JsonResult> StreamGriddler([FromBody] JToken dt)
+        public async Task<JsonResult> StreamGriddler([FromBody] SG data)
         {
-            SG Data = JsonConvert.DeserializeObject<SG>(dt.ToString(Formatting.None));
             (Item[][] R, Item[][] C) = (new Item[][] { }, new Item[][] { });
 
             //inputs
-            (R, C) = await Library.Library.GetSourceData(Data.sG);
+            (R, C) = await Library.Library.GetSourceData(data.sG);
 
             //outputs
             //Logic.RunAsStream(R, C);
@@ -261,13 +259,12 @@ namespace Griddlers.Controllers
             return Json(Tree);
         }
 
-        public async Task<JsonResult> GetTreeTest([FromBody] JToken dt)
+        public async Task<JsonResult> GetTreeTest([FromBody] SG data)
         {
-            SG Data = JsonConvert.DeserializeObject<SG>(dt.ToString(Formatting.None));
             (Item[][] R, Item[][] C) = (new Item[][] { }, new Item[][] { });
 
             //inputs
-            (R, C) = await Library.Library.GetSourceData(Data.sG);
+            (R, C) = await Library.Library.GetSourceData(data.sG);
 
             Tree Tree = Logic.CreateTree2(R, C);
 
@@ -338,9 +335,8 @@ namespace Griddlers.Controllers
             }
         }
 
-        public async Task<JsonResult> GetActionsChart([FromBody] JToken dt)
+        public async Task<JsonResult> GetActionsChart([FromBody] SG data)
         {
-            //SG Data = JsonConvert.DeserializeObject<SG>(dt.ToString(Formatting.None));
             (Item[][] R, Item[][] C) = (new Item[][] { }, new Item[][] { });
 
             string[] Griddlers = Library.Library.ListGriddlers();
