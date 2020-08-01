@@ -236,7 +236,6 @@ namespace Griddlers.Library
 
             return RetVal;
         }
-
         public static IReadOnlyList<string> GetRequiredActions(Item[][] rows,
                                                                Item[][] columns,
                                                                IReadOnlyDictionary<(int, int), Point> points,
@@ -278,6 +277,44 @@ namespace Griddlers.Library
             bool AnyFullLines = Rows.Any() || Columns.Any();
 
             return !AnyZeroLines && !AnyFullLines;
+        }
+
+        public static int FullLineCount(Item[][] rows, Item[][] columns)
+        {
+            (int, int) Counts = FullLineCounts(rows, columns);
+            return Counts.Item1 + Counts.Item2;
+        }
+        public static (int, int) FullLineCounts(Item[][] rows, Item[][] columns)
+        {
+            Logic L = new Logic();
+            int Width = columns.Length;
+            int Height = rows.Length;
+            L.Rows = rows.Select((s, si) => new Line(si, true, Width, s, L)).ToDictionary(k => k.LineIndex);
+            L.Cols = columns.Select((s, si) => new Line(si, false, Height, s, L)).ToDictionary(k => k.LineIndex);
+
+            IEnumerable<Point> Rows = L.FullLine(L.Rows.Values);
+            IEnumerable<Point> Columns = L.FullLine(L.Cols.Values);
+
+            return (Rows.GroupBy(g => g.Ypos).Count(), Columns.GroupBy(g => g.Xpos).Count());
+        }
+
+        public static int OverlapLineCount(Item[][] rows, Item[][] columns)
+        {
+            (int, int) Counts = OverlapLineCounts(rows, columns);
+            return Counts.Item1 + Counts.Item2;
+        }
+        public static (int, int) OverlapLineCounts(Item[][] rows, Item[][] columns)
+        {
+            Logic L = new Logic();
+            int Width = columns.Length;
+            int Height = rows.Length;
+            L.Rows = rows.Select((s, si) => new Line(si, true, Width, s, L)).ToDictionary(k => k.LineIndex);
+            L.Cols = columns.Select((s, si) => new Line(si, false, Height, s, L)).ToDictionary(k => k.LineIndex);
+
+            IEnumerable<Point> Rows = L.OverlapLine(L.Rows.Values);
+            IEnumerable<Point> Columns = L.OverlapLine(L.Cols.Values);
+
+            return (Rows.GroupBy(g => g.Ypos).Count(), Columns.GroupBy(g => g.Xpos).Count());
         }
 
 
