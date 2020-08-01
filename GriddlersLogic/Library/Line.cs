@@ -61,13 +61,7 @@ namespace Griddlers.Library
 
         public Block CurrentBlock => _Blocks.Values.Last();
 
-
-        public Item this[int index]
-        {
-            get { return _Items[index]; }
-            set { _Items[index] = value; }
-        }
-
+        public Item this[int index] => _Items[index];
 
         public Line(int index, bool isRow, int lL, Item[] items, Logic logic) : base(items)
         {
@@ -128,7 +122,7 @@ namespace Griddlers.Library
                 if (Item >= LineItems && block.SolidCount > 0)
                     Item = LineItems - 1;
 
-                foreach (Item Itm in _Items.Skip(Item))
+                foreach (Item Itm in Skip(Item))
                 {
                     Sum += Itm.Value;
                     var Pos = IsRow ? (i - gapSize + Sum, LineIndex) : (LineIndex, i - gapSize + Sum);
@@ -171,7 +165,7 @@ namespace Griddlers.Library
                 {
                     int UniqueCount = 0, TempItem = 0;
 
-                    foreach (Item Itm in _Items.Skip(LastItemAtEquality + 1).Take(Item - LastItemAtEquality))
+                    foreach (Item Itm in Skip(LastItemAtEquality + 1).Take(Item - LastItemAtEquality))
                     {
                         if (block == Itm)
                         {
@@ -235,12 +229,12 @@ namespace Griddlers.Library
                 TheItem = _Items[Item];
 
             LastBlock.Complete = ScValid;
-            IEnumerable<Item> Next = this.Where((w, wi) => wi >= ItemAtEquality && ((!Equality && wi <= Item) || wi == Item));
-            ItemRange Before = new ItemRange(this.Where((w, wi) => wi >= ItemAtEquality && wi < Item));
-            IEnumerable<Item> After = this.Where((w, wi) => wi >= Item);
+            IEnumerable<Item> Next = _Items.Where((w, wi) => wi >= ItemAtEquality && ((!Equality && wi <= Item) || wi == Item));
+            ItemRange Before = new ItemRange(_Items.Where((w, wi) => wi >= ItemAtEquality && wi < Item));
+            IEnumerable<Item> After = _Items.Where((w, wi) => wi >= Item);
             //HashSet<Item> RightBefore = FindPossibleSolids(IsRow, LineLength, lineIndex, 1);
             HashSet<Block> RightBefore = new Block[] { LastBlock }.ToHashSet();
-            ItemRange Gap = new ItemRange(this.Where((w, wi) => wi >= ItemAtLastGap && wi < Item));
+            ItemRange Gap = new ItemRange(_Items.Where((w, wi) => wi >= ItemAtLastGap && wi < Item));
 
             return new LineSegment(Next, true, TheItem, Equality, Before, After, RightBefore, Gap, ItemAtLastGap, ItemAtEquality);
         }
@@ -608,12 +602,12 @@ namespace Griddlers.Library
             if (Valid)
                 TheItem = _Items[Item];
 
-            IEnumerable<Item> Next = this.Where((w, wi) => ((!Equality && wi >= Item) || wi == Item) && wi <= ItemAtEquality);
-            ItemRange Before = new ItemRange(this.Where((w, wi) => wi > Item && wi <= ItemAtEquality));
-            IEnumerable<Item> After = this.Where((w, wi) => wi <= Item);
+            IEnumerable<Item> Next = _Items.Where((w, wi) => ((!Equality && wi >= Item) || wi == Item) && wi <= ItemAtEquality);
+            ItemRange Before = new ItemRange(_Items.Where((w, wi) => wi > Item && wi <= ItemAtEquality));
+            IEnumerable<Item> After = _Items.Where((w, wi) => wi <= Item);
             //HashSet<Item> RightBefore = FindPossibleSolids(IsRow, LineLength, lineIndex, 1);
             HashSet<Block> RightBefore = new Block[] { new Block(ScValid, SolidCount) }.ToHashSet();
-            ItemRange Gap = new ItemRange(this.Where((w, wi) => wi > Item && wi <= ItemAtLastGap));
+            ItemRange Gap = new ItemRange(_Items.Where((w, wi) => wi > Item && wi <= ItemAtLastGap));
 
             return new LineSegment(Next, false, TheItem, Equality, Before, After, RightBefore, Gap, ItemAtLastGap, ItemAtEquality);
         }
@@ -683,18 +677,12 @@ namespace Griddlers.Library
         public bool IsEq(ItemRange u, int index, int start, int end)
             => IsEq(index, start, end, u.Sum());
         public bool IsEq(int index, int start, int end, int sum)
-        {
-            return end - start - sum <= GetDotCount(index);
-            //return end - dotCount <= start + sum;
-        }
-
+            => sum > 0 && end - start - sum <= GetDotCount(index);
+        
         public bool IsEqB(ItemRange u, int index, int start, int end)
             => IsEqB(index, start, end, u.Sum());
         public bool IsEqB(int index, int start, int end, int sum)
-        {
-            return end - start - sum <= GetDotCountB(index);
-            //return end - dotCount <= start + sum;
-        }
+            => sum > 0 && end - start - sum <= GetDotCountB(index);         
 
         public (int, int, bool) FindGapStartEnd(int pos, int? pos2 = null)
         {
@@ -931,7 +919,7 @@ namespace Griddlers.Library
                             int StartIndex = -1;
                             int Stop = 0;
 
-                            StartIndex = this.FirstOrDefault(w => w >= new Block(-1, Pt.Green) { SolidCount = SolidCount }).Index;
+                            StartIndex = _Items.FirstOrDefault(w => w >= new Block(-1, Pt.Green) { SolidCount = SolidCount }).Index;
 
                             for (int d = SolidBlockCount - 1; d >= 0; d--)
                             {
@@ -1043,7 +1031,7 @@ namespace Griddlers.Library
                         //start - skip to correct solid count
                         if (SolidBlockCount == 1 && _Items[CurrentItem].Value < SolidCount)
                         {
-                            CurrentItem = this.Select((w, wi) => (w, wi))
+                            CurrentItem = _Items.Select((w, wi) => (w, wi))
                                                .FirstOrDefault(w => w.w.Value >= SolidCount).wi;
                             StartItem = CurrentItem;
                             IsIsolated = false;
@@ -1165,14 +1153,14 @@ namespace Griddlers.Library
 
                 if (Ls.Valid || LsEnd.Valid || (Ls.ItemAtStartOfGap == Ls.LastItemAtEquality))
                 {
-                    Item Min = new Item(this.Max(m => m.Value), false), Max = new Item(0, false);
+                    Item Min = new Item(MaxItem, false), Max = new Item(0, false);
                     int Start = 0, End = LineItems - 1;
                     bool WholeGap = false;
 
                     if (Ls.Valid)
                         End = Ls.Index;
 
-                    if (Ls.Valid && Ls.Gap.Any() && IsEq(Ls.Gap, Ls.Index - 1, GapIndex, i - 1))
+                    if (Ls.Valid && IsEq(Ls.Gap, Ls.Index - 1, GapIndex, i - 1))
                         End--;
 
                     if (LsEnd.Before.Any() && End > LsEnd.Before.LastItemIndex)
@@ -1182,7 +1170,7 @@ namespace Griddlers.Library
                         Start = LsEnd.Index;
 
                     //2,1,2//--00---.
-                    if (LsEnd.Valid && Start < LineItems - 1 && LsEnd.Gap.Any()
+                    if (LsEnd.Valid && Start < LineItems - 1
                             && IsEqB(LsEnd.Gap, LsEnd.Index + 1, i, EndOfGap + 1))
                         Start++;
 
@@ -1294,10 +1282,10 @@ namespace Griddlers.Library
                     }
 
                     //TEMP
-                    if (_Items.Skip(Start).Take(End - Start + 1).All(a => a.Value < block.SolidCount))
+                    if (Skip(Start).Take(End - Start + 1).All(a => a.Value < block.SolidCount))
                     {
                         Min = new Item(0, false);
-                        Max = new Item(this.Max(m => m.Value), false);
+                        Max = new Item(MaxItem, false);
                     }
                     else if (Start <= End)
                         (Min, Max) = FindMinMax(Start, End);
@@ -1317,9 +1305,9 @@ namespace Griddlers.Library
 
                     (Item, Item) FindMinMax(int s, int e)
                     {
-                        Item Min = new Item(this.Max(m => m.Value), false), Max = new Item(0, false);
+                        Item Min = new Item(MaxItem, false), Max = new Item(0, false);
 
-                        foreach (Item Item in _Items.Skip(s).Take(e - s + 1))
+                        foreach (Item Item in Skip(s).Take(e - s + 1))
                         {
                             if (Item.Value > Max.Value)
                                 Max = Item;
@@ -1357,9 +1345,9 @@ namespace Griddlers.Library
                 else if (Logic.dots.ContainsKey(xy))
                     WasGap = false;
 
-                if (!Logic.points.ContainsKey(xy) && wasSolid && block.SolidCount > this.Min(m => m.Value))
+                if (!Logic.points.ContainsKey(xy) && wasSolid && block.SolidCount > MinItem)
                 {
-                    Item[] ItemsGTSolid = this.Where(w => w.Value >= block.SolidCount).ToArray();
+                    Item[] ItemsGTSolid = _Items.Where(w => w.Value >= block.SolidCount).ToArray();
 
                     if (ItemsGTSolid.Length > 0)
                     {
@@ -1367,7 +1355,7 @@ namespace Griddlers.Library
                             && Val.Item1.Value < ItemsGTSolid.Min(m => m.Value))
                             MinMaxItems[i] = (new Item(ItemsGTSolid.Min(m => m.Value), false), Val.Item2);
 
-                        MinMaxItems.TryAdd(i, (new Item(ItemsGTSolid.Min(m => m.Value), false), new Item(this.Max(m => m.Value), false)));
+                        MinMaxItems.TryAdd(i, (new Item(ItemsGTSolid.Min(m => m.Value), false), new Item(MaxItem, false)));
                     }
 
                 }

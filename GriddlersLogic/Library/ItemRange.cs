@@ -97,6 +97,14 @@ namespace Griddlers.Library
             return Retval;
         }
 
+        public IEnumerable<Item> Skip(int count)
+        {
+            if (_UsingArray)
+                return _ItemsArray.Skip(count);
+            else
+                return _ItemsEnum.Skip(count);
+        }
+
         public IEnumerable<Item> Reverse(int? start = null)
         {
             if (_UsingArray)
