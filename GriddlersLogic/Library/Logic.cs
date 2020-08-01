@@ -17,7 +17,7 @@ namespace Griddlers.Library
 
         private static bool Staging = false;
         private static int TreeLevel = 0;
-        private static Dictionary<(int,int), Point> TreeStage = new Dictionary<(int, int), Point>();
+        private static Dictionary<(int, int), Point> TreeStage = new Dictionary<(int, int), Point>();
         private static List<TreeNode> Excludes = new List<TreeNode>();
 
         private HashSet<byte> RemovedActions = new HashSet<byte>();
@@ -124,7 +124,7 @@ namespace Griddlers.Library
             return Pt;
         }
 
-        public static Tree CreateTree(Item[][] rows, Item[][] columns) 
+        public static Tree CreateTree(Item[][] rows, Item[][] columns)
         {
             Logic L = new Logic();
             Staging = true;
@@ -138,10 +138,10 @@ namespace Griddlers.Library
 
             return Tree;
         }
-        private void AddChildren(Item[][] rows, Item[][] columns, TreeNode parent) 
+        private void AddChildren(Item[][] rows, Item[][] columns, TreeNode parent)
         {
             foreach (TreeNode Node in parent.Children)
-            {   
+            {
                 foreach (Point Point in Node.Points.Values)
                 {
                     if (Point.IsDot)
@@ -158,13 +158,13 @@ namespace Griddlers.Library
 
             //if (TreeLevel < 10)
             //{
-                //foreach (Point Point in parent.Points.Values)
-                //{
-                //    if (Point.IsDot)
-                //        dots.Remove((Point.Xpos, Point.Ypos));
-                //    else
-                //        points.Remove((Point.Xpos, Point.Ypos));
-                //}
+            //foreach (Point Point in parent.Points.Values)
+            //{
+            //    if (Point.IsDot)
+            //        dots.Remove((Point.Xpos, Point.Ypos));
+            //    else
+            //        points.Remove((Point.Xpos, Point.Ypos));
+            //}
             //}
 
             //TreeLevel++;
@@ -218,6 +218,25 @@ namespace Griddlers.Library
             return Tree;
         }
 
+        public static bool IsActionRequired(Item[][] rows,
+                                            Item[][] columns,
+                                            IReadOnlyDictionary<(int, int), Point> points,
+                                            IReadOnlyDictionary<(int, int), Point> dots,
+                                            string action)
+        {
+            bool RetVal = false;
+            Logic L = new Logic();
+            L.RemovedActions.Add((byte)Enum.Parse(typeof(GriddlerPath.Action), action));
+
+            var Output = L.RunNonStatic(rows, columns);
+
+            if (Output.Item1.Count != points.Count || Output.Item1.Keys.Except(points.Keys).Any()
+                && Output.Item2.Count != dots.Count || Output.Item2.Keys.Except(dots.Keys).Any())
+                RetVal = true;
+
+            return RetVal;
+        }
+
         public static IReadOnlyList<string> GetRequiredActions(Item[][] rows,
                                                                Item[][] columns,
                                                                IReadOnlyDictionary<(int, int), Point> points,
@@ -228,13 +247,7 @@ namespace Griddlers.Library
 
             Parallel.ForEach(AllActions, (Action) =>
             {
-                Logic L = new Logic();
-                L.RemovedActions.Add((byte)Enum.Parse(typeof(GriddlerPath.Action), Action));
-
-                var Output = L.RunNonStatic(rows, columns);
-
-                if (Output.Item1.Count != points.Count || Output.Item1.Keys.Except(points.Keys).Any()
-                    && Output.Item2.Count != dots.Count || Output.Item2.Keys.Except(dots.Keys).Any())
+                if(IsActionRequired(rows, columns, points, dots, Action))
                     Actions.Add(Action);
             });
 
@@ -247,6 +260,24 @@ namespace Griddlers.Library
             IEnumerable<string> Actions = (from p in Points
                                            select Enum.GetName(typeof(GriddlerPath.Action), p.Action));
             return Actions.Distinct().ToList();
+        }
+
+
+        public static bool IsTrueGriddler(Item[][] rows, Item[][] columns)
+        {
+            Logic L = new Logic();
+            int Width = columns.Length;
+            int Height = rows.Length;
+            IEnumerable<Line> RowLines = rows.Select((s, si) => new Line(si, true, Width, s, L));
+            IEnumerable<Line> ColumnLines = columns.Select((s, si) => new Line(si, false, Height, s, L));
+
+            IEnumerable<Point> Rows = L.FullLine(RowLines);
+            IEnumerable<Point> Columns = L.FullLine(ColumnLines);
+
+            bool AnyZeroLines = rows.Any(a => a[0].Value == 0) || columns.Any(a => a[0].Value == 0);
+            bool AnyFullLines = Rows.Any() || Columns.Any();
+
+            return !AnyZeroLines && !AnyFullLines;
         }
 
 
@@ -427,10 +458,10 @@ namespace Griddlers.Library
                     if (dot)
                         dots.TryAdd(Xy, NewPoint);
                     else
-                        points.TryAdd(Xy, NewPoint);                
+                        points.TryAdd(Xy, NewPoint);
                 }
 
-                if(New && !RemovedActions.Contains((byte)action))
+                if (New && !RemovedActions.Contains((byte)action))
                     yield return NewPoint;
 
                 if (line.IsRow)
@@ -442,7 +473,7 @@ namespace Griddlers.Library
                 {
                     Cols[line.LineIndex].ClearCaches(start);
                     Rows[Pos].ClearCaches(line.LineIndex);
-                }                
+                }
             }
         }
 
