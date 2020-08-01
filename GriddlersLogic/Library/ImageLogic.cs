@@ -1,12 +1,10 @@
 ﻿using Microsoft.AspNetCore.Http;
-using Newtonsoft.Json;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Threading.Tasks;
+using System.Text.Json;
 
 namespace Griddlers.Library
 {
@@ -99,8 +97,8 @@ namespace Griddlers.Library
                 int[][] rowsArray = rows.ToArray<int>();
                 int[][] colsArray = columns.ToArray<int>();                
 
-                jsonRows = JsonConvert.SerializeObject(rowsArray);
-                jsonCols = JsonConvert.SerializeObject(colsArray);
+                jsonRows = JsonSerializer.Serialize(rowsArray);
+                jsonCols = JsonSerializer.Serialize(colsArray);
             }
 
             return (jsonRows, jsonCols);
