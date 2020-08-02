@@ -60,6 +60,13 @@ namespace Griddlers.Library
             return (Points, Dots);
         }
 
+        /// <summary>
+        /// Starts solving a griddler as a stream.  
+        /// If no action is passed then the stream will be paused.
+        /// </summary>
+        /// <param name="rows">The rows</param>
+        /// <param name="columns">The columns</param>
+        /// <param name="action">The method to call for each point/dot solved.</param>
         public static void RunAsStream(Item[][] rows, Item[][] columns, Action<Point>? action = null)
         {
             Logic L = new Logic();
@@ -71,6 +78,11 @@ namespace Griddlers.Library
             if (action != null)
                 Play(action);
         }
+        /// <summary>
+        /// Starts/Restarts a stream.  
+        /// Must call <see cref="RunAsStream(Item[][], Item[][], Action{Point}?)"/> first.
+        /// </summary>
+        /// <param name="action">The method to call for each point/dot solved.</param>
         public static void Play(Action<Point> action)
         {
             Streaming = true;
@@ -88,10 +100,17 @@ namespace Griddlers.Library
                 }
             });
         }
+        /// <summary>
+        /// Stops a stream.
+        /// </summary>
         public static void Stop()
         {
             Streaming = false;
         }
+        /// <summary>
+        /// Gets the next point to be solved.
+        /// </summary>
+        /// <returns>The next point in the stream.</returns>
         public static Point? Next()
         {
             Point? Pt = null;
@@ -111,6 +130,10 @@ namespace Griddlers.Library
 
             return Pt;
         }
+        /// <summary>
+        /// Gets the previous point that was solved.
+        /// </summary>
+        /// <returns>The previous point in the stream.</returns>
         public static Point? Previous()
         {
             Point? Pt = null;
@@ -218,6 +241,15 @@ namespace Griddlers.Library
             return Tree;
         }
 
+        /// <summary>
+        /// Determines if a griddler cannot solve without a particular action.
+        /// </summary>
+        /// <param name="rows">The rows</param>
+        /// <param name="columns">The columns</param>
+        /// <param name="points">The points</param>
+        /// <param name="dots">The dots</param>
+        /// <param name="action">The action to test</param>
+        /// <returns><see cref="true"/> if the action is required.</returns>
         public static bool IsActionRequired(Item[][] rows,
                                             Item[][] columns,
                                             IReadOnlyDictionary<(int, int), Point> points,
@@ -236,6 +268,14 @@ namespace Griddlers.Library
 
             return RetVal;
         }
+        /// <summary>
+        /// Determines what actions a griddler needs to solve.
+        /// </summary>
+        /// <param name="rows">The rows</param>
+        /// <param name="columns">The columns</param>
+        /// <param name="points">The points</param>
+        /// <param name="dots">The dots</param>
+        /// <returns>A list of required actions.</returns>
         public static IReadOnlyList<string> GetRequiredActions(Item[][] rows,
                                                                Item[][] columns,
                                                                IReadOnlyDictionary<(int, int), Point> points,
@@ -252,6 +292,12 @@ namespace Griddlers.Library
 
             return Actions;
         }
+        /// <summary>
+        /// Determines what actions are used by a griddler.
+        /// </summary>
+        /// <param name="rows">The rows</param>
+        /// <param name="columns">The columns</param>
+        /// <returns>A list of used actions.</returns>
         public static IReadOnlyList<string> GetUsedActions(Item[][] rows, Item[][] columns)
         {
             Logic L = new Logic();
@@ -261,7 +307,18 @@ namespace Griddlers.Library
             return Actions.Distinct().ToList();
         }
 
-
+        /// <summary>
+        /// Determines if a griddler satisfies the following
+        /// <list type="number">
+        /// <item>No zero lines</item>
+        /// <item>No trivial lines (full lines)</item>
+        /// <item>Size is a mulitple of 5</item>
+        /// <item>No symmetry (TODO)</item>
+        /// </list>
+        /// </summary>
+        /// <param name="rows">The rows</param>
+        /// <param name="columns">The columns</param>
+        /// <returns><see cref="true"/> if the griddler is a true griddler</returns>
         public static bool IsTrueGriddler(Item[][] rows, Item[][] columns)
         {
             Logic L = new Logic();
@@ -275,15 +332,30 @@ namespace Griddlers.Library
 
             bool AnyZeroLines = rows.Any(a => a[0].Value == 0) || columns.Any(a => a[0].Value == 0);
             bool AnyFullLines = Rows.Any() || Columns.Any();
+            bool MultipleOfFive = rows.Length % 5 == 0 && columns.Length % 5 == 0;
+            bool Symmetry = true;
 
-            return !AnyZeroLines && !AnyFullLines;
+            return !AnyZeroLines && !AnyFullLines && MultipleOfFive && Symmetry;
         }
 
+        /// <summary>
+        /// Determines the number of trivial lines (full lines).
+        /// </summary>
+        /// <param name="rows">The rows</param>
+        /// <param name="columns">The columns</param>
+        /// <returns>The number of full lines.</returns>
         public static int FullLineCount(Item[][] rows, Item[][] columns)
         {
             (int, int) Counts = FullLineCounts(rows, columns);
             return Counts.Item1 + Counts.Item2;
         }
+        /// <summary>
+        /// Determines the number of trivial lines (full lines).
+        /// Split into rows/columns.
+        /// </summary>
+        /// <param name="rows">The rows</param>
+        /// <param name="columns">The columns</param>
+        /// <returns>The number of full rows and columns.</returns>
         public static (int, int) FullLineCounts(Item[][] rows, Item[][] columns)
         {
             Logic L = new Logic();
@@ -298,11 +370,24 @@ namespace Griddlers.Library
             return (Rows.GroupBy(g => g.Ypos).Count(), Columns.GroupBy(g => g.Xpos).Count());
         }
 
+        /// <summary>
+        /// Determines the number of overlap lines.
+        /// </summary>
+        /// <param name="rows">The rows</param>
+        /// <param name="columns">The columns</param>
+        /// <returns>The number of overlap liens.</returns>
         public static int OverlapLineCount(Item[][] rows, Item[][] columns)
         {
             (int, int) Counts = OverlapLineCounts(rows, columns);
             return Counts.Item1 + Counts.Item2;
         }
+        /// <summary>
+        /// Determines the number of overlap lines.
+        /// Split into rows/columns.
+        /// </summary>
+        /// <param name="rows">The rows</param>
+        /// <param name="columns">The columns</param>
+        /// <returns>The number of overlap rows and columns.</returns>
         public static (int, int) OverlapLineCounts(Item[][] rows, Item[][] columns)
         {
             Logic L = new Logic();
