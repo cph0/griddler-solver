@@ -214,7 +214,12 @@ namespace Griddlers.Database
             /// <para>1,2,3|0.--0-.000| to |0..-0-.000|</para>
             /// Item cannot reach gap start and no more items
             /// </summary>
-            ItemBackwardReach = 28
+            ItemBackwardReach = 28,
+            /// <summary>
+            /// <para>1,2,3|0.----.000| to |0.0---.000|</para>
+            /// Try a point at the first possible position
+            /// </summary>
+            TrialAndError = 29
         }
     }
 }

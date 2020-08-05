@@ -558,7 +558,7 @@ namespace Tests
 
             bool Same = (Points.Count == PtsOut.Count
                 && !Points.Select(s => (s.Key.Item1, s.Key.Item2, s.Value.Green)).Except(PtsOut.Select(s => (s.Key.Item1, s.Key.Item2, s.Value.Green))).Any()
-                && DtsOut.Count == 304);
+                && Dots.Count == DtsOut.Count && !Dots.Keys.Except(DtsOut.Keys).Any());
 
             Assert.True(Same);
         }
