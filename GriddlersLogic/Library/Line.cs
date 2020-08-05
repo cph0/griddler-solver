@@ -92,26 +92,26 @@ namespace Griddlers.Library
             Block LastBlock = new Block(0, false);
             HashSet<(int, bool)> PossibleSolids = new HashSet<(int, bool)>();
 
-            foreach ((int i, (int, int) xy, Block block, bool wasSolid, int gapSize, int solidCount) in Logic.ForEachLinePos(this, (ns, sC, i, xy, gS) => gS > 0 && (Logic.dots.ContainsKey(xy) || i == LineLength - 1 || (!untilDot && i == position - 1)), (i) => i == position))
+            foreach ((int Pos, _, Block Block, bool WasSolid, int GapSize, int SolidCount) in Logic.ForEachLinePos(this, (ns, sC, i, xy, gS) => gS > 0 && (Logic.dots.ContainsKey(xy) || i == LineLength - 1 || (!untilDot && i == position - 1)), (i) => i == position))
             {
                 int Sum = 0, ItemShift = 0, GapMaxItem = 0;
                 ItemAtLastGap = Item;
-                LastGapIndex = i - gapSize - 1;
+                LastGapIndex = Pos - GapSize - 1;
 
-                if (wasSolid && !untilDot)
-                    PossibleSolids = FindPossibleSolids(i - block.SolidCount);
+                if (WasSolid && !untilDot)
+                    PossibleSolids = FindPossibleSolids(Pos - Block.SolidCount);
 
-                if (block.SolidCount == gapSize && Item < LineItems && _Items[Item].Value == block.SolidCount
+                if (Block.SolidCount == GapSize && Item < LineItems && _Items[Item].Value == Block.SolidCount
                     && _Items[Item].Value > MaxItem)
                 {
                     Equality = true;
                 }
 
-                if (untilDot && Item >= LineItems && block.SolidCount > 0 && block.SolidCount == gapSize)
+                if (untilDot && Item >= LineItems && Block.SolidCount > 0 && Block.SolidCount == GapSize)
                 {
                     for (int c = LineItems - 1; c >= 0; c--)
                     {
-                        if (_Items[c].Value >= block.SolidCount && _Items[c].Value <= gapSize)
+                        if (_Items[c].Value >= Block.SolidCount && _Items[c].Value <= GapSize)
                         {
                             Item = c;
                             break;
@@ -119,30 +119,30 @@ namespace Griddlers.Library
                     }
                 }
 
-                if (Item >= LineItems && block.SolidCount > 0)
+                if (Item >= LineItems && Block.SolidCount > 0)
                     Item = LineItems - 1;
 
                 foreach (Item Itm in Skip(Item))
                 {
                     Sum += Itm.Value;
-                    var Pos = IsRow ? (i - gapSize + Sum, LineIndex) : (LineIndex, i - gapSize + Sum);
+                    var Pos2 = IsRow ? (Pos - GapSize + Sum, LineIndex) : (LineIndex, Pos - GapSize + Sum);
 
-                    if (Logic.points.TryGetValue(Pos, out Point? Pt) && Pt.Green == Itm.Green)
+                    if (Logic.points.TryGetValue(Pos2, out Point? Pt) && Pt.Green == Itm.Green)
                     {
                         Sum++;
 
-                        if (wasSolid && Sum == gapSize
+                        if (WasSolid && Sum == GapSize
                             && Item + ItemShift >= 0
-                            && block.SolidCount > _Items[Item + ItemShift].Value)
+                            && Block.SolidCount > _Items[Item + ItemShift].Value)
                             Item--;
                         else if ((untilDot || !PossibleSolids.Contains((_Items[Item + ItemShift].Value, false)))
-                            && wasSolid && Sum > gapSize
+                            && WasSolid && Sum > GapSize
                             && Item + ItemShift - 1 >= 0
-                            && block.SolidCount > _Items[Item + ItemShift - 1].Value)
+                            && Block.SolidCount > _Items[Item + ItemShift - 1].Value)
                             Item--;
                     }
 
-                    if (Sum <= gapSize)
+                    if (Sum <= GapSize)
                     {
                         ItemShift++;
 
@@ -155,19 +155,19 @@ namespace Griddlers.Library
                     Sum += GetDotCount(Itm.Index);
                 }
 
-                if (solidCount < gapSize && (ItemShift > 1 || (ItemShift == 1 && solidCount == 0)))
+                if (SolidCount < GapSize && (ItemShift > 1 || (ItemShift == 1 && SolidCount == 0)))
                     Equality = false;
 
-                if (solidCount < gapSize)
+                if (SolidCount < GapSize)
                     PartEquality = false;
 
-                if (untilDot && block.SolidCount == gapSize && Item < LineItems)
+                if (untilDot && Block.SolidCount == GapSize && Item < LineItems)
                 {
                     int UniqueCount = 0, TempItem = 0;
 
                     foreach (Item Itm in Skip(LastItemAtEquality + 1).Take(Item - LastItemAtEquality))
                     {
-                        if (block == Itm)
+                        if (Block == Itm)
                         {
                             if (UniqueCount > 0 && Itm.Index > TempItem + 1)
                             {
@@ -191,23 +191,23 @@ namespace Griddlers.Library
                     }
                 }
 
-                if (solidCount == gapSize)
+                if (SolidCount == GapSize)
                     PartEquality = true;
 
-                if (Equality && i < LineLength - 1 && i < position - 1)
+                if (Equality && Pos < LineLength - 1 && Pos < position - 1)
                     LastItemAtEquality = Item; //????
 
-                if (Equality && i < LineLength - 1 && i < position - 1)
+                if (Equality && Pos < LineLength - 1 && Pos < position - 1)
                     ItemAtEquality = Item + ItemShift;
 
                 if (GapMaxItem > MaxItem)
                     MaxItem = GapMaxItem;
 
-                if (solidCount == gapSize)
-                    LastFullGapCount = solidCount;
+                if (SolidCount == GapSize)
+                    LastFullGapCount = Block.SolidCount;
 
-                LastBlock = block;
-                if (solidCount < gapSize)
+                LastBlock = Block;
+                if (SolidCount < GapSize)
                     ScValid = false;
                 else
                     ScValid = true;
@@ -254,17 +254,17 @@ namespace Griddlers.Library
             Dictionary<int, Dictionary<(int, bool), int>> PossibleSolids = new Dictionary<int, Dictionary<(int, bool), int>>(50);
             bool WasSolid = false, AfterFirstSolid = false, PrevColour = false;
 
-            foreach ((int i, (int, int) xy, Block block, bool wasSolid, int gapSize, int solidCount) in Logic.ForEachLinePos(this, start: start))
+            foreach ((int Pos, (int, int) Xy, _, _, _, _) in Logic.ForEachLinePos(this, start: start))
             {
-                if (Logic.points.TryGetValue(xy, out Point? Pt))
+                if (Logic.points.TryGetValue(Xy, out Point? Pt))
                 {
                     if (!WasSolid || PrevColour != Pt.Green)
                     {
                         foreach (int PosSolid in PossibleSolids.Keys)
-                            PossibleSolids[PosSolid].Remove((i - PosSolid, Pt.Green));
+                            PossibleSolids[PosSolid].Remove((Pos - PosSolid, Pt.Green));
 
                         if (!AfterFirstSolid)
-                            PossibleSolids.Add(i, new Dictionary<(int, bool), int>(50));
+                            PossibleSolids.Add(Pos, new Dictionary<(int, bool), int>(50));
 
                         if (!WasSolid)
                             PrevColour = Pt.Green;
@@ -273,22 +273,22 @@ namespace Griddlers.Library
                 else
                 {
                     if (!WasSolid && !AfterFirstSolid)
-                        PossibleSolids.Add(i, new Dictionary<(int, bool), int>(50));
+                        PossibleSolids.Add(Pos, new Dictionary<(int, bool), int>(50));
                     else if (WasSolid && onlyFirstSolid)
                         AfterFirstSolid = true;
                 }
 
-                if (!Logic.points.TryGetValue(xy, out Pt) || PrevColour != Pt.Green || i == LineLength - 1)
+                if (!Logic.points.TryGetValue(Xy, out Pt) || PrevColour != Pt.Green || Pos == LineLength - 1)
                 {
                     foreach (int PosSolid in PossibleSolids.Keys)
                     {
                         int ConsumeCount = 0;
                         bool ConsumeColour = false;
                         bool Valid = true, NextValid = true;
-                        for (int Pos = PosSolid; Pos <= i; Pos++)
+                        for (int Pos2 = PosSolid; Pos2 <= Pos; Pos2++)
                         {
-                            var Xy = IsRow ? (Pos, LineIndex) : (LineIndex, Pos);
-                            if (Logic.points.TryGetValue(Xy, out Point? Pt2))
+                            var PosXy = IsRow ? (Pos2, LineIndex) : (LineIndex, Pos2);
+                            if (Logic.points.TryGetValue(PosXy, out Point? Pt2))
                             {
                                 if (ConsumeCount > 0 && Pt2.Green != ConsumeColour)
                                 {
@@ -308,22 +308,22 @@ namespace Griddlers.Library
                         }
 
                         if (WasSolid && Valid)
-                            PossibleSolids[PosSolid].TryAdd((i - PosSolid, ConsumeColour), ConsumeCount);
+                            PossibleSolids[PosSolid].TryAdd((Pos - PosSolid, ConsumeColour), ConsumeCount);
 
                         if (Valid && NextValid)
-                            PossibleSolids[PosSolid].TryAdd((i - PosSolid + 1, ConsumeColour), ConsumeCount);
+                            PossibleSolids[PosSolid].TryAdd((Pos - PosSolid + 1, ConsumeColour), ConsumeCount);
 
                         if (ConsumeCount == 0)
                         {
                             if (WasSolid)
-                                PossibleSolids[PosSolid].TryAdd((i - PosSolid, !ConsumeColour), ConsumeCount);
+                                PossibleSolids[PosSolid].TryAdd((Pos - PosSolid, !ConsumeColour), ConsumeCount);
 
-                            PossibleSolids[PosSolid].TryAdd((i - PosSolid + 1, !ConsumeColour), ConsumeCount);
+                            PossibleSolids[PosSolid].TryAdd((Pos - PosSolid + 1, !ConsumeColour), ConsumeCount);
                         }
                     }
                 }
 
-                if (Logic.points.TryGetValue(xy, out Pt))
+                if (Logic.points.TryGetValue(Xy, out Pt))
                 {
                     WasSolid = true;
                     PrevColour = Pt.Green;
@@ -331,7 +331,7 @@ namespace Griddlers.Library
                 else
                     WasSolid = false;
 
-                if (Logic.dots.ContainsKey(xy))
+                if (Logic.dots.ContainsKey(Xy))
                     break;
             }
 
@@ -442,20 +442,20 @@ namespace Griddlers.Library
             int LastFullGapCount = 0, LastGapIndex = LineLength;
             HashSet<(int, bool)> PossibleSolids = new HashSet<(int, bool)>();
 
-            foreach ((int i, (int, int) xy, Block block, bool wasSolid, int gapSize, int solidCount) in Logic.ForEachLinePos(this, (nS, sC, i, xy, gS) => (Logic.dots.ContainsKey(xy) || i == position + 1), (i) => i == position, true))
+            foreach ((int Pos, (int, int) Xy, Block Block, bool WasSolid, int GapSize, int Sc) in Logic.ForEachLinePos(this, (nS, sC, i, xy, gS) => (Logic.dots.ContainsKey(xy) || i == position + 1), (i) => i == position, true))
             {
-                int Sum = 0, ItemShift = 0, IsPoint = Logic.points.ContainsKey(xy) ? 1 : 0;
-                int GapSizeCopy = gapSize;
+                int Sum = 0, ItemShift = 0, IsPoint = Logic.points.ContainsKey(Xy) ? 1 : 0;
+                int GapSizeCopy = GapSize;
                 ItemAtLastGap = Item;
-                LastGapIndex = i + GapSizeCopy + 1;
+                LastGapIndex = Pos + GapSizeCopy + 1;
                 GapSizeCopy += IsPoint;
 
                 if (GapSizeCopy > 0)
                 {
 
-                    if (Item < 0 && block.SolidCount > 0 && block.SolidCount == GapSizeCopy)
+                    if (Item < 0 && Block.SolidCount > 0 && Block.SolidCount == GapSizeCopy)
                     {
-                        Item FirstItem = _Items.FirstOrDefault(f => f.Value >= block.SolidCount && f.Value <= GapSizeCopy);
+                        Item FirstItem = _Items.FirstOrDefault(f => f.Value >= Block.SolidCount && f.Value <= GapSizeCopy);
                         Item = FirstItem != (object?)null ? FirstItem.Index : -1;
 
                         if (Item < LineItems - 1
@@ -467,28 +467,28 @@ namespace Griddlers.Library
                         }
                     }
 
-                    if (wasSolid && !untilDot)
-                        PossibleSolids = FindPossibleSolids(i - block.SolidCount);
+                    if (WasSolid && !untilDot)
+                        PossibleSolids = FindPossibleSolids(Pos - Block.SolidCount);
 
                     for (int c = Item; c >= 0; c--)
                     {
                         Sum += _Items[c].Value;
-                        var Pos = IsRow ? (i + GapSizeCopy - IsPoint - Sum, LineIndex) : (LineIndex, i + GapSizeCopy - IsPoint - Sum);
+                        var PosXy = IsRow ? (Pos + GapSizeCopy - IsPoint - Sum, LineIndex) : (LineIndex, Pos + GapSizeCopy - IsPoint - Sum);
 
-                        if (Logic.points.TryGetValue(Pos, out Point? Pt) && Pt.Green == _Items[c].Green)
+                        if (Logic.points.TryGetValue(PosXy, out Point? Pt) && Pt.Green == _Items[c].Green)
                         {
                             Sum++;
 
-                            if (wasSolid && Pt.Green == _Items[c].Green
+                            if (WasSolid && Pt.Green == _Items[c].Green
                                 && Sum <= GapSizeCopy
-                                && i + GapSizeCopy - IsPoint - Sum <= block.EndIndex
+                                && Pos + GapSizeCopy - IsPoint - Sum <= Block.EndIndex
                                 && Item - ItemShift <= LineItems - 1
-                                && block.SolidCount > _Items[Item - ItemShift].Value)
+                                && Block.SolidCount > _Items[Item - ItemShift].Value)
                                 Item++;
                             else if ((untilDot || (!PossibleSolids.Contains((_Items[Item - ItemShift].Value, false)) && false))
-                                && wasSolid && Sum > GapSizeCopy && Pt.Green == _Items[c].Green
+                                && WasSolid && Sum > GapSizeCopy && Pt.Green == _Items[c].Green
                                 && Item - (ItemShift - 1) <= LineItems - 1
-                                && block.SolidCount > _Items[Item - (ItemShift - 1)].Value)
+                                && Block.SolidCount > _Items[Item - (ItemShift - 1)].Value)
                                 Item++;
                         }
 
@@ -501,20 +501,20 @@ namespace Griddlers.Library
                     }
 
                     //TO FIX
-                    if (solidCount < GapSizeCopy && (ItemShift != 1 || (ItemShift == 1 && solidCount == 0)))
+                    if (Sc < GapSizeCopy && (ItemShift != 1 || (ItemShift == 1 && Sc == 0)))
                     {
                         Equality = false;
                     }
 
-                    if (solidCount < GapSizeCopy)
+                    if (Sc < GapSizeCopy)
                         PartEquality = false;
 
                     //unique colour item
-                    if (untilDot && !Equality && wasSolid && Item - ItemShift < LineItems - 1)
+                    if (untilDot && !Equality && WasSolid && Item - ItemShift < LineItems - 1)
                     {
                         //ItemRange R = new ItemRange(_Items.Where(w => w.Index > Item + 1));
                         IEnumerable<Item> R2 = _Items.Where(w => w.Index > Item - ItemShift && w.Index <= LastItemAtEquality
-                                        && w >= block);
+                                        && w >= Block);
                         if (R2.Count() == 1)
                         {
                             Item = R2.First().Index;
@@ -526,28 +526,28 @@ namespace Griddlers.Library
                     //mutliple possible solids
                     IEnumerable<Item> R = _Items.Where(w => w.Index > Item - ItemShift && w.Index <= ItemAtEquality);
                     if (untilDot && !Equality && ItemAtLastGap == ItemAtEquality
-                        && R.Any() && FindPossibleSolids(i + 1, R, out int NewItem))
+                        && R.Any() && FindPossibleSolids(Pos + 1, R, out int NewItem))
                     {
                         ItemShift = 1;
                         Item = NewItem;
                         Equality = true;
                     }
 
-                    if (untilDot && block.SolidCount == GapSizeCopy && Item < LineItems)
+                    if (untilDot && Block.SolidCount == GapSizeCopy && Item < LineItems)
                     {
                         int UniqueCount = 0, TempItem = 0;
 
-                        for (int Pos = LastItemAtEquality - 1; Pos >= Item; Pos--)
+                        for (int Pos2 = LastItemAtEquality - 1; Pos2 >= Item; Pos2--)
                         {
-                            if (block == _Items[Pos])
+                            if (Block == _Items[Pos2])
                             {
-                                if (UniqueCount > 0 && Pos < TempItem - 1)
+                                if (UniqueCount > 0 && Pos2 < TempItem - 1)
                                 {
                                     UniqueCount = 0;
                                     break;
                                 }
 
-                                TempItem = Pos;
+                                TempItem = Pos2;
                                 UniqueCount++;
                             }
                         }
@@ -562,32 +562,32 @@ namespace Griddlers.Library
                         }
                     }
 
-                    if (solidCount == GapSizeCopy)
+                    if (Sc == GapSizeCopy)
                         PartEquality = true;
 
                     if (Equality)
                         LastItemAtEquality = Item;
 
-                    if (Equality && i > 0 && i > position + 1)
+                    if (Equality && Pos > 0 && Pos > position + 1)
                         ItemAtEquality = Item - ItemShift;
 
-                    if (solidCount == GapSizeCopy)
-                        LastFullGapCount = solidCount;
+                    if (Sc == GapSizeCopy)
+                        LastFullGapCount = Sc;
 
-                    SolidCount = block.SolidCount;
-                    if (block.SolidCount < GapSizeCopy)
+                    SolidCount = Block.SolidCount;
+                    if (Block.SolidCount < GapSizeCopy)
                         ScValid = false;
                     else
                         ScValid = true;
 
-                    if (Logic.dots.ContainsKey(xy))
+                    if (Logic.dots.ContainsKey(Xy))
                     {
                         ItemAtLastGap = Item - ItemShift;
-                        LastGapIndex = i;
+                        LastGapIndex = Pos;
                     }
 
                     Item -= ItemShift;
-                    PossibleSolids = FindPossibleSolids(i + 1);
+                    PossibleSolids = FindPossibleSolids(Pos + 1);
                 }
             }
 
@@ -1143,7 +1143,7 @@ namespace Griddlers.Library
             int GapIndex = -1, EndOfGap = -1;
             bool WasGap = false;
 
-            foreach ((int i, (int, int) xy, Block block, bool wasSolid, int gapSize, int solidCount) in Logic.ForEachLinePos(this))
+            foreach ((int i, (int, int) Xy, Block Block, bool WasSolid, _, _) in Logic.ForEachLinePos(this))
             {
                 if (i >= EndOfGap)
                     EndOfGap = FindGapStartEnd(i).Item2;
@@ -1176,14 +1176,14 @@ namespace Griddlers.Library
 
                     if (Start > 0 && Start >= End
                     //&& _Items[Start].Value == 1 
-                    && _Items[Start].Green != block.Green)
+                    && _Items[Start].Green != Block.Green)
                         Start--;
 
                     if (End > Start)
                     {
                         for (int Pos = End; Pos >= Start;)
                         {
-                            if (block.Green != _Items[Pos].Green)
+                            if (Block.Green != _Items[Pos].Green)
                                 End--;
                             //else
                             break;
@@ -1192,7 +1192,7 @@ namespace Griddlers.Library
 
 
                     //colour check TEMP - should be in find possible solids
-                    if (End > Start && End > 0 && End < LineItems - 1 && !Logic.points.ContainsKey(xy))
+                    if (End > Start && End > 0 && End < LineItems - 1 && !Logic.points.ContainsKey(Xy))
                     {
                         //for (int Pos = End + 1; Pos >= 1; Pos--)
                         //{
@@ -1214,7 +1214,7 @@ namespace Griddlers.Library
                     {
                         for (int Pos = Start; Pos <= End;)
                         {
-                            if (block.Green != _Items[Pos].Green)
+                            if (Block.Green != _Items[Pos].Green)
                                 Start++;
                             //else
                             break;
@@ -1238,16 +1238,16 @@ namespace Griddlers.Library
                     }
 
                     //pull out end
-                    if (wasSolid && End > 0)
+                    if (WasSolid && End > 0)
                     {
-                        (bool IsolatedEnd, _, _) = GetIsolatedPart(i - block.SolidCount, End - 1, LineItems - 1);
+                        (bool IsolatedEnd, _, _) = GetIsolatedPart(i - Block.SolidCount, End - 1, LineItems - 1);
 
                         if (IsolatedEnd)
                             End--;
                     }
 
                     //pull out start
-                    if (wasSolid && Start < LineItems - 1 && false)
+                    if (WasSolid && Start < LineItems - 1 && false)
                     {
                         (bool IsolatedEnd, _, _) = GetIsolatedPart(0, 0, Start + 1);
 
@@ -1282,7 +1282,7 @@ namespace Griddlers.Library
                     }
 
                     //TEMP
-                    if (Skip(Start).Take(End - Start + 1).All(a => a.Value < block.SolidCount))
+                    if (Skip(Start).Take(End - Start + 1).All(a => a.Value < Block.SolidCount))
                     {
                         Min = new Item(0, false);
                         Max = new Item(MaxItem, false);
@@ -1298,7 +1298,7 @@ namespace Griddlers.Library
                     else
                         WholeGap = false;
 
-                    if ((Logic.dots.ContainsKey(xy) || i == LineLength - 1) && LsEnd.Eq)
+                    if ((Logic.dots.ContainsKey(Xy) || i == LineLength - 1) && LsEnd.Eq)
                         End = LsEnd.Index;
                     else
                         WholeGap = false;
@@ -1312,7 +1312,7 @@ namespace Griddlers.Library
                             if (Item.Value > Max.Value)
                                 Max = Item;
 
-                            if (Item.Value < Min.Value && (WholeGap || !wasSolid || Item.Value >= block.SolidCount))
+                            if (Item.Value < Min.Value && (WholeGap || !WasSolid || Item.Value >= Block.SolidCount))
                                 Min = Item;
                         }
 
@@ -1335,19 +1335,19 @@ namespace Griddlers.Library
 
                 }
 
-                if (!Logic.dots.ContainsKey(xy))
+                if (!Logic.dots.ContainsKey(Xy))
                 {
                     if (!WasGap)
                         GapIndex = i - 1;
 
                     WasGap = true;
                 }
-                else if (Logic.dots.ContainsKey(xy))
+                else if (Logic.dots.ContainsKey(Xy))
                     WasGap = false;
 
-                if (!Logic.points.ContainsKey(xy) && wasSolid && block.SolidCount > MinItem)
+                if (!Logic.points.ContainsKey(Xy) && WasSolid && Block.SolidCount > MinItem)
                 {
-                    Item[] ItemsGTSolid = _Items.Where(w => w.Value >= block.SolidCount).ToArray();
+                    Item[] ItemsGTSolid = _Items.Where(w => w.Value >= Block.SolidCount).ToArray();
 
                     if (ItemsGTSolid.Length > 0)
                     {
