@@ -440,6 +440,14 @@ namespace Griddlers.Library
             foreach (Point Point in OverlapLine(Cols.Values))
                 yield return Point;
 
+            //multi colour cross reference rows
+            foreach (Point Point in MultiColourCrossReference(Rows.Values))
+                yield return Point;
+
+            //multi colour cross reference columns
+            foreach (Point Point in MultiColourCrossReference(Cols.Values))
+                yield return Point;
+
             foreach (Point Point in Run())
                 yield return Point;
 
@@ -1899,7 +1907,77 @@ namespace Griddlers.Library
         }
 
         /// <summary>
-        /// For each line do the following:
+        /// Restrict where items of a certain colour can go by looking at 
+        /// the perpendicular lines and their appropriate items. 
+        /// Probably only for the edges.
+        /// Note: Two adjacent items of the same colour must have a dot between them
+        /// </para>
+        /// </summary>
+        /// <param name="lines">The rows or colums</param>
+        private IEnumerable<Point> MultiColourCrossReference(IEnumerable<Line> lines)
+        {
+            int MaxLines = lines.First().IsRow ? Rows.Count : Cols.Count;
+
+            foreach (Line Line in ForEachLine(lines))
+            {
+                if (Line.LineIndex == 0 || Line.LineIndex == MaxLines - 1)
+                {
+                    int ColourBlockIndex = 0;
+                    List<Block> ColourCounts = new List<Block>(10) { new Block(false, 0) };
+                    bool PrevColour = false;
+
+                    foreach ((int Pos, (int, int) Xy, _, _, _, _) in ForEachLinePos(Line))
+                    {
+                        bool Colour = false;
+
+                        if (Line.IsRow)
+                        {
+                            int ItemIndex = Line.LineIndex == 0 ? 0 : Cols[Pos].LineItems - 1;
+                            Colour = Cols[Pos][ItemIndex].Green;
+                        }
+                        else
+                        {
+                            int ItemIndex = Line.LineIndex == 0 ? 0 : Rows[Pos].LineItems - 1;
+                            Colour = Rows[Pos][ItemIndex].Green;
+                        }
+
+                        if (Colour == PrevColour)
+                        {
+                            ColourCounts[ColourBlockIndex].EndIndex = Pos;
+                            ColourCounts[ColourBlockIndex].SolidCount++; 
+                        }
+                        else
+                        {
+                            PrevColour = Colour;
+                            ColourBlockIndex++;
+                            ColourCounts.Add(new Block(Pos, Pos, Colour));
+                        }
+                    }
+
+                    if (Line.Count(c => c.Green) == ColourCounts.Count(c => c.Green))
+                    {
+                        foreach ((Block, Item) Item in ColourCounts.Where(w => w.Green).Zip(Line))
+                        {
+                            if (Item.Item2.Value == Item.Item1.SolidCount)
+                            {
+                                foreach (Point Point in FullPart(Line, Item.Item1.StartIndex, Item.Item2.Index, Item.Item2.Index, GriddlerPath.Action.GapFull))
+                                    yield return Point;
+                            }
+                            else if (Item.Item2.Value < Item.Item1.SolidCount
+                                    && Item.Item2.Value >= Item.Item1.SolidCount / 2)
+                            {
+                                foreach (Point Point in OverlapPart(Line, Item.Item1.StartIndex, Item.Item1.EndIndex, Item.Item2.Index, Item.Item2.Index, GriddlerPath.Action.GapFull))
+                                    yield return Point;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+
+        /// <summary>
+        /// Add one point at a time
         /// Note: Two adjacent items of the same colour must have a dot between them
         /// </para>
         /// </summary>
