@@ -603,25 +603,24 @@ namespace Griddlers.Library
                     }
 
                     //busker30x30 - does not solve
-                    //dots.TryAdd((6, 9), new Point(6, 9, false));
-                    //dots.TryAdd((6, 11), new Point(6, 11, false));
-                    //points.TryAdd((0, 13), new Point(0, 13, true));
-                    //points.TryAdd((0, 14), new Point(0, 14, true));
-                    //points.TryAdd((1, 11), new Point(1, 11, true));
-                    //points.TryAdd((2, 11), new Point(2, 11, false));
-                    //points.TryAdd((2, 8), new Point(2, 8, true));
-                    //points.TryAdd((3, 13), new Point(3, 13, false));
-                    //points.TryAdd((0, 15), new Point(0, 15, false));
-                    //points.TryAdd((7, 23), new Point(7, 23, true));
-                    //points.TryAdd((7, 25), new Point(7, 25, false)); //bug
+                    //dots.TryAdd((6, 9), new Point(true, 6, 9, false));
+                    //dots.TryAdd((6, 11), new Point(true, 6, 11, false));
+                    //points.TryAdd((0, 13), new Point(false, 0, 13, true));
+                    //points.TryAdd((0, 14), new Point(false, 0, 14, true));
+                    //points.TryAdd((1, 11), new Point(false, 1, 11, true));
+                    //points.TryAdd((2, 11), new Point(false, 2, 11, false));
+                    //points.TryAdd((2, 8), new Point(false, 2, 8, true));
+                    //points.TryAdd((3, 13), new Point(false, 3, 13, false));
+                    //points.TryAdd((0, 15), new Point(false, 0, 15, false));
+                    //points.TryAdd((7, 23), new Point(false, 7, 23, true));
+                    //points.TryAdd((7, 25), new Point(false, 7, 25, false)); //bug
 
                     //FourCallingBirds25x35 - does not solve
-                    //dots.TryAdd((9, 26), new Point(9, 26, false));
-                    //dots.TryAdd((10, 26), new Point(10, 26, false));
+                    //points.TryAdd((5, 22), new Point(false, 5, 22, false));
 
                     //FiveGoldRing25x35 - does not solve
-                    //dots.TryAdd((9, 11), new Point(9, 11, false));
-                    //dots.TryAdd((9, 13), new Point(9, 13, false));
+                    //dots.TryAdd((9, 11), new Point(true, 9, 11, false));
+                    //dots.TryAdd((9, 13), new Point(true, 9, 13, false));
 
                     if (PointsChange == points.Count && DotsChange == dots.Count)
                         break;
@@ -1478,7 +1477,7 @@ namespace Griddlers.Library
                     }
 
                     //No Join//3,2,5,...//|---.-00-0- to |---.-00.0-
-                    if (Ls.Valid && !dots.ContainsKey(Xy)
+                    if (!dots.ContainsKey(Xy)
                         && points.TryGetValue(Line.IsRow ? (Pos + 1, Line.LineIndex) : (Line.LineIndex, Pos + 1), out Point? Pt)
                         && Pt.Green == Block.Green)
                     {
@@ -1498,7 +1497,9 @@ namespace Griddlers.Library
 
                         Flag = Ls.All(a => a.Value < End - Start - 1 && (a.Value > 1 || a.Green == Block.Green));
 
-                        if (!Flag && Ls.All(a => a.Value > 1 || a.Green == Block.Green)
+                        Flag = LsEnd.All(a => a.Value < End - Start - 1 && (a.Value > 1 || a.Green == Block.Green));
+
+                        if (!Flag && Ls.Valid && Ls.All(a => a.Value > 1 || a.Green == Block.Green)
                             && Line.IsEq(Ls.Gap, Ls.Index - 1, StartOfGap, Pos - Block.SolidCount)
                             && Ls.Before.All(a => a.Value < End - Start - 1 && (a.Value > 1 || a.Green == Block.Green)))
                             Flag = true;
