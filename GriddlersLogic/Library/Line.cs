@@ -214,7 +214,7 @@ namespace Griddlers.Library
 
                 Item += ItemShift;
             }
-            
+
             if (Item > LineItems - 1)
                 Valid = false;
 
@@ -678,11 +678,11 @@ namespace Griddlers.Library
             => IsEq(index, start, end, u.Sum());
         public bool IsEq(int index, int start, int end, int sum)
             => sum > 0 && end - start - sum <= GetDotCount(index);
-        
+
         public bool IsEqB(ItemRange u, int index, int start, int end)
             => IsEqB(index, start, end, u.Sum());
         public bool IsEqB(int index, int start, int end, int sum)
-            => sum > 0 && end - start - sum <= GetDotCountB(index);         
+            => sum > 0 && end - start - sum <= GetDotCountB(index);
 
         public (int, int, bool) FindGapStartEnd(int pos, int? pos2 = null)
         {
@@ -822,11 +822,6 @@ namespace Griddlers.Library
                         NotSolid = true;
                     }
 
-                    //if (BlockIndexes.ContainsKey(SolidBlockCount))
-                    //    BlockIndexes[SolidBlockCount] = (BlockIndexes[SolidBlockCount].Item1, c);
-                    //else
-                    //    BlockIndexes.TryAdd(SolidBlockCount, (c, c));
-
                     if (BlockIndexes.ContainsKey(SolidBlockCount))
                         BlockIndexes[SolidBlockCount].EndIndex = c;
                     else
@@ -909,41 +904,43 @@ namespace Griddlers.Library
 
                         CurrentItem++;
 
-                        bool NoMoreItems = UniqueCount(new Block(-1, Pt.Green) { SolidCount = SolidCount });
-
                         //check solid count
-                        if (NoMoreItems && CurrentItem < endItem + 1
+                        if (CurrentItem < endItem + 1
                             && _Items[CurrentItem] < new Block(-1, Pt.Green) { SolidCount = SolidCount })
                         {
-                            bool Flag = true;
+                            bool NoMoreItems = UniqueCount(new Block(-1, Pt.Green) { SolidCount = SolidCount });
+                            bool Flag = NoMoreItems;
                             int StartIndex = -1;
                             int Stop = 0;
 
-                            StartIndex = _Items.FirstOrDefault(w => w >= new Block(-1, Pt.Green) { SolidCount = SolidCount }).Index;
-
-                            for (int d = SolidBlockCount - 1; d >= 0; d--)
+                            if (NoMoreItems)
                             {
-                                int ItemIndex = StartIndex - (SolidBlockCount - d);
+                                StartIndex = _Items.FirstOrDefault(w => w >= new Block(-1, Pt.Green) { SolidCount = SolidCount }).Index;
 
-                                if (ItemIndex == -1)
+                                for (int d = SolidBlockCount - 1; d >= 0; d--)
                                 {
-                                    Flag = false;
-                                    break;
-                                }
+                                    int ItemIndex = StartIndex - (SolidBlockCount - d);
 
-                                if (BlockIndexes.TryGetValue(d, out Block? First)
-                                    && BlockIndexes.TryGetValue(d + 1, out Block? Second))
-                                {
-                                    if (First.StartIndex + _Items[ItemIndex].Value - 1 >= Second.EndIndex
-                                        || Second.EndIndex - _Items[ItemIndex + 1].Value + 1 <= First.StartIndex)
+                                    if (ItemIndex == -1)
                                     {
                                         Flag = false;
                                         break;
                                     }
-                                    else if (Second.StartIndex - First.EndIndex - 1 >= (AllOneColour ? 3 : 0))
+
+                                    if (BlockIndexes.TryGetValue(d, out Block? First)
+                                        && BlockIndexes.TryGetValue(d + 1, out Block? Second))
                                     {
-                                        Stop = d + 1;
-                                        break;
+                                        if (First.StartIndex + _Items[ItemIndex].Value - 1 >= Second.EndIndex
+                                            || Second.EndIndex - _Items[ItemIndex + 1].Value + 1 <= First.StartIndex)
+                                        {
+                                            Flag = false;
+                                            break;
+                                        }
+                                        else if (Second.StartIndex - First.EndIndex - 1 >= (AllOneColour ? 3 : 0))
+                                        {
+                                            Stop = d + 1;
+                                            break;
+                                        }
                                     }
                                 }
                             }
@@ -956,7 +953,12 @@ namespace Griddlers.Library
                                     IsolatedItems.TryAdd(d, ItemIndex);
                                 }
                             }
-
+                            else if (CurrentItem == endItem && Pushes.Count == 1)
+                            {
+                                int Key = Pushes.Keys.First();
+                                CanJoin[Key] = true;
+                                CanJoin[Key - 1] = true;
+                            }
                         }
 
                         //previous reach current && no more items
@@ -1048,13 +1050,16 @@ namespace Griddlers.Library
 
             //4 items, 5 blocks, 3 isolations => other 2 blocks join
             if (startItem == 0 && endItem == LineItems - 1
-                && SolidBlockCount > (endItem + 1) - StartItem)
+                && SolidBlockCount >= (endItem + 1) - StartItem
+                )
             {
+                bool Default = SolidBlockCount > (endItem + 1) - StartItem && CanJoin.Count == 2;
+
                 for (int Pos = 0; Pos < SolidBlockCount; Pos++)
                 {
-                    if (CanJoin.TryGetValue(Pos, out bool First) && (First || CanJoin.Count == 2))
+                    if (CanJoin.TryGetValue(Pos, out bool First) && (First || Default))
                     {
-                        if (CanJoin.TryGetValue(Pos + 1, out bool Second) && (Second || CanJoin.Count == 2))
+                        if (CanJoin.TryGetValue(Pos + 1, out bool Second) && (Second || Default))
                         {
                             Point.Group++;
                             int FirstIndex = BlockIndexes[Pos].EndIndex;

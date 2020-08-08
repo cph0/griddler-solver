@@ -616,7 +616,7 @@ namespace Griddlers.Library
                     //points.TryAdd((7, 25), new Point(false, 7, 25, false)); //bug
 
                     //FourCallingBirds25x35 - does not solve
-                    //points.TryAdd((5, 22), new Point(false, 5, 22, false));
+                    //dots.TryAdd((10, 17), new Point(true, 10, 17, false));
 
                     //FiveGoldRing25x35 - does not solve
                     //dots.TryAdd((9, 11), new Point(true, 9, 11, false));
@@ -1875,6 +1875,36 @@ namespace Griddlers.Library
                         {
                             (s, e) = Line.ShouldAddDots(Ls.Index - 1);
                             return true;
+                        }
+
+                        if (dots.ContainsKey(Xy) && false)
+                        {
+                            int End = Line.LineLength;
+                            bool PrevPtG = Block.Green;
+                            for (int Pos2 = Pos + 1; Pos2 < Line.LineLength; Pos2++)
+                            {
+                                var PosXy = Line.IsRow ? (Pos2, Line.LineIndex) : (Line.LineIndex, Pos2);
+                                if ((!points.TryGetValue(PosXy, out Pt) || Pt.Green != PrevPtG)
+                                    && dots.ContainsKey(PosXy))
+                                {
+                                    End = Pos2;
+                                    break;
+                                }
+                                else if (Pt != (object?)null)
+                                    PrevPtG = Pt.Green;
+                            }
+
+                            Block NextBlock = new Block(-1, PrevPtG) { SolidCount = End - Pos - 1 };
+                            Item[] Matches = Line.Pair().Where(w => Block == w.Item1
+                                                                && NextBlock == w.Item2)
+                                                        .Select(s => s.Item1)
+                                                        .ToArray();
+
+                            if (Matches.Length == 1)
+                            {
+                                (s, e) = Line.ShouldAddDots(Matches[0].Index);
+                                return true;
+                            }
                         }
 
                         return false;
