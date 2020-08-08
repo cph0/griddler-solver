@@ -625,7 +625,7 @@ export class Home extends React.Component<RouteComponentProps<{}>, HomeState> {
                     <div className="col-lg-2">
                         {this.renderPathList()}
                     </div>
-                    <div className="col">
+                    <div className="col" style={{overflowY: "auto", height: "calc(78vh)"}}>
                         <div style={{ position: "relative", display: "inline-block", width: square, height: square }}>
                             {xBoxes}{yBoxes}
                         </div>
