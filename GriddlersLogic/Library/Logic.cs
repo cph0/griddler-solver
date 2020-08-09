@@ -616,7 +616,9 @@ namespace Griddlers.Library
                     //points.TryAdd((7, 25), new Point(false, 7, 25, false)); //bug
 
                     //FourCallingBirds25x35 - does not solve
-                    //dots.TryAdd((10, 17), new Point(true, 10, 17, false));
+                    //points.TryAdd((6, 13), new Point(false, 6, 13, false));
+                    //points.TryAdd((6, 14), new Point(false, 6, 14, false));
+                    //points.TryAdd((6, 15), new Point(false, 6, 15, false));
 
                     //FiveGoldRing25x35 - does not solve
                     //dots.TryAdd((9, 11), new Point(true, 9, 11, false));
