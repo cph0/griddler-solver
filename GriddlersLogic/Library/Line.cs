@@ -533,7 +533,7 @@ namespace Griddlers.Library
                         Equality = true;
                     }
 
-                    if (untilDot && Block.SolidCount == GapSizeCopy && Item < LineItems)
+                    if (Logic.dots.ContainsKey(Xy) && Block.SolidCount == GapSizeCopy && Item < LineItems)
                     {
                         int UniqueCount = 0, TempItem = 0;
 
@@ -1154,7 +1154,7 @@ namespace Griddlers.Library
                     EndOfGap = FindGapStartEnd(i).Item2;
 
                 LineSegment Ls = GetItemAtPos(i + 1, false);
-                LineSegment LsEnd = GetItemAtPosB(i - 1, false);
+                LineSegment LsEnd = GetItemAtPosB(i - 1, Logic.dots.ContainsKey(Xy));
 
                 if (Ls.Valid || LsEnd.Valid || (Ls.ItemAtStartOfGap == Ls.LastItemAtEquality))
                 {
@@ -1183,6 +1183,9 @@ namespace Griddlers.Library
                     //&& _Items[Start].Value == 1 
                     && _Items[Start].Green != Block.Green)
                         Start--;
+
+                    if (Logic.dots.ContainsKey(Xy) && LsEnd.Valid && LsEnd.Eq)
+                        End = LsEnd.Index;
 
                     if (End > Start)
                     {
@@ -1298,12 +1301,12 @@ namespace Griddlers.Library
                     MinMaxItems.TryAdd(i, (Min, Max));
                     WholeGap = true;
 
-                    if (Ls.ItemAtStartOfGap == Ls.LastItemAtEquality)
+                    if (Ls.ItemAtStartOfGap > -1 && Ls.ItemAtStartOfGap == Ls.LastItemAtEquality)
                         Start = Ls.ItemAtStartOfGap;
                     else
                         WholeGap = false;
 
-                    if ((Logic.dots.ContainsKey(Xy) || i == LineLength - 1) && LsEnd.Eq)
+                    if ((Logic.dots.ContainsKey(Xy) || i == LineLength - 1) && LsEnd.Valid && LsEnd.Eq)
                         End = LsEnd.Index;
                     else
                         WholeGap = false;
