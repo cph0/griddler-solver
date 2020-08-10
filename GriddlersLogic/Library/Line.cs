@@ -1327,7 +1327,7 @@ namespace Griddlers.Library
                             if (Item.Value > Max.Value)
                                 Max = Item;
 
-                            if (Item.Value < Min.Value && (WholeGap || !WasSolid || Item.Value >= Block.SolidCount))
+                            if (Item.Value < Min.Value && (WholeGap || !WasSolid || Item >= Block))
                                 Min = Item;
                         }
 
