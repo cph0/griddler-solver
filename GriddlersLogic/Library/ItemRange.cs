@@ -69,6 +69,28 @@ namespace Griddlers.Library
             }
         }
 
+        public IEnumerable<(Item, Item, Item)> Triple()
+            => Triple(_Items);
+        public static IEnumerable<(Item, Item, Item)> Triple(IEnumerable<Item> items)
+        {
+            Item? First = null;
+            Item? Second = null;
+
+            foreach (Item Item in items)
+            {
+                if (First != (object?)null && Second != (object?)null)
+                { 
+                    yield return (First, Second, Item);
+                    First = Second;
+                }
+
+                if (First != (object?)null)
+                    Second = Item;
+                else    
+                    First = Item;
+            }
+        }
+
         public int GetDotCount()
             => GetDotCount(_Items);
         public static int GetDotCount(IEnumerable<Item> items)

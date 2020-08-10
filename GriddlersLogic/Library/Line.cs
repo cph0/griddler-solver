@@ -346,7 +346,7 @@ namespace Griddlers.Library
         /// <returns>
         /// A HashSet of the possible item values and colours
         /// </returns>        
-        private HashSet<(int, bool)> FindPossibleSolids(int start, bool onlyFirstSolid = true)
+        public HashSet<(int, bool)> FindPossibleSolids(int start, bool onlyFirstSolid = true)
         {
             Dictionary<int, Dictionary<(int, bool), int>> PossibleSolids = FindPossibleSolidsI(start, onlyFirstSolid);
             HashSet<(int, bool)> Return = new HashSet<(int, bool)>();
@@ -1186,6 +1186,13 @@ namespace Griddlers.Library
 
                     if (Logic.dots.ContainsKey(Xy) && LsEnd.Valid && LsEnd.Eq)
                         End = LsEnd.Index;
+
+                    if (End > Start && End < LineItems && false
+                        && !FindPossibleSolids(i - Block.SolidCount)
+                            .Contains((_Items[End].Value, _Items[End].Green)))
+                    {
+                        End--;
+                    }
 
                     if (End > Start)
                     {
