@@ -603,11 +603,6 @@ namespace Griddlers.Library
                     }
 
                     //busker30x30 - does not solve
-                    //dots.TryAdd((6, 9), new Point(true, 6, 9, false));
-                    //dots.TryAdd((6, 11), new Point(true, 6, 11, false));
-                    //points.TryAdd((0, 13), new Point(false, 0, 13, true));
-                    //points.TryAdd((0, 14), new Point(false, 0, 14, true));
-                    //points.TryAdd((1, 11), new Point(false, 1, 11, true));
                     //points.TryAdd((2, 11), new Point(false, 2, 11, false));
                     //points.TryAdd((2, 8), new Point(false, 2, 8, true));
                     //points.TryAdd((3, 13), new Point(false, 3, 13, false));
@@ -1505,6 +1500,25 @@ namespace Griddlers.Library
                             && Line.IsEq(Ls.Gap, Ls.Index - 1, StartOfGap, Pos - Block.SolidCount)
                             && Ls.Before.All(a => a.Value < End - Start - 1 && (a.Value > 1 || a.Green == Block.Green)))
                             Flag = true;
+
+                        Block BlackOne = new Block(-1, !Block.Green) { SolidCount = 1 };
+                        if (!Flag && !Line.ItemsOneColour
+                            && Line.Where(w => w.Index >= Ls.LastItemAtEquality && w.Index <= Ls.Index + 1)
+                            .All(a => a.Value < End - Start - 1))
+                        {
+                            IEnumerable<Item> Items = Line.Triple().Where((w, i) => w.Item3.Index >= Ls.LastItemAtEquality
+                                                                        && w.Item3.Index <= Ls.Index + 1
+                                                                        && w.Item1.Green == Block.Green
+                                                                        && BlackOne == w.Item2
+                                                                        && w.Item3.Green == Block.Green)
+                                                                .Select(s => s.Item3);
+                            Item Second = Items.FirstOrDefault();
+
+                            if (Second == (object?)null 
+                                || (Items.Count() == 1
+                                    && !Line.FindPossibleSolids(Pos + 1).Contains((Second.Value, Second.Green))))
+                                Flag = true;
+                        }
 
                         if (Flag)
                         {
