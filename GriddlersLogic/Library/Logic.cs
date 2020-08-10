@@ -603,8 +603,6 @@ namespace Griddlers.Library
                     }
 
                     //busker30x30 - does not solve
-                    //points.TryAdd((2, 11), new Point(false, 2, 11, false));
-                    //points.TryAdd((2, 8), new Point(false, 2, 8, true));
                     //points.TryAdd((3, 13), new Point(false, 3, 13, false));
                     //points.TryAdd((0, 15), new Point(false, 0, 15, false));
                     //points.TryAdd((7, 23), new Point(false, 7, 23, true));
