@@ -1338,7 +1338,7 @@ namespace Griddlers.Library
                                 int Sum = Range.Sum();
 
                                 bool NextColourSumTooBig = false;
-                                Item FirstColourItem = LsEnd.After.LastOrDefault(l => l.Index < LsEnd.Index &&
+                                Item? FirstColourItem = LsEnd.After.LastOrDefault(l => l.Index < LsEnd.Index &&
                                                                 l.Green == Ls.RightBefore.First().Green);
                                 if (LsEnd.Valid && LsEnd.Eq && FirstColourItem != (object?)null
                                     && Ls.RightBefore.First().EndIndex == Pos - GapSizeCopy + IsEnd - 2)
@@ -1510,7 +1510,7 @@ namespace Griddlers.Library
                                                                         && BlackOne == w.Item2
                                                                         && w.Item3.Green == Block.Green)
                                                                 .Select(s => s.Item3);
-                            Item Second = Items.FirstOrDefault();
+                            Item? Second = Items.FirstOrDefault();
 
                             if (Second == (object?)null 
                                 || (Items.Count() == 1
