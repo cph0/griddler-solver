@@ -75,7 +75,7 @@ namespace Griddlers.Database
         {
             return await WithConnection(async c =>
             {
-                Griddler Griddler;
+                Griddler Griddler = new Griddler();
 
                 DynamicParameters p = new DynamicParameters();
                 p.Add("@griddlerID", griddlerID);
@@ -83,10 +83,15 @@ namespace Griddlers.Database
 
                 using (var r = await c.QueryMultipleAsync("dbo.usp_get_griddler", p, null, null, CommandType.StoredProcedure))
                 {
-                    Griddler = r.Read<Griddler>().SingleOrDefault();
-                    Griddler.Items = r.Read<GriddlerItem>().ToArray();
-                    Griddler.Solids = r.Read<GriddlerSolid>().ToArray();
-                    Griddler.Paths = r.Read<GriddlerPath>().ToArray();
+                    Griddler? G = r.Read<Griddler>().SingleOrDefault();
+
+                    if (G != null) 
+                    {
+                        Griddler = G;
+                        Griddler.Items = r.Read<GriddlerItem>().ToArray();
+                        Griddler.Solids = r.Read<GriddlerSolid>().ToArray();
+                        Griddler.Paths = r.Read<GriddlerPath>().ToArray();                    
+                    }
                 }
 
                 (Item[][] Rows, Item[][] Cols) = (new Item[][] { }, new Item[][] { });
