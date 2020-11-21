@@ -11,7 +11,7 @@ namespace Griddlers.Library
     {
         private static readonly string FileRoot = $"{TryGetSolutionDirectoryInfo().FullName}\\GriddlersDataContext\\Data\\";
 
-        public static DirectoryInfo TryGetSolutionDirectoryInfo(string currentPath = null)
+        public static DirectoryInfo TryGetSolutionDirectoryInfo(string? currentPath = null)
         {
             var directory = new DirectoryInfo(
                 currentPath ?? Directory.GetCurrentDirectory());
