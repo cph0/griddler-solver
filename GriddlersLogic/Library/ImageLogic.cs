@@ -15,7 +15,8 @@ namespace Griddlers.Library
 
         private static bool IsBlack(this Rgba32 rgba32)
         {
-            return rgba32.B <= 30 && rgba32.G <= 30 && rgba32.R <= 30;
+            //return rgba32.B <= 30 && rgba32.G <= 30 && rgba32.R <= 30;
+            return rgba32.B <= 180 && rgba32.G <= 180 && rgba32.R <= 180;
         }
 
         private static Dictionary<(int, int), T> ToDictionary<T>(this List<List<T>> list)
