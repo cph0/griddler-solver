@@ -1,7 +1,8 @@
+using System.IO;
 using Griddlers.Hubs;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.SpaServices.Webpack;
+using Microsoft.AspNetCore.SpaServices.ReactDevelopmentServer;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -21,8 +22,11 @@ namespace Griddlers
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddRazorPages();
-
             services.AddSignalR();
+            services.AddSpaStaticFiles(configuration =>
+            {
+                configuration.RootPath = "ClientApp/build";
+            });
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -31,11 +35,6 @@ namespace Griddlers
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
-                app.UseWebpackDevMiddleware(new WebpackDevMiddlewareOptions
-                {
-                    HotModuleReplacement = true,
-                    ReactHotModuleReplacement = true
-                });
             }
             else
             {
@@ -43,25 +42,24 @@ namespace Griddlers
             }
 
             app.UseStaticFiles();
+            app.UseSpaStaticFiles();
+            app.UseRouting();           
 
-            //app.UseMvc(routes =>
-            //{
-            //    routes.MapRoute(
-            //        name: "default",
-            //        template: "{controller=Home}/{action=Index}/{id?}");
-
-            //    routes.MapSpaFallbackRoute(
-            //        name: "spa-fallback",
-            //        defaults: new { controller = "Home", action = "Index" });
-            //});
-
-            app.UseRouting();
             app.UseEndpoints(e =>
             {
                 e.MapRazorPages();
                 e.MapHub<GriddlerHub>("/griddlerhub");
                 e.MapControllerRoute("default", "{controller=Home}/{action=Index}/{id?}");
-                e.MapFallbackToController("Index", "Home");
+            });
+
+            app.UseSpa(spa =>
+            {
+                spa.Options.SourcePath = Path.Join(env.ContentRootPath, "ClientApp");
+
+                if (env.IsDevelopment())
+                {
+                    spa.UseReactDevelopmentServer("start");
+                }
             });
         }
     }
