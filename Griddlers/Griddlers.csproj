@@ -18,6 +18,7 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.SpaServices" Version="3.1.4" />
+    <PackageReference Include="Microsoft.AspNetCore.SpaServices.Extensions" Version="5.0.0" />
   </ItemGroup>
 
   <ItemGroup>
@@ -27,6 +28,26 @@
   <ItemGroup>
     <!-- Files not to publish (note that the 'dist' subfolders are re-added below) -->
     <Content Remove="ClientApp\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="ClientApp\src\css\89889688147bd7575d6327160d64e760.svg" />
+    <None Remove="ClientApp\src\css\vendor.css" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="ClientApp\npm-shrinkwrap.json" />
+    <Content Include="ClientApp\package.json" />
+    <Content Include="ClientApp\public\manifest.json" />
+    <Content Include="ClientApp\src\css\dist\89889688147bd7575d6327160d64e760.svg">
+      <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
+    <Content Include="ClientApp\src\css\vendor.css">
+      <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
+    <Content Include="ClientApp\tsconfig.json" />
   </ItemGroup>
 
   <ItemGroup>
