@@ -33,23 +33,6 @@ interface GriddlerPath {
     yPos: number;
 }
 
-interface HomeState {
-    griddlers: Griddler[];
-    width: number;
-    height: number;
-    depth: number;
-    sG: string;
-    points: Point[];
-    dots: Point[];
-    paths: GriddlerPathGroup[];
-    selectedGroup?: GriddlerPathGroup;
-
-    streaming: boolean;
-
-    showTree: boolean;
-    treeData: ReactD3TreeItem;
-}
-
 class NodeLabel extends React.PureComponent<any, {}> {
     render() {
         const { nodeData } = this.props
