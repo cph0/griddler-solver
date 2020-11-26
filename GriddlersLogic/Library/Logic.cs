@@ -1340,10 +1340,10 @@ namespace Griddlers.Library
                                 bool NextColourSumTooBig = false;
                                 Item? FirstColourItem = LsEnd.After.LastOrDefault(l => l.Index < LsEnd.Index &&
                                                                 l.Green == Ls.RightBefore.First().Green);
-                                if (LsEnd.Valid && LsEnd.Eq && FirstColourItem != (object?)null
+                                if (LsEnd.Valid && LsEnd.Eq && FirstColourItem.HasValue
                                     && Ls.RightBefore.First().EndIndex == Pos - GapSizeCopy + IsEnd - 2)
                                 {
-                                    int ColourSum = new ItemRange(LsEnd.After.Where(w => w.Index > FirstColourItem.Index)).Sum();
+                                    int ColourSum = new ItemRange(LsEnd.After.Where(w => w.Index > FirstColourItem.Value.Index)).Sum();
                                     if (ColourSum > GapSizeCopy)
                                         NextColourSumTooBig = true;
                                 }
@@ -1512,9 +1512,9 @@ namespace Griddlers.Library
                                                                 .Select(s => s.Item3);
                             Item? Second = Items.FirstOrDefault();
 
-                            if (Second == (object?)null 
+                            if (!Second.HasValue 
                                 || (Items.Count() == 1
-                                    && !Line.FindPossibleSolids(Pos + 1).Contains((Second.Value, Second.Green))))
+                                    && !Line.FindPossibleSolids(Pos + 1).Contains((Second.Value.Value, Second.Value.Green))))
                                 Flag = true;
                         }
 
@@ -1929,8 +1929,8 @@ namespace Griddlers.Library
                     {
                         Point.Group++;
 
-                        if (ItmIdx.HasValue && Itm != (object?)null)
-                            Line.AddBlock(Itm, true, Pos - Block.SolidCount, Pos - 1);
+                        if (ItmIdx.HasValue && Itm.HasValue)
+                            Line.AddBlock(Itm.Value, true, Pos - Block.SolidCount, Pos - 1);
 
                         if (Pos - Block.SolidCount - 1 > 0 && S)
                         {
@@ -2039,10 +2039,10 @@ namespace Griddlers.Library
                     {
                         LineSegment Ls = Line.GetItemAtPos(Pos);
 
-                        if (Ls.Valid && Ls.Eq && Ls.Item != (object?)null)
+                        if (Ls.Valid && Ls.Eq && Ls.Item.HasValue)
                         {
                             //add one point
-                            foreach (Point Point in AddPoints(Line, Pos, Ls.Item.Green, GriddlerPath.Action.TrialAndError, Pos))
+                            foreach (Point Point in AddPoints(Line, Pos, Ls.Item.Value.Green, GriddlerPath.Action.TrialAndError, Pos))
                             {
                                 Trials.Add((Point.Xpos, Point.Ypos));
                                 yield return Point;

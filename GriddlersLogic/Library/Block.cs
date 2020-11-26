@@ -11,7 +11,7 @@
         public int SolidCount { get; set; }
         public bool Green { get; private set; }
         public bool Complete { get; set; }
-        public bool KnowItem => _Item != (object?)null;
+        public bool KnowItem => _Item.HasValue;
 
         public Block(int index, bool g)
         {
