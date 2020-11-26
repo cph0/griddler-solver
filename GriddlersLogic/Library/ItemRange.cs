@@ -13,8 +13,8 @@ namespace Griddlers.Library
         protected readonly IEnumerable<Item> _ItemsEnum;
         protected readonly Item[] _ItemsArray;
 
-        public int FirstItemIndex => _Items.First()?.Index ?? -1;
-        public int LastItemIndex => _Items.Last()?.Index ?? -1;
+        public int FirstItemIndex => FirstOrDefault()?.Index ?? -1;
+        public int LastItemIndex => LastOrDefault()?.Index ?? -1;
         public bool ItemsOneValue
         {
             get
@@ -62,8 +62,8 @@ namespace Griddlers.Library
 
             foreach (Item Item in items)
             {
-                if (Previous != (object?)null)
-                    yield return (Previous, Item);
+                if (Previous.HasValue)
+                    yield return (Previous.Value, Item);
 
                 Previous = Item;
             }
@@ -78,13 +78,13 @@ namespace Griddlers.Library
 
             foreach (Item Item in items)
             {
-                if (First != (object?)null && Second != (object?)null)
+                if (First.HasValue && Second.HasValue)
                 { 
-                    yield return (First, Second, Item);
+                    yield return (First.Value, Second.Value, Item);
                     First = Second;
                 }
 
-                if (First != (object?)null)
+                if (First.HasValue)
                     Second = Item;
                 else    
                     First = Item;
@@ -146,6 +146,27 @@ namespace Griddlers.Library
         public bool All(Func<Item, bool> func)
         {
             return Any(func) && _Items.All(func);
+        }
+
+        public Item? FirstOrDefault(Func<Item, bool> func)
+            => FirstOrDefault(_Items.Where(func));
+        public Item? FirstOrDefault()
+            => FirstOrDefault(_Items);
+        public Item? LastOrDefault(Func<Item, bool> func)
+            => FirstOrDefault(_Items.Reverse().Where(func));
+        public Item? LastOrDefault()
+            => FirstOrDefault(_Items.Reverse());
+        public Item? FirstOrDefault(IEnumerable<Item> list)
+        {
+            Item? RetVal = null;
+
+            foreach (Item Item in list)
+            {
+                RetVal = Item;
+                break;
+            }
+
+            return RetVal;
         }
     }
 }

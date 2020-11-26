@@ -29,7 +29,7 @@ namespace Griddlers.Library
         /// <summary>
         /// <see cref="true"/> if the <see cref="Item"/> exists
         /// </summary>
-        public bool Valid => Item != (object?)null;
+        public bool Valid => Item.HasValue;
         /// <summary>
         /// <see cref="true"/> if the next item index cannot be less than <see cref="Index"/>
         /// </summary>
@@ -69,8 +69,8 @@ namespace Griddlers.Library
             IsForward = isForward;
             Item = item;
 
-            if (item != (object?)null)
-                Index = item.Index;
+            if (item.HasValue)
+                Index = item.Value.Index;
             else if (isForward)
                 Index = 999;
             else
@@ -105,7 +105,7 @@ namespace Griddlers.Library
         public bool GetItem(out Item? item)
         {
             item = Item;
-            return item != (object?)null;
+            return item.HasValue;
         }
 
         public IEnumerator<Item> GetEnumerator()

@@ -456,7 +456,7 @@ namespace Griddlers.Library
                     if (Item < 0 && Block.SolidCount > 0 && Block.SolidCount == GapSizeCopy)
                     {
                         Item? FirstItem = _Items.FirstOrDefault(f => f.Value >= Block.SolidCount && f.Value <= GapSizeCopy);
-                        Item = FirstItem != (object?)null ? FirstItem.Index : -1;
+                        Item = FirstItem.HasValue ? FirstItem.Value.Index : -1;
 
                         if (Item < LineItems - 1
                             && !PossibleSolids.Contains((_Items[Item + 1].Value, false))
@@ -915,7 +915,7 @@ namespace Griddlers.Library
 
                             if (NoMoreItems)
                             {
-                                StartIndex = _Items.FirstOrDefault(w => w >= new Block(-1, Pt.Green) { SolidCount = SolidCount })?.Index ?? -1;
+                                StartIndex = FirstOrDefault(w => w >= new Block(-1, Pt.Green) { SolidCount = SolidCount })?.Index ?? -1;
 
                                 for (int d = SolidBlockCount - 1; d >= 0; d--)
                                 {

@@ -2,14 +2,12 @@
 
 namespace Griddlers.Library
 {
-    public class Item
+    public readonly struct Item
     {
-        public int Index { get; private set; }
-        private bool Incomplete { get; set; }
-        public int Value { get; private set; }
-        public bool Green { get; private set; }
+        public readonly int Index { get; }
+        public readonly int Value { get; }
+        public readonly bool Green { get; }
 
-        public Item() { }
         public Item(int index, string v)
         {
             Index = index;
@@ -24,13 +22,12 @@ namespace Griddlers.Library
             Value = item.value;
             Green = item.green;
         }
-        public Item(int v, bool g, bool i = true)
+        public Item(int v, bool g)
         {
+            Index = 0;
             Value = v;
             Green = g;
-            Incomplete = i;
         }
-
 
         public static int operator +(Item a, Item b)
         {
@@ -49,16 +46,7 @@ namespace Griddlers.Library
 
         public static bool operator !=(Item a, Item b)
         {
-            if (a.Green != b.Green)
-                return true;
-
-            if (a.Value < b.Value && !a.Incomplete)
-                return true;
-
-            if (a.Value > b.Value && !b.Incomplete)
-                return true;
-
-            return false;
+            return !(a == b);
         }
 
         public static bool operator ==(Item a, Point b)
@@ -75,32 +63,9 @@ namespace Griddlers.Library
         {
             return base.GetHashCode();
         }
-
         public override bool Equals(object? obj)
         {
             return base.Equals(obj);
         }
-
-        //public static bool operator <(Item a, Item b)
-        //{
-        //    return a.Value < b.Value || a.Green != b.Green;
-        //}
-
-        //public static bool operator >(Item a, Item b)
-        //{
-        //    return a.Value > b.Value || a.Green != b.Green;
-        //}
-
-        //public static bool operator <=(Item a, Item b)
-        //{
-        //    //return a.Value <= b.Value || a.Green != b.Green;
-        //    return a < b || a == b;
-        //}
-
-        //public static bool operator >=(Item a, Item b)
-        //{
-        //    //return a.Value >= b.Value || a.Green != b.Green;
-        //    return a > b || a == b;
-        //}
     }
 }
