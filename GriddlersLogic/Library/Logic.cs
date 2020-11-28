@@ -1631,7 +1631,7 @@ namespace Griddlers.Library
 
                         if (Start == End && Start < Line.LineItems - 1
                             && Line[Start + 1] < Block
-                            && Line.IsEq(new ItemRange(new Item[] { Line[Start], Line[Start + 1] }), Start + 1, StartOfGap, Pos - Block.SolidCount))
+                            && Line.IsEq(new ItemRange(Line[Start], Line[Start + 1]), Start + 1, StartOfGap, Pos - Block.SolidCount))
                         {
                             m = Line[End].Value;
                             return true;
@@ -1678,7 +1678,7 @@ namespace Griddlers.Library
                         if (Start == End && End > 0
                             && Line[End - 1] < Block
                             && End != Ls.Index
-                            && Line.IsEqB(new ItemRange(new Item[] { Line[End] }), End - 1, Pos, EndOfGap)
+                            && Line.IsEqB(new ItemRange(Line[End]), End - 1, Pos, EndOfGap)
                             //&& EndOfGap - Pos - Line[End].Value <= Line.GetDotCountB(End)
                             )
                         {

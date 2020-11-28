@@ -46,7 +46,7 @@ namespace Griddlers.Library
             _UniqueCounts = new Dictionary<(int, bool), bool>(items.Count());
         }
 
-        public ItemRange(Item[] items)
+        public ItemRange(params Item[] items)
         {
             _UsingArray = true;
             _ItemsEnum = items;
