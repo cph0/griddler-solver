@@ -316,7 +316,8 @@ namespace Griddlers.Library
         /// <item>No zero lines</item>
         /// <item>No trivial lines (full lines)</item>
         /// <item>Size is a mulitple of 5</item>
-        /// <item>No symmetry (TODO)</item>
+        /// <item>No symmetry (TEST)</item>
+        /// <item>No trial and error (TODO)</item>
         /// </list>
         /// </summary>
         /// <param name="rows">The rows</param>
@@ -337,8 +338,49 @@ namespace Griddlers.Library
             bool AnyFullLines = Rows.Any() || Columns.Any();
             bool MultipleOfFive = rows.Length % 5 == 0 && columns.Length % 5 == 0;
             bool Symmetry = true;
+            bool TrialAndError = true;
 
-            return !AnyZeroLines && !AnyFullLines && MultipleOfFive && Symmetry;
+            //symmetry
+            for (int index = 0; index < Height; index++)
+            {
+                Item[] First = rows[index];
+                Item[] Last = rows[Height - index - 1];
+
+                for (int c = 0; c < Width; c++)
+                {
+                    if (First[c] != Last[c])
+                    {
+                        Symmetry = false;
+                        break;
+                    }
+                }
+
+                if (!Symmetry)
+                    break;
+            }
+
+            if (Symmetry)
+            {
+                for (int index = 0; index < Width; index++)
+                {
+                    Item[] First = rows[index];
+                    Item[] Last = rows[Width - index - 1];
+
+                    for (int c = 0; c < Height; c++)
+                    {
+                        if (First[c] != Last[c])
+                        {
+                            Symmetry = false;
+                            break;
+                        }
+                    }
+
+                    if (!Symmetry)
+                        break;
+                }
+            }
+
+            return !AnyZeroLines && !AnyFullLines && MultipleOfFive && !Symmetry && !TrialAndError;
         }
 
         /// <summary>
