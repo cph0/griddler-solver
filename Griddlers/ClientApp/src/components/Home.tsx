@@ -488,7 +488,7 @@ export const Home: React.FunctionComponent = () => {
             let left = (depth * 20) + (i * 20);
             let item = {} as Item;
 
-            if (columns[i][c])
+            if (columns[i] && columns[i][c])
                 item = columns[i][c];
 
             xBoxes.push((
@@ -511,7 +511,7 @@ export const Home: React.FunctionComponent = () => {
             let top = (depth * 20) + (i * 20);
             let item = {} as Item;
 
-            if (rows[i][c])
+            if (rows[i] && rows[i][c])
                 item = rows[i][c];
 
             yBoxes.push(
