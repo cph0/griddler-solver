@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -15,7 +16,7 @@ namespace Griddlers.Library
     /// </summary>
     public class LineSegment : ItemRange, IEnumerable<Item>
     {
-        private IEnumerable<Item> _Items => _ItemsEnum;
+        private new IEnumerable<Item> _Items => base._Items;
         private readonly bool IsForward;
 
         /// <summary>
@@ -55,16 +56,51 @@ namespace Griddlers.Library
         /// </summary>
         public int LastItemAtEquality { get; private set; }
 
+        public int IndexAtBlock { get; private set; }
+
+        public void SetIndexAtBlock(int shift)
+        {
+            IndexAtBlock = Index;
+            IndexAtBlock += (IsForward ? 1 : -1) * shift;
+
+            if (IsForward)
+                End = IndexAtBlock;
+            else
+                Start = IndexAtBlock;
+        }
+
         public LineSegment(IEnumerable<Item> items,
-                            bool isForward,
-                            Item? item,
-                            bool eq,
-                            ItemRange before,
-                            IEnumerable<Item> after,
-                            HashSet<Block> rB,
-                            ItemRange gap,
-                            int itemAtStartOfGap,
-                            int lastItemAtEquality) : base(items)
+                           bool isForward,
+                           Item? item,
+                           int index,
+                           int equalityIndex) : base(items)
+        {
+            IsForward = isForward;
+            Item = item;
+            Index = index;
+            LastItemAtEquality = equalityIndex;
+            IndexAtBlock = index;
+
+            Start = IsForward ? LastItemAtEquality : Index;
+            End = IsForward ? Index : LastItemAtEquality;
+
+            Eq = LastItemAtEquality == Index;
+            Before = new();
+            After = Array.Empty<Item>();
+            RightBefore = new();
+            Gap = new();
+        }
+
+        public LineSegment(IEnumerable<Item> items,
+                           bool isForward,
+                           Item? item,
+                           bool eq,
+                           ItemRange before,
+                           IEnumerable<Item> after,
+                           HashSet<Block> rB,
+                           ItemRange gap,
+                           int itemAtStartOfGap,
+                           int lastItemAtEquality) : base(items)
         {
             IsForward = isForward;
             Item = item;
@@ -85,7 +121,14 @@ namespace Griddlers.Library
             LastItemAtEquality = lastItemAtEquality;
         }
 
-        public ItemRange With(LineSegment ls, bool includeItem = true)
+        public ItemRange With(LineSegment ls, bool gapOnly = false)
+        {
+            int Start = gapOnly ? Index : Math.Max(LastItemAtEquality, ls.IndexAtBlock);
+            int End = gapOnly ? ls.Index : Math.Min(IndexAtBlock, ls.LastItemAtEquality);
+            return CreateRange(Start, End);
+        }
+
+        public ItemRange WithOld(LineSegment ls, bool includeItem = true)
         {
             if (IsForward && Index <= ls.Index) //F, F | B
                 return new ItemRange(After.Where(w => w.Index < ls.Index || (includeItem && w.Index == ls.Index)));
@@ -96,6 +139,18 @@ namespace Griddlers.Library
             else // F F
                 return new ItemRange(ls.After.Where(w => w.Index <= Index));
         }
+
+        //public ItemRange With(LineSegment ls, bool includeItem = true)
+        //{
+        //    if (IsForward && Index <= ls.Index) //F, F | B
+        //        return new ItemRange(After.Where(w => w.Index < ls.Index || (includeItem && w.Index == ls.Index)));
+        //    else if (Index <= ls.Index) // B B
+        //        return new ItemRange(ls.After.Where(w => w.Index > Index || (includeItem && w.Index == Index)));
+        //    else if (!ls.IsForward) // F | B, B
+        //        return new ItemRange(ls.Where(w => w.Index <= Index));
+        //    else // F F
+        //        return new ItemRange(ls.After.Where(w => w.Index <= Index));
+        //}
 
         public ItemRange With(int index)
         {
@@ -116,6 +171,19 @@ namespace Griddlers.Library
         IEnumerator IEnumerable.GetEnumerator()
         {
             return _Items.GetEnumerator();
+        }
+
+        public void Deconstruct(out Item? item,
+                                out bool equality,
+                                out int index,
+                                out int equalityIndex,
+                                out int indexAtBlock)
+        {
+            item = Item;
+            equality = Eq;
+            index = Index;
+            equalityIndex = LastItemAtEquality;
+            indexAtBlock = IndexAtBlock;
         }
     }
 }

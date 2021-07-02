@@ -1,38 +1,38 @@
 ﻿namespace Griddlers.Library
 {
-    public class Block
+    public class Block : Range, IColour
     {
         private readonly Item? _Item;
-        private readonly Point[] _Points;
 
         public int BlockIndex { get; private set; }
         public int StartIndex { get; set; }
         public int EndIndex { get; set; }
         public int SolidCount { get; set; }
         public bool Green { get; private set; }
+        public string Colour { get; private set; }
         public bool Complete { get; set; }
         public bool KnowItem => _Item.HasValue;
 
-        public Block(int index, bool g)
+        public Block(int index, bool g) : base(-1, -1)
         {
-            _Points = new Point[] { };
             BlockIndex = index;
             Green = g;
+            Colour = g ? "green" : "black";
         }
 
-        public Block(bool c, int sC)
+        public Block(bool c, int sC) : base(-1, -1)
         {
-            _Points = new Point[] { };
             Complete = c;
             SolidCount = sC;
+            Colour = string.Empty;
         }
 
-        public Block(int start, int end, bool g)
+        public Block(int start, int end, bool g) : base(start, end)
         {
-            _Points = new Point[] { };
             StartIndex = start;
             EndIndex = end;
             Green = g;
+            Colour = g ? "green" : "black";
         }
 
         public Block(Item item, bool complete, int? start, int? end) : this(item.Index, item.Green)
@@ -48,44 +48,36 @@
                 EndIndex = end.Value;
         }
 
+        public bool Is(Item item) 
+            => item.Value == Size && item.Green == Green;
+
+        public bool CanBe(Item item) 
+            => item.Value >= Size && item.Green == Green;
+        
+        public bool IsOrCantBe(Item item) => Is(item) || !CanBe(item);
+
         public static bool operator ==(Block a, Item b)
-        {
-            return a.SolidCount == b.Value && a.Green == b.Green;
-        }
+            => a.SolidCount == b.Value && a.Green == b.Green;
 
         public static bool operator !=(Block a, Item b)
-        {
-            return a.SolidCount != b.Value || a.Green != b.Green;
-        }
+            => a.SolidCount != b.Value || a.Green != b.Green;
 
         public static bool operator <=(Item a, Block b)
-        {
-            return a.Value <= b.SolidCount && a.Green == b.Green;
-        }
+            => a.Value <= b.SolidCount && a.Green == b.Green;
 
         public static bool operator >=(Item a, Block b)
-        {
-            return a.Value >= b.SolidCount && a.Green == b.Green;
-        }
+            => a.Value >= b.SolidCount && a.Green == b.Green;
 
         public static bool operator <(Item a, Block b)
-        {
-            return a.Value < b.SolidCount || a.Green != b.Green;
-        }
+            => a.Value < b.SolidCount || a.Green != b.Green;
 
         public static bool operator >(Item a, Block b)
-        {
-            return a.Value > b.SolidCount || a.Green != b.Green;
-        }
+            => a.Value > b.SolidCount || a.Green != b.Green;
 
         public override bool Equals(object? obj)
-        {
-            return base.Equals(obj);
-        }
+            => base.Equals(obj);
 
         public override int GetHashCode()
-        {
-            return base.GetHashCode();
-        }
+            => base.GetHashCode();
     }
 }

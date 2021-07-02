@@ -24,7 +24,8 @@ namespace Griddlers.Library
 
         public static string[] ListGriddlers() 
         {
-            return new DirectoryInfo(FileRoot).GetFiles().Select(s => s.Name.Replace(s.Extension, "")).ToArray();
+            return new DirectoryInfo(FileRoot).GetFiles("*.txt")
+                .Select(s => s.Name.Replace(s.Extension, "")).ToArray();
         }
 
         public async static Task<(Item[][], Item[][])> GetSourceData(string fileName)

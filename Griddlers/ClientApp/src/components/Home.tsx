@@ -57,8 +57,8 @@ const createArray = (first: number, second: number): Item[][] => {
 }
 
 export const Home: React.FunctionComponent = () => {
-    let rows: Item[][] = createArray(10, 4);
-    let columns: Item[][] = createArray(10, 4);
+    //let rows: Item[][] = createArray(10, 4);
+    //let columns: Item[][] = createArray(10, 4);
 
     let uploadRef: HTMLInputElement | null = null;
     let hubConnection: signalR.HubConnection | null = null;
@@ -67,6 +67,8 @@ export const Home: React.FunctionComponent = () => {
     const [width, setWidth] = useState(10);
     const [height, setHeight] = useState(10);
     const [depth, setDepth] = useState(4);
+    const [rows, setRows] = useState([]);
+    const [columns, setColumns] = useState([]);
     const [sG, setSg] = useState("Bird10x10");
     const [points, setPoints] = useState<Point[]>([]);
     const [dots, setDots] = useState<Point[]>([]);
@@ -120,41 +122,41 @@ export const Home: React.FunctionComponent = () => {
             });
     }
 
-    const onWidthChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-        let width = parseInt(event.target.value);
-        if (!width)
-            width = 1;
+    //const onWidthChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    //    let width = parseInt(event.target.value);
+    //    if (!width)
+    //        width = 1;
 
-        columns = createArray(width, depth);
-        setWidth(width);
-    }
+    //    columns = createArray(width, depth);
+    //    setWidth(width);
+    //}
 
-    const onHeightChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-        let height = parseInt(event.target.value);
-        if (!height)
-            height = 1;
+    //const onHeightChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    //    let height = parseInt(event.target.value);
+    //    if (!height)
+    //        height = 1;
 
-        rows = createArray(height, depth);
-        setHeight(height);
-    }
+    //    rows = createArray(height, depth);
+    //    setHeight(height);
+    //}
 
-    const onDepthChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-        let depth = parseInt(event.target.value);
-        if (!depth)
-            depth = 1;
+    //const onDepthChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    //    let depth = parseInt(event.target.value);
+    //    if (!depth)
+    //        depth = 1;
 
-        columns = createArray(width, depth);
-        rows = createArray(height, depth);
-        setDepth(depth);
-    }
+    //    columns = createArray(width, depth);
+    //    rows = createArray(height, depth);
+    //    setDepth(depth);
+    //}
 
-    const onRowChange = (event: React.ChangeEvent<HTMLInputElement>, i: number, c: number) => {
-        rows[i][c].value = parseInt(event.target.value);
-    }
+    //const onRowChange = (event: React.ChangeEvent<HTMLInputElement>, i: number, c: number) => {
+    //    rows[i][c].value = parseInt(event.target.value);
+    //}
 
-    const onColumnChange = (event: React.ChangeEvent<HTMLInputElement>, i: number, c: number) => {
-        columns[i][c].value = parseInt(event.target.value);
-    }
+    //const onColumnChange = (event: React.ChangeEvent<HTMLInputElement>, i: number, c: number) => {
+    //    columns[i][c].value = parseInt(event.target.value);
+    //}
 
     const onSelectGriddler = (event: React.ChangeEvent<HTMLSelectElement>) => {
         setSg(event.target.value);
@@ -172,8 +174,8 @@ export const Home: React.FunctionComponent = () => {
         })
             .then(responce => responce.json() as Promise<any>)
             .then(data => {
-                rows = data.r;
-                columns = data.c;
+                setRows(data.r);
+                setColumns(data.c);
                 setWidth(data.w);
                 setHeight(data.h);
                 setDepth(data.d);
@@ -196,8 +198,8 @@ export const Home: React.FunctionComponent = () => {
         })
             .then(responce => responce.json() as Promise<any>)
             .then(data => {
-                rows = data.r;
-                columns = data.c;
+                setRows(data.r);
+                setColumns(data.c);
                 setWidth(data.w);
                 setHeight(data.h);
                 setDepth(data.d);
@@ -294,8 +296,8 @@ export const Home: React.FunctionComponent = () => {
         })
             .then(responce => responce.json() as Promise<any>)
             .then(data => {
-                rows = data.r;
-                columns = data.c;
+                setRows(data.r);
+                setColumns(data.c);
 
                 setWidth(data.w);
                 setHeight(data.h);
@@ -450,7 +452,8 @@ export const Home: React.FunctionComponent = () => {
                 sClass.backgroundColor = "red";
 
             grid.push(
-                <div style={{ ...sClass, borderLeft: brdL, borderTop: brdT, top: c * 20, left: i * 20 }}></div>
+                <div key={`${i}_${c}`}
+                    style={{ ...sClass, borderLeft: brdL, borderTop: brdT, top: c * 20, left: i * 20 }}></div>
             );
         }
     }
@@ -466,7 +469,8 @@ export const Home: React.FunctionComponent = () => {
                 sClass.backgroundColor = "lightgreen";
 
             pts.push(
-                <div style={{ ...sClass, top: pt.y, left: pt.x }}></div>
+                <div key={`${pt.x}_${pt.y}`}
+                    style={{ ...sClass, top: pt.y, left: pt.x }}></div>
             );
         }
     }
@@ -475,10 +479,9 @@ export const Home: React.FunctionComponent = () => {
         if (dot) {
             let sClass = { ...dotStyle };
 
-
-
             dts.push(
-                <div style={{ ...sClass, top: dot.y + 8, left: dot.x + 8 }}></div>
+                <div key={`${dot.x}_${dot.y}`}
+                    style={{ ...sClass, top: dot.y + 8, left: dot.x + 8 }}></div>
             );
         }
     }
@@ -492,7 +495,11 @@ export const Home: React.FunctionComponent = () => {
                 item = columns[i][c];
 
             xBoxes.push((
-                <input type="text" value={item.value} onChange={(e) => onColumnChange(e, i, c)}
+                <input
+                    key={`${i}_${c}`}
+                    type="text"
+                    value={item.value}
+                    onChange={() => { }}
                     style={{
                         width: "20px",
                         height: "20px",
@@ -516,7 +523,11 @@ export const Home: React.FunctionComponent = () => {
 
             yBoxes.push(
                 (
-                    <input type="text" value={item.value} onChange={(e) => onRowChange(e, i, c)}
+                    <input
+                        key={`${i}_${c}`}
+                        type="text"
+                        value={item.value}
+                        onChange={() => { }}
                         style={{
                             width: "20px",
                             height: "20px",
@@ -556,12 +567,6 @@ export const Home: React.FunctionComponent = () => {
             <div style={{ display: "none" }}>
                 <button className="btn btn-primary btn-sm" onClick={(e) => upload()}>Upload</button>
                 <input type="file" ref={el => uploadRef = el}></input>
-            </div>
-            <div style={{ marginTop: "5px", marginBottom: "10px" }}>
-                <input onChange={(e) => onWidthChange(e)} value={width} />
-                <input onChange={(e) => onHeightChange(e)} value={height} />
-                <input onChange={(e) => onDepthChange(e)} value={depth} />
-                <button className="btn btn-primary btn-sm" onClick={(e) => run()}>Run</button>
             </div>
             <div>
                 <Progress max={width * height}
