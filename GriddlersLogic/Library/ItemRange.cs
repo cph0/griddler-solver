@@ -7,11 +7,16 @@ namespace Griddlers.Library
     public class ItemRange
     {
         private readonly bool _UsingArray;
-        private readonly IDictionary<(int, bool), bool> _UniqueCounts;
+        private readonly IDictionary<(int, bool), Item> _UniqueCounts;
         private bool? _ItemsOneValue;
         private bool? _ItemsOneColour;
-        protected readonly IEnumerable<Item> _ItemsEnum;
-        protected readonly Item[] _ItemsArray;
+        private readonly Item[] _ItemsArray;
+        public int Start { get; protected set; }
+        public int End { get; protected set; }
+
+        private IEnumerable<Item> ItemsEnum => Where(Start, End);
+
+
 
         public int FirstItemIndex => FirstOrDefault()?.Index ?? -1;
         public int LastItemIndex => LastOrDefault()?.Index ?? -1;
@@ -36,23 +41,35 @@ namespace Griddlers.Library
             }
         }
 
-        private IEnumerable<Item> _Items => _UsingArray ? _ItemsArray : _ItemsEnum;
+        protected IEnumerable<Item> _Items => _UsingArray ? _ItemsArray : ItemsEnum;
 
-        public ItemRange(IEnumerable<Item> items)
+        protected ItemRange CreateRange(int start, int end)
+        {
+            return new ItemRange(_ItemsArray, start, end);
+        }
+
+        public ItemRange(IEnumerable<Item> items, int start = 0, int end = 0)
         {
             _UsingArray = false;
-            _ItemsEnum = items;
-            _ItemsArray = new Item[] { };
-            _UniqueCounts = new Dictionary<(int, bool), bool>(items.Count());
+            //_ItemsEnum = items;
+            _ItemsArray = items is Item[] v ? v : items.ToArray();
+            _UniqueCounts = new Dictionary<(int, bool), Item>(items.Count());
+
+            Start = start;
+            End = end;
         }
+
 
         public ItemRange(params Item[] items)
         {
             _UsingArray = true;
-            _ItemsEnum = items;
+            //_ItemsEnum = items;
             _ItemsArray = items;
-            _UniqueCounts = new Dictionary<(int, bool), bool>(items.Length);
+            _UniqueCounts = new Dictionary<(int, bool), Item>(items.Length);
         }
+
+        public IEnumerable<Item> Where(int start, int end)
+            => _ItemsArray.Where(w => w.Index >= start && w.Index <= end);
 
         public IEnumerable<(Item, Item)> Pair()
             => Pair(_Items);
@@ -79,14 +96,14 @@ namespace Griddlers.Library
             foreach (Item Item in items)
             {
                 if (First.HasValue && Second.HasValue)
-                { 
+                {
                     yield return (First.Value, Second.Value, Item);
                     First = Second;
                 }
 
                 if (First.HasValue)
                     Second = Item;
-                else    
+                else
                     First = Item;
             }
         }
@@ -104,16 +121,21 @@ namespace Griddlers.Library
             return Dots;
         }
 
-        public bool UniqueCount(Block block)
+        public bool UniqueCount(Block block, out Item item)
         {
             bool Retval = false;
 
-            if (_UniqueCounts.TryGetValue((block.SolidCount, block.Green), out bool Out))
-                Retval = Out;
+            if (_UniqueCounts.TryGetValue((block.Size, block.Green), out Item Out))
+            {
+                item = Out;
+                Retval = true;
+            }
             else
             {
-                Retval = _Items.Count(c => c >= block) == 1;
-                _UniqueCounts[(block.SolidCount, block.Green)] = Retval;
+                Retval = _Items.Count(block.CanBe) == 1;
+                item = FirstOrDefault(block.CanBe) ?? default;
+                if (Retval)
+                    _UniqueCounts[(block.Size, block.Green)] = item;
             }
 
             return Retval;
@@ -124,7 +146,7 @@ namespace Griddlers.Library
             if (_UsingArray)
                 return _ItemsArray.Skip(count);
             else
-                return _ItemsEnum.Skip(count);
+                return ItemsEnum.Skip(count);
         }
 
         public IEnumerable<Item> Reverse(int? start = null)
@@ -132,7 +154,7 @@ namespace Griddlers.Library
             if (_UsingArray)
                 return _ItemsArray.Reverse(start);
             else
-                return _ItemsEnum.Reverse();
+                return ItemsEnum.Reverse();
         }
 
         public int Sum(bool includeDots = true)
