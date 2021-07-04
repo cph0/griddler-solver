@@ -21,16 +21,8 @@ namespace Griddlers.Library
                         ("Start", k => k.Start), ("End", k => k.End));
         }
 
-
-        public static bool operator ==(Gap g, Item a)
-        {
-            return g.Size == a.Value && g.GetBlockAtStart(g.Start)?.Colour == (a.Green ? "green" : "black");
-        }
-
-        public static bool operator !=(Gap g, Item a)
-        {
-            return g.Size != a.Value || g.GetBlockAtStart(g.Start)?.Colour != (a.Green ? "green" : "black");
-        }
+        public bool Is(Item a)
+            => Size == a.Value && GetBlockAtStart(Start)?.Colour == a.Colour;
 
         public IEnumerable<Block> GetBlocks()
         {
@@ -129,7 +121,7 @@ namespace Griddlers.Library
                 End = RightBlock.End;
             }
 
-            _Blocks.Add(new Block(Start, End, colour == "green"));
+            _Blocks.Add(new Block(Start, End, colour));
         }
 
         public void AddPoint(int index, string colour, int? item)

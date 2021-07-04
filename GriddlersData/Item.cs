@@ -11,7 +11,6 @@ namespace Griddlers.Library
     {
         public readonly int Index { get; }
         public readonly int Value { get; }
-        public readonly bool Green { get; }
         public readonly string Colour { get; }
 
         public Item(int index, string v)
@@ -20,35 +19,28 @@ namespace Griddlers.Library
 
             string[] Parts = v.Split(".");
             Value = int.Parse(Parts[0]);
-            Green = Parts.Length > 1 && Parts[1] == "1";
+            bool Green = Parts.Length > 1 && Parts[1] == "1";
             Colour = Green ? "green" : "black";
         }
         public Item(GriddlerItem item)
         {
             Index = item.position;
             Value = item.value;
-            Green = item.green;
-            Colour = Green ? "green" : "black";
-        }
-        public Item(int v, bool g)
-        {
-            Index = 0;
-            Value = v;
-            Green = g;
+            bool Green = item.green;
             Colour = Green ? "green" : "black";
         }
 
         public void Deconstruct(out int value, out string colour) 
         {
             value = Value;
-            colour = Green ? "green" : "black";
+            colour = Colour;
         }
 
         public static int operator +(Item a, Item b)
         {
             int Sum = a.Value + b.Value;
 
-            if (a.Green == b.Green)
+            if (a.Colour == b.Colour)
                 Sum++;
 
             return Sum;
@@ -56,22 +48,12 @@ namespace Griddlers.Library
 
         public static bool operator ==(Item a, Item b)
         {
-            return a.Value == b.Value && a.Green == b.Green;
+            return a.Value == b.Value && a.Colour == b.Colour;
         }
 
         public static bool operator !=(Item a, Item b)
         {
             return !(a == b);
-        }
-
-        public static bool operator ==(Item a, Point b)
-        {
-            return a.Green == b.Green;
-        }
-
-        public static bool operator !=(Item a, Point b)
-        {
-            return a.Green != b.Green;
         }
 
         public override int GetHashCode()
