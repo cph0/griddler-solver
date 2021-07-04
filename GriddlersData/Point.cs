@@ -24,20 +24,5 @@ namespace Griddlers.Library
             Time = DateTime.Now;
             Grp = Group;
         }
-
-        public static bool operator ==(Point a, Item b)
-        {
-            return a.Green == b.Green;
-        }
-
-        public static bool operator !=(Point? a, Item b)
-        {
-            return a != (Point?)null && a.Green != b.Green;
-        }
-
-        public override int GetHashCode()
-        {
-            return base.GetHashCode();
-        }
     }
 }

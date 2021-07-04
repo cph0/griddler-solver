@@ -156,7 +156,7 @@ namespace Griddlers.Database
                 Data.Columns.Add("is_row", typeof(bool));
                 Data.Columns.Add("position", typeof(byte));
                 Data.Columns.Add("value", typeof(byte));
-                Data.Columns.Add("green", typeof(bool));
+                Data.Columns.Add("colour", typeof(string));
 
                 byte LineNumber = 0;
                 foreach (Item[] Row in rows)
@@ -164,7 +164,7 @@ namespace Griddlers.Database
                     byte Position = 0;
                     foreach (Item Item in Row)
                     {
-                        Data.Rows.Add(LineNumber, true, Position, (byte)Item.Value, Item.Green);
+                        Data.Rows.Add(LineNumber, true, Position, (byte)Item.Value, Item.Colour);
                         Position++;
                     }
                     LineNumber++;
@@ -176,7 +176,7 @@ namespace Griddlers.Database
                     byte Position = 0;
                     foreach (Item Item in Col)
                     {
-                        Data.Rows.Add(LineNumber, false, Position, (byte)Item.Value, Item.Green);
+                        Data.Rows.Add(LineNumber, false, Position, (byte)Item.Value, Item.Colour);
                         Position++;
                     }
                     LineNumber++;
@@ -185,7 +185,7 @@ namespace Griddlers.Database
                 DataTable Solids = new DataTable();
                 Solids.Columns.Add("x_position", typeof(byte));
                 Solids.Columns.Add("y_position", typeof(byte));
-                Solids.Columns.Add("green", typeof(bool));
+                Solids.Columns.Add("colour", typeof(bool));
 
                 foreach (KeyValuePair<(int, int), Point> Solid in points)
                 {

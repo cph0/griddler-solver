@@ -7,19 +7,14 @@ namespace Griddlers.Library
     public class ItemRange
     {
         private readonly bool _UsingArray;
-        private readonly IDictionary<(int, bool), Item> _UniqueCounts;
+        private readonly IDictionary<(int, string), Item> _UniqueCounts;
         private bool? _ItemsOneValue;
         private bool? _ItemsOneColour;
         private readonly Item[] _ItemsArray;
-        public int Start { get; protected set; }
-        public int End { get; protected set; }
+        public int Start { get; private set; }
+        public int End { get; private set; }
 
         private IEnumerable<Item> ItemsEnum => Where(Start, End);
-
-
-
-        public int FirstItemIndex => FirstOrDefault()?.Index ?? -1;
-        public int LastItemIndex => LastOrDefault()?.Index ?? -1;
         public bool ItemsOneValue
         {
             get
@@ -35,7 +30,7 @@ namespace Griddlers.Library
             get
             {
                 if (!_ItemsOneColour.HasValue)
-                    _ItemsOneColour = _Items.GroupBy(g => g.Green).Count() == 1;
+                    _ItemsOneColour = _Items.GroupBy(g => g.Colour).Count() == 1;
 
                 return _ItemsOneColour.Value;
             }
@@ -44,8 +39,18 @@ namespace Griddlers.Library
         protected IEnumerable<Item> _Items => _UsingArray ? _ItemsArray : ItemsEnum;
 
         protected ItemRange CreateRange(int start, int end)
+            => new ItemRange(_ItemsArray, start, end);
+
+        protected void SetStart(int start)
         {
-            return new ItemRange(_ItemsArray, start, end);
+            Start = start;
+            _UniqueCounts.Clear();
+        }
+
+        protected void SetEnd(int end)
+        {
+            End = end;
+            _UniqueCounts.Clear();
         }
 
         public ItemRange(IEnumerable<Item> items, int start = 0, int end = 0)
@@ -53,23 +58,29 @@ namespace Griddlers.Library
             _UsingArray = false;
             //_ItemsEnum = items;
             _ItemsArray = items is Item[] v ? v : items.ToArray();
-            _UniqueCounts = new Dictionary<(int, bool), Item>(items.Count());
+            _UniqueCounts = new Dictionary<(int, string), Item>(items.Count());
 
             Start = start;
             End = end;
         }
-
 
         public ItemRange(params Item[] items)
         {
             _UsingArray = true;
             //_ItemsEnum = items;
             _ItemsArray = items;
-            _UniqueCounts = new Dictionary<(int, bool), Item>(items.Length);
+            _UniqueCounts = new Dictionary<(int, string), Item>(items.Length);
         }
 
         public IEnumerable<Item> Where(int start, int end)
-            => _ItemsArray.Where(w => w.Index >= start && w.Index <= end);
+            => Where(start, end, false);
+
+        protected IEnumerable<Item> Where(int start, int end, bool allowSwap)
+        {
+            (int Start, int End) = (Math.Min(start, end), Math.Max(start, end));
+            (Start, End) = !allowSwap ? (start, end) : (Start, End);
+            return _ItemsArray.Where(w => w.Index >= Start && w.Index <= End);
+        }
 
         public IEnumerable<(Item, Item)> Pair()
             => Pair(_Items);
@@ -112,20 +123,15 @@ namespace Griddlers.Library
             => GetDotCount(_Items);
         public static int GetDotCount(IEnumerable<Item> items)
         {
-            int Dots = 0;
-            foreach ((Item, Item) Item in Pair(items))
-            {
-                if (Item.Item1.Green == Item.Item2.Green)
-                    Dots++;
-            }
-            return Dots;
+            return Pair(items)
+                .Aggregate(0, (acc, a) => acc + DotBetween(a.Item1, a.Item2));
         }
 
         public bool UniqueCount(Block block, out Item item)
         {
             bool Retval = false;
 
-            if (_UniqueCounts.TryGetValue((block.Size, block.Green), out Item Out))
+            if (_UniqueCounts.TryGetValue((block.Size, block.Colour), out Item Out))
             {
                 item = Out;
                 Retval = true;
@@ -135,7 +141,7 @@ namespace Griddlers.Library
                 Retval = _Items.Count(block.CanBe) == 1;
                 item = FirstOrDefault(block.CanBe) ?? default;
                 if (Retval)
-                    _UniqueCounts[(block.Size, block.Green)] = item;
+                    _UniqueCounts[(block.Size, block.Colour)] = item;
             }
 
             return Retval;
@@ -157,17 +163,22 @@ namespace Griddlers.Library
                 return ItemsEnum.Reverse();
         }
 
+        public static int DotBetween(IColour first, IColour second)
+            => first.Colour == second.Colour ? 1 : 0;
+
         public int Sum(bool includeDots = true)
         {
-            return _Items.Sum(s => s.Value) + (includeDots ? GetDotCount(_Items) : 0);
+            return _Items.Sum(s => s.Value) + (includeDots ? GetDotCount() : 0);
         }
 
         public bool Any() => _Items.Any();
         public bool Any(Func<Item, bool> func) => _Items.Any(func);
 
-        public bool All(Func<Item, bool> func)
+        public bool All(Func<Item, bool> func) => Any(func) && _Items.All(func); 
+
+        public int Min(Block? block = null) 
         {
-            return Any(func) && _Items.All(func);
+            return _Items.Where(w => block == null || block.CanBe(w)).Min(m => m.Value);
         }
 
         public Item? FirstOrDefault(Func<Item, bool> func)
@@ -175,20 +186,10 @@ namespace Griddlers.Library
         public Item? FirstOrDefault()
             => FirstOrDefault(_Items);
         public Item? LastOrDefault(Func<Item, bool> func)
-            => FirstOrDefault(_Items.Reverse().Where(func));
+            => FirstOrDefault(Reverse().Where(func));
         public Item? LastOrDefault()
-            => FirstOrDefault(_Items.Reverse());
-        public Item? FirstOrDefault(IEnumerable<Item> list)
-        {
-            Item? RetVal = null;
-
-            foreach (Item Item in list)
-            {
-                RetVal = Item;
-                break;
-            }
-
-            return RetVal;
-        }
+            => FirstOrDefault(Reverse());
+        public static Item? FirstOrDefault(IEnumerable<Item> list)
+            => list.FirstOrDefault();
     }
 }
