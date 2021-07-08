@@ -4,6 +4,12 @@ using System.Linq;
 
 namespace Griddlers.Library
 {
+    public interface ICanBeItem : IColour
+    {
+        int Size { get; }
+        bool CanBe(Item item);
+    }
+
     public class ItemRange
     {
         private readonly bool _UsingArray;
@@ -11,10 +17,10 @@ namespace Griddlers.Library
         private bool? _ItemsOneValue;
         private bool? _ItemsOneColour;
         private readonly Item[] _ItemsArray;
+        private IEnumerable<Item> ItemsEnum => Where(Start, End);
+        protected IEnumerable<Item> _Items => _UsingArray ? _ItemsArray : ItemsEnum;
         public int Start { get; private set; }
         public int End { get; private set; }
-
-        private IEnumerable<Item> ItemsEnum => Where(Start, End);
         public bool ItemsOneValue
         {
             get
@@ -36,9 +42,17 @@ namespace Griddlers.Library
             }
         }
 
-        protected IEnumerable<Item> _Items => _UsingArray ? _ItemsArray : ItemsEnum;
+        protected ItemRange(Item[] items, int start, int end, bool usingArray = false)
+        {
+            _UsingArray = usingArray;
+            _ItemsArray = items;
+            _UniqueCounts = new Dictionary<(int, string), Item>(items.Length);
 
-        protected ItemRange CreateRange(int start, int end)
+            Start = start;
+            End = end;
+        }
+
+        public ItemRange CreateRange(int start, int end)
             => new ItemRange(_ItemsArray, start, end);
 
         protected void SetStart(int start)
@@ -53,23 +67,21 @@ namespace Griddlers.Library
             _UniqueCounts.Clear();
         }
 
-        public ItemRange(IEnumerable<Item> items, int start = 0, int end = 0)
+        public (bool, bool) ShouldAddDots(int index)
         {
-            _UsingArray = false;
-            //_ItemsEnum = items;
-            _ItemsArray = items is Item[] v ? v : items.ToArray();
-            _UniqueCounts = new Dictionary<(int, string), Item>(items.Count());
-
-            Start = start;
-            End = end;
+            bool Start = index > 0 && _ItemsArray[index].Colour == _ItemsArray[index - 1].Colour;
+            bool End = index < _ItemsArray.Length - 1 && _ItemsArray[index].Colour == _ItemsArray[index + 1].Colour;
+            return (Start || index == 0, End || index == _ItemsArray.Length - 1);
         }
 
-        public ItemRange(params Item[] items)
+        public int GetDotCount(int pos)
         {
-            _UsingArray = true;
-            //_ItemsEnum = items;
-            _ItemsArray = items;
-            _UniqueCounts = new Dictionary<(int, string), Item>(items.Length);
+            return ShouldAddDots(pos).Item2 ? 1 : 0;
+        }
+
+        public int GetDotCountB(int pos)
+        {
+            return ShouldAddDots(pos).Item1 ? 1 : 0;
         }
 
         public IEnumerable<Item> Where(int start, int end)
@@ -127,9 +139,9 @@ namespace Griddlers.Library
                 .Aggregate(0, (acc, a) => acc + DotBetween(a.Item1, a.Item2));
         }
 
-        public bool UniqueCount(Block block, out Item item)
+        public bool UniqueCount(ICanBeItem block, out Item item)
         {
-            bool Retval = false;
+            bool Retval;
 
             if (_UniqueCounts.TryGetValue((block.Size, block.Colour), out Item Out))
             {
@@ -138,13 +150,21 @@ namespace Griddlers.Library
             }
             else
             {
-                Retval = _Items.Count(block.CanBe) == 1;
-                item = FirstOrDefault(block.CanBe) ?? default;
+                Retval = UniqueCount(_Items, block, out item);
                 if (Retval)
                     _UniqueCounts[(block.Size, block.Colour)] = item;
             }
 
             return Retval;
+        }
+
+        public static bool UniqueCount(IEnumerable<Item> items,
+                                       ICanBeItem block,
+                                       out Item item)
+        {
+            Item[] Cache = items.AsArray();
+            item = Cache.FirstOrDefault(block.CanBe);
+            return item != null && Cache.Count(block.CanBe) == 1;
         }
 
         public IEnumerable<Item> Skip(int count)
@@ -166,17 +186,21 @@ namespace Griddlers.Library
         public static int DotBetween(IColour first, IColour second)
             => first.Colour == second.Colour ? 1 : 0;
 
-        public int Sum(bool includeDots = true)
+        public int Sum(bool includeDots = true) => Sum(_Items, includeDots);
+        public static int Sum(IEnumerable<Item> items, bool includeDots = true)
         {
-            return _Items.Sum(s => s.Value) + (includeDots ? GetDotCount() : 0);
+            Item[] Cache = items.AsArray();
+            return Cache.Sum(s => s.Value) + (includeDots ? GetDotCount(Cache) : 0);
         }
 
-        public bool Any() => _Items.Any();
-        public bool Any(Func<Item, bool> func) => _Items.Any(func);
+        public bool All(Func<Item, bool> func) => All(_Items, func);
+        public static bool All(IEnumerable<Item> items, Func<Item, bool> func)
+        {
+            Item[] Cache = items.AsArray();
+            return Cache.Any(func) && Cache.All(func);
+        }
 
-        public bool All(Func<Item, bool> func) => Any(func) && _Items.All(func); 
-
-        public int Min(Block? block = null) 
+        public int Min(Block? block = null)
         {
             return _Items.Where(w => block == null || block.CanBe(w)).Min(m => m.Value);
         }

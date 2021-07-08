@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 
 namespace Griddlers.Library
 {
@@ -16,5 +17,8 @@ namespace Griddlers.Library
             for (int Pos = Start; Pos >= 0; Pos--)
                 yield return arr[Pos];
         }
+
+        public static T[] AsArray<T>(this IEnumerable<T> source)
+            => source is T[] v ? v : source.ToArray();
     }
 }

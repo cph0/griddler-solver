@@ -1,6 +1,6 @@
 ﻿namespace Griddlers.Library
 {
-    public class Block : Range, IColour
+    public class Block : Range, ICanBeItem
     {
         private readonly Item? _Item;
 

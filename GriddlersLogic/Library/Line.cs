@@ -62,16 +62,14 @@ namespace Griddlers.Library
                 return _MaxItem.Value;
             }
         }
-        public int StartOfFirstGap => FindGapAtPos(-1)?.Start ?? 0;
-        public int EndOfLastGap => FindGapAtPos(LineLength, false)?.End ?? LineLength - 1;
-
+        
         public Item this[int index] => _Items[index];
 
         public Line(int index,
                     bool isRow,
                     int lL,
                     Item[] items,
-                    Logic logic) : base(items)
+                    Logic logic) : base(items, 0, items.Length - 1, true)
         {
             Logic = logic;
             IsRow = isRow;
@@ -207,11 +205,9 @@ namespace Griddlers.Library
                 Block? LastBlock = forward ? gap.GetLastBlock(gap.End) : gap.GetNextBlock(gap.Start);
                 if (LastBlock != null)
                 {
-                    int ToItem = Iei.Item1 + ((forward ? 1 : -1) * (Iei.ItemShift - 1));
-                    Item[] UniqueItems = Where(ei, ToItem, true)
-                                        .Where(w => gap.Is(w)).ToArray();
-
-                    if (UniqueItems.Length == 1 && UniqueItems[0].Index == ToItem)
+                    int ToItem = Iei.Item1 + ((forward ? 1 : -1) * (Iei.ItemShift - 1));                    
+                    if (UniqueCount(Where(ei, ToItem, true), gap, out Item UniqueItem) 
+                        && UniqueItem.Index == ToItem)
                         Iei.Item2 = true;
                 }
             }
@@ -228,8 +224,6 @@ namespace Griddlers.Library
             {
                 if (_Gaps.TryGetValue("Start", Skip.Index, out Gap Gap))
                 {
-                    //IEnumerable<Item> Next = Where(EqualityItem, Item);
-                    //IEnumerable<Item> After = _Items.Where((w, wi) => wi >= Item);
                     Item? TheItem = Item < LineItems ? this[Item] : null;
                     LineSegment Ls = new LineSegment(_Items, true, TheItem, Item, EqualityItem);
                     yield return (Gap, Ls, Skip);
@@ -289,8 +283,6 @@ namespace Griddlers.Library
                 Item -= ItemShift;
             }
 
-            //IEnumerable<Item> Next = Where(Item, EqualityItem);
-            //IEnumerable<Item> After = _Items.Where((w, wi) => wi <= Item);
             Item? TheItem = Item >= 0 ? this[Item] : null;
             LineSegment LsEnd = new LineSegment(_Items, false, TheItem, Item, EqualityItem);
 
@@ -434,23 +426,6 @@ namespace Griddlers.Library
 
         public int GetLinePointsValue(bool includeDots = false)
             => Points.Count + (includeDots ? Dots.Count : 0);
-
-        public (bool, bool) ShouldAddDots(int index)
-        {
-            bool Start = index > 0 && _Items[index].Colour == _Items[index - 1].Colour;
-            bool End = index < _Items.Length - 1 && _Items[index].Colour == _Items[index + 1].Colour;
-            return (Start || index == 0, End || index == _Items.Length - 1);
-        }
-
-        public int GetDotCount(int pos)
-        {
-            return ShouldAddDots(pos).Item2 ? 1 : 0;
-        }
-
-        public int GetDotCountB(int pos)
-        {
-            return ShouldAddDots(pos).Item1 ? 1 : 0;
-        }
 
         /// <summary>
         /// Determines if the block index is equivalent to the item index by:
@@ -646,8 +621,7 @@ namespace Griddlers.Library
                 //start - skip to correct solid count
                 if (BlockCount == 1 && _Items[CurrentItem].Value < SolidCount)
                 {
-                    CurrentItem = _Items.Select((w, wi) => (w, wi))
-                                       .FirstOrDefault(w => w.w.Value >= SolidCount).wi;
+                    CurrentItem = FirstOrDefault(w => w.Value >= SolidCount)?.Index ?? 0;
                     StartItem = CurrentItem;
                 }
             }
