@@ -34,20 +34,6 @@ namespace Griddlers.Library
         /// <see cref="true"/> if the next item index cannot be less than <see cref="Index"/>
         /// </summary>
         public bool Eq => LastItemAtEquality == Index;
-        public ItemRange Before { get; private set; }
-        /// <summary>
-        /// The items including and after <see cref="Item"/>, may be empty
-        /// </summary>
-        public IEnumerable<Item> After { get; private set; }
-        public HashSet<Block> RightBefore { get; private set; }
-        /// <summary>
-        /// The items that come after the last dot but are before <see cref="Item"/>
-        /// </summary>
-        public ItemRange Gap { get; private set; }
-        /// <summary>
-        /// The item index that is after the last dot
-        /// </summary>
-        public int ItemAtStartOfGap { get; private set; }
         /// <summary>
         /// The last item index that can be the next item
         /// </summary>
@@ -55,18 +41,7 @@ namespace Griddlers.Library
 
         public int IndexAtBlock { get; private set; }
 
-        public void SetIndexAtBlock(int shift)
-        {
-            IndexAtBlock = Index;
-            IndexAtBlock += (IsForward ? 1 : -1) * shift;
-
-            if (IsForward)
-                SetEnd(IndexAtBlock);
-            else
-                SetStart(IndexAtBlock);
-        }
-
-        public LineSegment(IEnumerable<Item> items,
+        public LineSegment(Item[] items,
                            bool isForward,
                            Item? item,
                            int index,
@@ -79,11 +54,17 @@ namespace Griddlers.Library
             Index = index;
             LastItemAtEquality = equalityIndex;
             IndexAtBlock = index;
+        }
 
-            Before = new();
-            After = Array.Empty<Item>();
-            RightBefore = new();
-            Gap = new();
+        public void SetIndexAtBlock(int shift)
+        {
+            IndexAtBlock = Index;
+            IndexAtBlock += (IsForward ? 1 : -1) * shift;
+
+            if (IsForward)
+                SetEnd(IndexAtBlock);
+            else
+                SetStart(IndexAtBlock);
         }
 
         public ItemRange With(LineSegment ls, bool gapOnly = false)

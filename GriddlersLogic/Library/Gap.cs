@@ -5,7 +5,7 @@ using System.Linq;
 
 namespace Griddlers.Library
 {
-    public class Gap : Range
+    public class Gap : Range, ICanBeItem
     {
         private readonly MultiKeyLookup<Block> _Blocks;
 
@@ -14,6 +14,7 @@ namespace Griddlers.Library
         public int NumberOfBlocks => _Blocks.Count;
         public bool HasPoints => NumberOfBlocks > 0;
         public bool IsFull => _Blocks.GetValueOrDefault("Start", Start)?.End == End;
+        public string Colour => GetBlockAtStart(Start)?.Colour ?? GetBlockAtEnd(End)?.Colour ?? string.Empty;
 
         public Gap(int start, int end, IEnumerable<Block>? blocks = null) : base(start, end)
         {
@@ -22,7 +23,10 @@ namespace Griddlers.Library
         }
 
         public bool Is(Item a)
-            => Size == a.Value && GetBlockAtStart(Start)?.Colour == a.Colour;
+            => Size == a.Value && Colour == a.Colour;
+
+        public bool CanBe(Item a)
+            => Size >= a.Value && Colour == a.Colour;
 
         public IEnumerable<Block> GetBlocks()
         {
