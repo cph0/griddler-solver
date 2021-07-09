@@ -20,14 +20,14 @@ namespace Griddlers.Library
             string[] Parts = v.Split(".");
             Value = int.Parse(Parts[0]);
             bool Green = Parts.Length > 1 && Parts[1] == "1";
-            Colour = Green ? "green" : "black";
+            Colour = Green ? "lightgreen" : "black";
         }
         public Item(GriddlerItem item)
         {
             Index = item.position;
             Value = item.value;
             bool Green = item.green;
-            Colour = Green ? "green" : "black";
+            Colour = Green ? "lightgreen" : "black";
         }
 
         public void Deconstruct(out int value, out string colour) 

@@ -365,7 +365,7 @@ namespace Griddlers.Library
                     line.AddDot(LineIndex, action, true);
 
                 var Xy = IsRow ? (index, LineIndex) : (LineIndex, index);
-                Point Dot = new Point(true, Xy, false, action);
+                Point Dot = new Point(true, Xy, "black", action);
                 Logic.dots.TryAdd(Xy, Dot);
                 return new[] { Dot };
             }
@@ -403,7 +403,7 @@ namespace Griddlers.Library
                     line.AddPoint(LineIndex, colour, action, item, true);
 
                 var Xy = IsRow ? (index, LineIndex) : (LineIndex, index);
-                Point Pt = new Point(false, Xy, colour == "green", action);
+                Point Pt = new Point(false, Xy, colour, action);
                 Logic.points.TryAdd(Xy, Pt);
                 return new[] { Pt };
             }

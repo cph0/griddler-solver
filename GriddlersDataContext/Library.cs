@@ -74,7 +74,7 @@ namespace Griddlers.Library
                 Points = JsonConvert.DeserializeObject<Point[]>(colsString);
             }
 
-            Pts = Points.ToDictionary(k => (k.Xpos, k.Ypos));
+            Pts = Points.ToDictionary(k => (k.X, k.Y));
 
             for (int Li = 0; Li < w; Li++)
                 for (int Pos = 0; Pos < h; Pos++)

@@ -63,7 +63,7 @@ namespace Griddlers.Library
 
             IEnumerable<TreeNode> AllNodes = (from p in points
                                               group p by p.Grp into grp
-                                              select new TreeNode(grp.First(), grp.ToDictionary(k => (k.Xpos, k.Ypos))));
+                                              select new TreeNode(grp.First(), grp.ToDictionary(k => (k.X, k.Y))));
 
             foreach (TreeNode Node in AllNodes)
             {

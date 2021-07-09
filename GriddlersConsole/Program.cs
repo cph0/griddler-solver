@@ -91,7 +91,7 @@ namespace GriddlersConsole
                     { 
                         Cell = "███";
 
-                        if(Pt.Green)
+                        if(Pt.Colour == "lightgreen")
                             Console.ForegroundColor = ConsoleColor.Green;
                     }
                     else if (Dots.ContainsKey((Pos, RowIndex)))
