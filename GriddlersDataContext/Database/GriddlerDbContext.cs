@@ -58,7 +58,7 @@ namespace Griddlers.Database
 
                 short Count = 0;
                 foreach (Point item in points)                
-                    Data.Rows.Add(item.Action, item.Xpos, item.Ypos, item.Grp, Count++);                
+                    Data.Rows.Add(item.Action, item.X, item.Y, item.Grp, Count++);                
 
                 DynamicParameters p = new DynamicParameters();
                 p.Add("@id", id);
@@ -185,11 +185,11 @@ namespace Griddlers.Database
                 DataTable Solids = new DataTable();
                 Solids.Columns.Add("x_position", typeof(byte));
                 Solids.Columns.Add("y_position", typeof(byte));
-                Solids.Columns.Add("colour", typeof(bool));
+                Solids.Columns.Add("colour", typeof(string));
 
                 foreach (KeyValuePair<(int, int), Point> Solid in points)
                 {
-                    Solids.Rows.Add((byte)Solid.Key.Item1, (byte)Solid.Key.Item2, (bool)Solid.Value.Green);
+                    Solids.Rows.Add((byte)Solid.Key.Item1, (byte)Solid.Key.Item2, (string)Solid.Value.Colour);
                 }
 
                 DynamicParameters P = new DynamicParameters();
@@ -215,11 +215,11 @@ namespace Griddlers.Database
                 DataTable Solids = new DataTable();
                 Solids.Columns.Add("x_position", typeof(byte));
                 Solids.Columns.Add("y_position", typeof(byte));
-                Solids.Columns.Add("green", typeof(bool));
+                Solids.Columns.Add("colour", typeof(string));
 
                 foreach (KeyValuePair<(int, int), Point> Solid in points)
                 {
-                    Solids.Rows.Add((byte)Solid.Key.Item1, (byte)Solid.Key.Item2, (bool)Solid.Value.Green);
+                    Solids.Rows.Add((byte)Solid.Key.Item1, (byte)Solid.Key.Item2, (string)Solid.Value.Colour);
                 }
 
                 DynamicParameters p = new DynamicParameters();

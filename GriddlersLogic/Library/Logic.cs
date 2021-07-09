@@ -55,9 +55,9 @@ namespace Griddlers.Library
             foreach (Point Point in All)
             {
                 if (Point.IsDot)
-                    Dots.TryAdd((Point.Xpos, Point.Ypos), Point);
+                    Dots.TryAdd((Point.X, Point.Y), Point);
                 else
-                    Points.TryAdd((Point.Xpos, Point.Ypos), Point);
+                    Points.TryAdd((Point.X, Point.Y), Point);
             }
 
             return (Points, Dots);
@@ -171,9 +171,9 @@ namespace Griddlers.Library
                 foreach (Point Point in Node.Points.Values)
                 {
                     if (Point.IsDot)
-                        dots.TryAdd((Point.Xpos, Point.Ypos), Point);
+                        dots.TryAdd((Point.X, Point.Y), Point);
                     else
-                        points.TryAdd((Point.Xpos, Point.Ypos), Point);
+                        points.TryAdd((Point.X, Point.Y), Point);
                 }
 
                 IEnumerable<Point> Stage = RunI(rows, columns);
@@ -187,9 +187,9 @@ namespace Griddlers.Library
             //foreach (Point Point in parent.Points.Values)
             //{
             //    if (Point.IsDot)
-            //        dots.Remove((Point.Xpos, Point.Ypos));
+            //        dots.Remove((Point.X, Point.Y));
             //    else
-            //        points.Remove((Point.Xpos, Point.Ypos));
+            //        points.Remove((Point.X, Point.Y));
             //}
             //}
 
@@ -219,9 +219,9 @@ namespace Griddlers.Library
                     foreach (Point Point in Current.Points.Values)
                     {
                         if (Point.IsDot)
-                            L.dots.TryAdd((Point.Xpos, Point.Ypos), Point);
+                            L.dots.TryAdd((Point.X, Point.Y), Point);
                         else
-                            L.points.TryAdd((Point.Xpos, Point.Ypos), Point);
+                            L.points.TryAdd((Point.X, Point.Y), Point);
                     }
                 }
                 else if (Current.Parent != null)
@@ -229,9 +229,9 @@ namespace Griddlers.Library
                     foreach (Point Point in Current.Points.Values)
                     {
                         if (Point.IsDot)
-                            L.dots.Remove((Point.Xpos, Point.Ypos));
+                            L.dots.Remove((Point.X, Point.Y));
                         else
-                            L.points.Remove((Point.Xpos, Point.Ypos));
+                            L.points.Remove((Point.X, Point.Y));
                     }
 
                     Current = Current.Parent;
@@ -412,7 +412,7 @@ namespace Griddlers.Library
             IEnumerable<Point> Rows = FullLine(L.Rows.Values).SelectMany(s => s);
             IEnumerable<Point> Columns = FullLine(L.Cols.Values).SelectMany(s => s);
 
-            return (Rows.GroupBy(g => g.Ypos).Count(), Columns.GroupBy(g => g.Xpos).Count());
+            return (Rows.GroupBy(g => g.Y).Count(), Columns.GroupBy(g => g.X).Count());
         }
 
         /// <summary>
@@ -444,7 +444,7 @@ namespace Griddlers.Library
             IEnumerable<Point> Rows = OverlapLine(L.Rows.Values).SelectMany(s => s);
             IEnumerable<Point> Columns = OverlapLine(L.Cols.Values).SelectMany(s => s);
 
-            return (Rows.GroupBy(g => g.Ypos).Count(), Columns.GroupBy(g => g.Xpos).Count());
+            return (Rows.GroupBy(g => g.Y).Count(), Columns.GroupBy(g => g.X).Count());
         }
 
         private IEnumerable<Point> RunI(Item[][] rows, Item[][] columns)
@@ -511,9 +511,9 @@ namespace Griddlers.Library
                     foreach (Point Point in TrialAndError(Rows.Values))
                     {
                         if (Point.IsDot)
-                            TestDotKeys.Add((Point.Xpos, Point.Ypos));
+                            TestDotKeys.Add((Point.X, Point.Y));
                         else
-                            TestPointKeys.Add((Point.Xpos, Point.Ypos));
+                            TestPointKeys.Add((Point.X, Point.Y));
                     }
 
                     //foreach (Point Point in TrialAndError(Cols.Values))
@@ -522,9 +522,9 @@ namespace Griddlers.Library
                     foreach (Point Point in Run())
                     {
                         if (Point.IsDot)
-                            TestDotKeys.Add((Point.Xpos, Point.Ypos));
+                            TestDotKeys.Add((Point.X, Point.Y));
                         else
-                            TestPointKeys.Add((Point.Xpos, Point.Ypos));
+                            TestPointKeys.Add((Point.X, Point.Y));
                     }
 
                     //undo
@@ -675,7 +675,7 @@ namespace Griddlers.Library
 
         public IEnumerable<Point> AddPoints(Line line,
                                             int start,
-                                            bool green,
+                                            string colour,
                                             GriddlerPath.Action action,
                                             int? end = null,
                                             bool dot = false)
@@ -684,7 +684,7 @@ namespace Griddlers.Library
             {
                 var Xy = line.IsRow ? (Pos, line.LineIndex) : (line.LineIndex, Pos);
 
-                Point NewPoint = new Point(dot, Xy, green, action);
+                Point NewPoint = new Point(dot, Xy, colour, action);
                 bool New = (dot && !dots.ContainsKey(Xy)) || (!dot && !points.ContainsKey(Xy));
 
                 if (!Staging && !RemovedActions.Contains((byte)action))
@@ -697,7 +697,7 @@ namespace Griddlers.Library
                     else
                     {
                         points.TryAdd(Xy, NewPoint);
-                        line.AddPoint(Pos, green ? "green" : "black", action);
+                        line.AddPoint(Pos, colour, action);
                     }
                 }
 
@@ -1594,7 +1594,7 @@ namespace Griddlers.Library
                             //add one point
                             foreach (Point Point in Line.AddPoints(Gap.Start, Gap.Start, Item.Value.Colour, GriddlerPath.Action.TrialAndError))
                             {
-                                Trials.Add((Point.Xpos, Point.Ypos));
+                                Trials.Add((Point.X, Point.Y));
                                 yield return Point;
                             }
 

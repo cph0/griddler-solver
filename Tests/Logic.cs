@@ -61,22 +61,24 @@ namespace Tests
             //    List<decimal[]> Rows = new List<decimal[]>(rows.GetLength(0));
             //    foreach (Item[] Row in rows)
             //    {
-            //        decimal[] RowS = Row.Select(s => decimal.Parse($"{s.Value}{(s.Green ? ".1" : "")}")).ToArray();
+            //        decimal[] RowS = Row.Select(s =>
+            //        decimal.Parse($"{s.Value}{(s.Colour == "lightgreen" ? ".1" : "")}")).ToArray();
             //        Rows.Add(RowS);
             //    }
             //    List<decimal[]> Columns = new List<decimal[]>(rows.GetLength(0));
             //    foreach (Item[] Col in cols)
             //    {
-            //        decimal[] ColS = Col.Select(s => decimal.Parse($"{s.Value}{(s.Green ? ".1" : "")}")).ToArray();
+            //        decimal[] ColS = Col.Select(s =>
+            //        decimal.Parse($"{s.Value}{(s.Colour == "lightgreen" ? ".1" : "")}")).ToArray();
             //        Columns.Add(ColS);
             //    }
 
-            //    S.WriteLine(JsonConvert.SerializeObject(Rows.ToArray()));
-            //    S.WriteLine(JsonConvert.SerializeObject(Columns.ToArray()));
-            //    Point[] ptsArray = points.Values
-            //        .Select(k => new Point() { Xpos = k.Xpos, Ypos = k.Ypos, Green = k.Green })
+            //    await S.WriteLineAsync(JsonConvert.SerializeObject(Rows.ToArray()));
+            //    await S.WriteLineAsync(JsonConvert.SerializeObject(Columns.ToArray()));
+            //    var ptsArray = points.Values
+            //        .Select(k => new { X = k.Xpos, Y = k.Ypos, Colour = k.Colour })
             //        .ToArray();
-            //    S.WriteLine(JsonConvert.SerializeObject(ptsArray));
+            //    await S.WriteLineAsync(JsonConvert.SerializeObject(ptsArray));
             //}
         }                        
     }

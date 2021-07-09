@@ -12,12 +12,12 @@ interface Point {
     isDot: boolean;
     x: number;
     y: number;
-    green: boolean;
+    colour: string;
 }
 
 interface Item {
     value: number;
-    green: boolean;
+    colour: string;
 }
 
 interface GriddlerPathGroup {
@@ -29,8 +29,8 @@ interface GriddlerPathGroup {
 interface GriddlerPath {
     name: string;
     group: number;
-    xPos: number;
-    yPos: number;
+    x: number;
+    y: number;
 }
 
 class NodeLabel extends React.PureComponent<any, {}> {
@@ -386,7 +386,7 @@ export const Home: React.FunctionComponent = () => {
                 <div key={g.group}>
                     <p style={{ cursor: "pointer" }} onClick={() => onPathClick(g)}>{g.name}</p>
                     <Collapse isOpen={open}>
-                        {g.items.map((m, i) => <p key={i}>({m.xPos}, {m.yPos})</p>)}
+                        {g.items.map((m, i) => <p key={i}>({m.x}, {m.y})</p>)}
                     </Collapse>
                 </div>
             );
@@ -413,6 +413,7 @@ export const Home: React.FunctionComponent = () => {
     let yBoxes: JSX.Element[] = [];
     let dts: JSX.Element[] = [];
     let grid: JSX.Element[] = [];
+    const squareSize = 20;
 
     const style: CSSProperties = {
         position: "absolute",
@@ -447,13 +448,15 @@ export const Home: React.FunctionComponent = () => {
             if (c % 5 == 0)
                 brdT = "1px solid black";
 
-            if (selectedGroup
-                && selectedGroup.items.some(e => e.xPos == i && e.yPos == c))
+            if (selectedGroup && selectedGroup.items.some(e => e.x == i && e.y == c))
                 sClass.backgroundColor = "red";
 
             grid.push(
                 <div key={`${i}_${c}`}
-                    style={{ ...sClass, borderLeft: brdL, borderTop: brdT, top: c * 20, left: i * 20 }}></div>
+                    style={{
+                        ...sClass, borderLeft: brdL, borderTop: brdT,
+                        top: c * squareSize, left: i * squareSize
+                    }}></div>
             );
         }
     }
@@ -463,14 +466,17 @@ export const Home: React.FunctionComponent = () => {
             let sClass: any = { ...style };
 
             if (selectedGroup
-                && selectedGroup.items.some(e => e.xPos * 20 == pt.x && e.yPos * 20 == pt.y))
+                && selectedGroup.items.some(e => e.x == pt.x && e.y == pt.y))
                 sClass.backgroundColor = "red";
-            else if (pt.green)
-                sClass.backgroundColor = "lightgreen";
+            else 
+                sClass.backgroundColor = pt.colour;
 
             pts.push(
                 <div key={`${pt.x}_${pt.y}`}
-                    style={{ ...sClass, top: pt.y, left: pt.x }}></div>
+                    style={{
+                        ...sClass, top: pt.y * squareSize,
+                        left: pt.x * squareSize
+                    }}></div>
             );
         }
     }
@@ -481,14 +487,17 @@ export const Home: React.FunctionComponent = () => {
 
             dts.push(
                 <div key={`${dot.x}_${dot.y}`}
-                    style={{ ...sClass, top: dot.y + 8, left: dot.x + 8 }}></div>
+                    style={{
+                        ...sClass, top: (dot.y * squareSize) + 8,
+                        left: (dot.x * squareSize) + 8
+                    }}></div>
             );
         }
     }
 
     for (let i = 0; i < width; i++) {
         for (let c = 0; c < depth; c++) {
-            let left = (depth * 20) + (i * 20);
+            let left = (depth * squareSize) + (i * squareSize);
             let item = {} as Item;
 
             if (columns[i] && columns[i][c])
@@ -505,8 +514,8 @@ export const Home: React.FunctionComponent = () => {
                         height: "20px",
                         position: "absolute",
                         left: left,
-                        top: c * 20,
-                        backgroundColor: item.green ? "lightgreen" : ""
+                        top: c * squareSize,
+                        backgroundColor: item.colour !== 'black' ? item.colour : ""
                     }} />
             )
             );
@@ -515,7 +524,7 @@ export const Home: React.FunctionComponent = () => {
 
     for (let i = 0; i < height; i++) {
         for (let c = 0; c < depth; c++) {
-            let top = (depth * 20) + (i * 20);
+            let top = (depth * squareSize) + (i * squareSize);
             let item = {} as Item;
 
             if (rows[i] && rows[i][c])
@@ -532,16 +541,16 @@ export const Home: React.FunctionComponent = () => {
                             width: "20px",
                             height: "20px",
                             position: "absolute",
-                            left: c * 20,
+                            left: c * squareSize,
                             top: top,
-                            backgroundColor: item.green ? "lightgreen" : ""
+                            backgroundColor: item.colour !== 'black' ? item.colour : ""
                         }} />
                 )
             );
         }
     }
 
-    let square = (depth * 20) + "px";
+    let square = (depth * squareSize) + "px";
 
     html = (
         <div>
