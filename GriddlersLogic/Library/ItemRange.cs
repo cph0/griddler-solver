@@ -193,6 +193,8 @@ namespace Griddlers.Library
             return Cache.Sum(s => s.Value) + (includeDots ? GetDotCount(Cache) : 0);
         }
 
+        public bool Any(Func<Item, bool> func) => _Items.Any(func);
+
         public bool All(Func<Item, bool> func) => All(_Items, func);
         public static bool All(IEnumerable<Item> items, Func<Item, bool> func)
         {

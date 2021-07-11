@@ -1606,7 +1606,6 @@ namespace Tests
             Assert.True(Same);
         }
 
-        //not solvable!
         [Fact]
         //https://nonogramskatana.files.wordpress.com/2017/01/wp-1483457175860.png
         public async Task Crab25x25()

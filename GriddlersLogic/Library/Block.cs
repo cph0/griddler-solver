@@ -20,5 +20,17 @@
             => item.Value >= Size && item.Colour == Colour;
         
         public bool IsOrCantBe(Item item) => Is(item) || !CanBe(item);
+
+        public Block SetStart(int start)
+        {
+            Start = start;
+            return this;
+        }
+
+        public Block SetEnd(int end)
+        {
+            End = end;
+            return this;
+        }
     }
 }
