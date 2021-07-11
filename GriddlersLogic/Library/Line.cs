@@ -1,6 +1,5 @@
 ﻿using Griddlers.Database;
 using MultiKeyLookup;
-using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,24 +9,29 @@ namespace Griddlers.Library
     public class Skip
     {
         public int Index { get; set; }
+        public int BlockCount { get; set; }
+        public Gap? LastGap { get; set; }
+        public Block? LastBlock { get; private set; }
+
+        public void Continue(Block block) 
+        {
+            BlockCount++;
+            LastBlock = block;
+        }
     }
 
     public class Line : ItemRange, IEnumerable<Item>
     {
-        //TEMP - until points/dots are in this class
-        private Logic Logic;
-
         private new Item[] _Items => (Item[])base._Items;
         private int? _LineValue;
         private int? _MinItem;
         private int? _MaxItem;
-
         private IDictionary<int, Line> _PairLines;
         private readonly MultiKeyLookup<Gap> _Gaps;
+
         public IDictionary<int, string> Points { get; private set; }
         public HashSet<int> Dots { get; private set; }
-
-        public bool IsComplete { get; set; }
+        public bool IsComplete => Points.Count + Dots.Count == LineLength;
         public bool IsRow { get; private set; }
         public int LineLength { get; private set; }
         public int LineIndex { get; private set; }
@@ -62,16 +66,14 @@ namespace Griddlers.Library
                 return _MaxItem.Value;
             }
         }
-        
+
         public Item this[int index] => _Items[index];
 
         public Line(int index,
                     bool isRow,
                     int lL,
-                    Item[] items,
-                    Logic logic) : base(items, 0, items.Length - 1, true)
+                    Item[] items) : base(items, 0, items.Length - 1, true)
         {
-            Logic = logic;
             IsRow = isRow;
             LineLength = lL;
             LineIndex = index;
@@ -205,8 +207,8 @@ namespace Griddlers.Library
                 Block? LastBlock = forward ? gap.GetLastBlock(gap.End) : gap.GetNextBlock(gap.Start);
                 if (LastBlock != null)
                 {
-                    int ToItem = Iei.Item1 + ((forward ? 1 : -1) * (Iei.ItemShift - 1));                    
-                    if (UniqueCount(Where(ei, ToItem, true), gap, out Item UniqueItem) 
+                    int ToItem = Iei.Item1 + ((forward ? 1 : -1) * (Iei.ItemShift - 1));
+                    if (UniqueCount(Where(ei, ToItem, true), gap, out Item UniqueItem)
                         && UniqueItem.Index == ToItem)
                         Iei.Item2 = true;
                 }
@@ -240,6 +242,8 @@ namespace Griddlers.Library
 
                         Item += ItemShift;
                     }
+
+                    Skip.LastGap = Gap;
                 }
             }
         }
@@ -261,6 +265,7 @@ namespace Griddlers.Library
                 {
                     Ls.SetIndexAtBlock(SumWhile(Ls.Index, Gap, Block));
                     yield return (Block, Gap, Ls, Skip);
+                    Skip.Continue(Block);
                 }
             }
         }
@@ -276,7 +281,7 @@ namespace Griddlers.Library
                 (Item, Equality, ItemShift) = AdjustItemIndexes(Gap, EqualityItem, (Item, Equality), false);
 
                 if (Equality)
-                    EqualityItem = Item - ItemShift;
+                    EqualityItem = Item - ItemShift;                
                 else if (Gap.HasPoints)
                     EqualityItem--;
 
@@ -308,13 +313,35 @@ namespace Griddlers.Library
                 else if (index != Gap.End)
                     _Gaps.Add(Gap.SetStart(index + 1));
                 else if (index != Gap.Start)
-                    _Gaps.Add(Gap.SetEnd(index - 1));                
+                    _Gaps.Add(Gap.SetEnd(index - 1));
             }
+        }
+
+        private void RemoveGap(int index) 
+        {
+            Gap? LeftGap = _Gaps.GetValueOrDefault("End", index - 1);
+            Gap? RightGap = _Gaps.GetValueOrDefault("Start", index + 1);
+            int Start = index;
+            int End = index;
+
+            if (LeftGap != null)
+            {
+                _Gaps.Remove("Start", LeftGap.Start);
+                Start = LeftGap.Start;
+            }
+            
+            if (RightGap != null)
+            {
+                _Gaps.Remove("Start", RightGap.Start);
+                End = RightGap.End;
+            }
+
+            _Gaps.Add(new Gap(Start, End));
         }
 
         public static (int, int, int) SpaceBetween(Range block,
                                                    Range nextBlock,
-                                                   Item item) 
+                                                   Item item)
         {
             int End = nextBlock.Start;
             int Start = block.End;
@@ -339,22 +366,9 @@ namespace Griddlers.Library
             return item.Value <= SpaceBetween(block, nextBlock, item).Item1;
         }
 
-        public IEnumerable<Point> AddDots(int start,
-                                          int end,
-                                          GriddlerPath.Action action)
-        {
-            for (int i = start; i <= end; i++)
-            {
-                Point? Dot = AddDot(i, action).SingleOrDefault();
-
-                if (Dot != null)
-                    yield return Dot;
-            }
-        }
-
-        public IEnumerable<Point> AddDot(int index,
-                                         GriddlerPath.Action action,
-                                         bool fromPair = false)
+        public void AddDot(int index,
+                           GriddlerPath.Action action,
+                           bool fromPair = false)
         {
             if (!Dots.Contains(index) && index >= 0 && index <= LineLength - 1)
             {
@@ -363,36 +377,23 @@ namespace Griddlers.Library
 
                 if (!fromPair && _PairLines.TryGetValue(index, out Line? line))
                     line.AddDot(LineIndex, action, true);
-
-                var Xy = IsRow ? (index, LineIndex) : (LineIndex, index);
-                Point Dot = new Point(true, Xy, "black", action);
-                Logic.dots.TryAdd(Xy, Dot);
-                return new[] { Dot };
             }
-
-            return Array.Empty<Point>();
         }
 
-        public IEnumerable<Point> AddPoints(int start,
-                                            int end,
-                                            string colour,
-                                            GriddlerPath.Action action,
-                                            int? item = null)
+        public void RemoveDot(int index, bool fromPair = false)
         {
-            for (int i = start; i <= end; i++)
-            {
-                Point? Pt = AddPoint(i, colour, action, item).SingleOrDefault();
+            Dots.Remove(index);
+            RemoveGap(index);
 
-                if (Pt != null)
-                    yield return Pt;
-            }
+            if (!fromPair && _PairLines.TryGetValue(index, out Line? line))
+                line.RemoveDot(LineIndex, true);
         }
 
-        public IEnumerable<Point> AddPoint(int index,
-                                           string colour,
-                                           GriddlerPath.Action action,
-                                           int? item = null,
-                                           bool fromPair = false)
+        public void AddPoint(int index,
+                             string colour,
+                             GriddlerPath.Action action,
+                             int? item = null,
+                             bool fromPair = false)
         {
             if (!Points.ContainsKey(index) && index >= 0 && index <= LineLength - 1)
             {
@@ -402,13 +403,16 @@ namespace Griddlers.Library
                 if (!fromPair && _PairLines.TryGetValue(index, out Line? line))
                     line.AddPoint(LineIndex, colour, action, item, true);
 
-                var Xy = IsRow ? (index, LineIndex) : (LineIndex, index);
-                Point Pt = new Point(false, Xy, colour, action);
-                Logic.points.TryAdd(Xy, Pt);
-                return new[] { Pt };
             }
+        }
 
-            return Array.Empty<Point>();
+        public void RemovePoint(int index, bool fromPair = false)
+        {
+            Points.Remove(index);
+            FindGapAtPos(index, false)?.RemovePoint(index);
+
+            if (!fromPair && _PairLines.TryGetValue(index, out Line? line))
+                line.RemovePoint(LineIndex, true);
         }
 
         public static bool IsolatedPart(Item item,
@@ -424,9 +428,6 @@ namespace Griddlers.Library
             return true;
         }
 
-        public int GetLinePointsValue(bool includeDots = false)
-            => Points.Count + (includeDots ? Dots.Count : 0);
-
         /// <summary>
         /// Determines if the block index is equivalent to the item index by:
         /// <list type="number">
@@ -440,40 +441,36 @@ namespace Griddlers.Library
         /// A boolean if the part is isolated.  A boolean if the dictionary is valid.  
         /// A dictionary of item index by block index
         /// </returns>
-        public (bool, bool, IDictionary<int, int>) IsLineIsolated()
+        public (bool, IDictionary<int, int>) IsLineIsolated()
         {
-            Logic.AddMethodCount("IsolatedPart");
             //2,3,4,5//--00--0---0---- isolated 2,3,4 - invalid as could be 3,4,5
-            bool IsIsolated = true, Valid = false, NotSolid = false, RestIsolated = false;
-            bool Green = false, AllOneColour = ItemsOneColour;
-            int BlockCount = 0;
-            int SolidCount = 0;
-            int CurrentItem = 0, ReachIndex = 0, StartItem = 0;
-            Block? LastBlock = null;
+            bool IsIsolated = true, NotSolid = false, RestIsolated = false;
+            bool AllOneColour = ItemsOneColour;
+            int BlockCount = 0, CurrentItem = 0, ReachIndex = 0, StartItem = 0;
             Dictionary<int, bool> Isolations = new Dictionary<int, bool>();
             Dictionary<int, int> IsolatedItems = new Dictionary<int, int>();
             Dictionary<int, Block> BlockIndexes = new Dictionary<int, Block>();
             Dictionary<int, bool> CanJoin = new Dictionary<int, bool>();
             Dictionary<int, int> Pushes = new Dictionary<int, int>();
 
-            foreach (var (Block, _, _, _) in GetBlocks())
+            foreach (var (Block, _, _, Skip) in GetBlocks())
             {
-                BlockIndexes[BlockCount] = Block;
+                BlockIndexes[Skip.BlockCount] = Block;
 
-                if (LastBlock != null && CurrentItem < LineItems)
+                if (Skip.LastBlock != null && CurrentItem < LineItems)
                 {
-                    int ReachIndexCurrent = LastBlock.Start + _Items[CurrentItem].Value - 1;
-                    
+                    int ReachIndexCurrent = Skip.LastBlock.Start + _Items[CurrentItem].Value - 1;
+
                     if (ReachIndexCurrent > ReachIndex)
                         ReachIndex = ReachIndexCurrent;
 
                     //previous block reach current
                     if (Block.End <= ReachIndexCurrent)
                     {
-                        Isolations.TryAdd(BlockCount, false);
-                        CanJoin.TryAdd(BlockCount - 1, false);
-                        CanJoin.TryAdd(BlockCount, false);
-                        Pushes.TryAdd(BlockCount, CurrentItem + 1);
+                        Isolations.TryAdd(Skip.BlockCount, false);
+                        CanJoin.TryAdd(Skip.BlockCount - 1, false);
+                        CanJoin.TryAdd(Skip.BlockCount, false);
+                        Pushes.TryAdd(Skip.BlockCount, CurrentItem + 1);
                         RestIsolated = true;
                         IsIsolated = false;
                     }
@@ -481,21 +478,21 @@ namespace Griddlers.Library
                     {
                         //does not reach & no more items => change isolations
                         RestIsolated = false;
-                        if (Isolations.ContainsKey(BlockCount))
-                            Isolations.Remove(BlockCount);
-                        if (Isolations.ContainsKey(BlockCount - 2)
-                            && !Pushes.ContainsKey(BlockCount - 2))
-                            Isolations.Remove(BlockCount - 2);
+                        if (Isolations.ContainsKey(Skip.BlockCount))
+                            Isolations.Remove(Skip.BlockCount);
+                        if (Isolations.ContainsKey(Skip.BlockCount - 2)
+                            && !Pushes.ContainsKey(Skip.BlockCount - 2))
+                            Isolations.Remove(Skip.BlockCount - 2);
 
                         // just one push
                         if (Pushes.Count == 1)
                         {
                             int Stop = Pushes.Keys.First();
-                            bool Flag = false;
+                            bool Flag = true;
                             //start at previous block and current item minus 1 - current item is previous block
-                            for (int d = BlockCount - 1; d >= 0; d--)
+                            for (int d = Skip.BlockCount - 1; d >= 0; d--)
                             {
-                                int ItemIndex = CurrentItem - (BlockCount - d);
+                                int ItemIndex = CurrentItem - (Skip.BlockCount - d);
 
                                 if (BlockIndexes.TryGetValue(d, out Block? First)
                                     && BlockIndexes.TryGetValue(d + 1, out Block? Second))
@@ -525,72 +522,19 @@ namespace Griddlers.Library
 
                             if (Flag)
                             {
-                                for (int d = Stop; d < BlockCount; d++)
-                                {
+                                int ItmIdx = 0;
+                                for (int i = 0; i <= Skip.BlockCount; i++)
+                                    IsolatedItems.TryAdd(i, Pushes.ContainsKey(i) ? ItmIdx - 1 : ItmIdx++);
+
+                                for (int d = Stop; d < Skip.BlockCount; d++)
                                     Isolations.Remove(d);
-                                }
+
+                                break;
                             }
                         }
                     }
 
                     CurrentItem++;
-
-                    //check solid count
-                    //if (CurrentItem < endItem + 1
-                    //    && !new Block(-1, Pt.Green) { SolidCount = SolidCount }.CanBe(_Items[CurrentItem]))
-                    //{
-                    //    bool NoMoreItems = UniqueCount(new Block(-1, Pt.Green) { SolidCount = SolidCount }, out Item q);
-                    //    bool Flag = NoMoreItems;
-                    //    int StartIndex = -1;
-                    //    int Stop = 0;
-
-                    //    if (NoMoreItems)
-                    //    {
-                    //        StartIndex = FirstOrDefault(w => new Block(-1, Pt.Green) { SolidCount = SolidCount }.CanBe(w))?.Index ?? -1;
-
-                    //        for (int d = BlockCount - 1; d >= 0; d--)
-                    //        {
-                    //            int ItemIndex = StartIndex - (BlockCount - d);
-
-                    //            if (ItemIndex == -1)
-                    //            {
-                    //                Flag = false;
-                    //                break;
-                    //            }
-
-                    //            if (BlockIndexes.TryGetValue(d, out Block? First)
-                    //                && BlockIndexes.TryGetValue(d + 1, out Block? Second))
-                    //            {
-                    //                if (First.StartIndex + _Items[ItemIndex].Value - 1 >= Second.EndIndex
-                    //                    || Second.EndIndex - _Items[ItemIndex + 1].Value + 1 <= First.StartIndex)
-                    //                {
-                    //                    Flag = false;
-                    //                    break;
-                    //                }
-                    //                else if (Second.StartIndex - First.EndIndex - 1 >= (AllOneColour ? 3 : 0))
-                    //                {
-                    //                    Stop = d + 1;
-                    //                    break;
-                    //                }
-                    //            }
-                    //        }
-                    //    }
-
-                    //    if (Flag)
-                    //    {
-                    //        for (int d = Stop; d <= BlockCount; d++)
-                    //        {
-                    //            int ItemIndex = StartIndex - (BlockCount - d);
-                    //            IsolatedItems.TryAdd(d, ItemIndex);
-                    //        }
-                    //    }
-                    //    else if (CurrentItem == endItem && Pushes.Count == 1)
-                    //    {
-                    //        int Key = Pushes.Keys.First();
-                    //        CanJoin[Key] = true;
-                    //        CanJoin[Key - 1] = true;
-                    //    }
-                    //}
 
                     //previous reach current && no more items
                     if (Block.End <= ReachIndexCurrent && CurrentItem == LineItems)
@@ -600,9 +544,9 @@ namespace Griddlers.Library
                     {
                         int BackReach = (Block.End - _Items[CurrentItem].Value) + 1;
                         //current block reach previous
-                        if (BackReach <= LastBlock.Start)
+                        if (BackReach <= Skip.LastBlock.Start)
                         {
-                            for (int d = BlockCount - 1; d >= 0; d--)
+                            for (int d = Skip.BlockCount - 1; d >= 0; d--)
                             {
                                 Isolations.TryAdd(d, false);
                                 if (BlockIndexes.TryGetValue(d, out Block? Value)
@@ -610,28 +554,29 @@ namespace Griddlers.Library
                                     CanJoin.TryAdd(d, false);
                             }
 
+                            Pushes.TryAdd(1, 1);
+                            Pushes.TryAdd(2, 2);
                             IsIsolated = false;
                         }
                     }
                 }
 
-                BlockCount++;
-                LastBlock = Block;
-
                 //start - skip to correct solid count
-                if (BlockCount == 1 && _Items[CurrentItem].Value < SolidCount)
+                if (Skip.BlockCount == 0 && !Block.CanBe(_Items[CurrentItem]))
                 {
-                    CurrentItem = FirstOrDefault(w => w.Value >= SolidCount)?.Index ?? 0;
+                    CurrentItem = FirstOrDefault(Block.CanBe)?.Index ?? 0;
                     StartItem = CurrentItem;
                 }
+
+                BlockCount = Skip.BlockCount;
             }
 
-            if (BlockCount != LineItems || StartItem > 0)
+            if (BlockCount != LineItems - 1 || StartItem > 0)
                 IsIsolated = false;
 
-            return (IsIsolated, Valid, IsolatedItems);
+            return (IsIsolated, IsolatedItems);
         }
-                
+
         public IEnumerator<Item> GetEnumerator()
         {
             return ((IEnumerable<Item>)_Items).GetEnumerator();

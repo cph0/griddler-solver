@@ -242,7 +242,7 @@ namespace Tests
             (Dictionary<(int, int), Point> PtsOut, Dictionary<(int, int), Point> DtsOut)
                 = Logic.Run(Rows, Cols);
 
-            await Save(nameof(Chaplin30x30), Rows, Cols, PtsOut);
+            //await Save(nameof(Chaplin30x30), Rows, Cols, PtsOut);
 
             bool Same = (Points.Count == PtsOut.Count && !Points.Keys.Except(PtsOut.Keys).Any()
                 && Dots.Count == DtsOut.Count && !Dots.Keys.Except(DtsOut.Keys).Any());
@@ -677,7 +677,7 @@ namespace Tests
             (Dictionary<(int, int), Point> PtsOut, Dictionary<(int, int), Point> DtsOut)
                 = Logic.Run(Rows, Cols);
 
-            await Save(nameof(Poodles30x35), Rows, Cols, Points);
+            await Save(nameof(Poodles30x35), Rows, Cols, PtsOut);
 
             bool Same = (Points.Count == PtsOut.Count && !Points.Keys.Except(PtsOut.Keys).Any()
                 && Dots.Count == DtsOut.Count && !Dots.Keys.Except(DtsOut.Keys).Any());

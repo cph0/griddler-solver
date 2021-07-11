@@ -76,7 +76,7 @@ namespace Tests
             //    await S.WriteLineAsync(JsonConvert.SerializeObject(Rows.ToArray()));
             //    await S.WriteLineAsync(JsonConvert.SerializeObject(Columns.ToArray()));
             //    var ptsArray = points.Values
-            //        .Select(k => new { X = k.Xpos, Y = k.Ypos, Colour = k.Colour })
+            //        .Select(k => new { X = k.X, Y = k.Y, Colour = k.Colour })
             //        .ToArray();
             //    await S.WriteLineAsync(JsonConvert.SerializeObject(ptsArray));
             //}

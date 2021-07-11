@@ -18,7 +18,7 @@ namespace Griddlers.Library
 
         public Gap(int start, int end, IEnumerable<Block>? blocks = null) : base(start, end)
         {
-            _Blocks = new MultiKeyLookup<Block>(blocks?.ToArray() ?? Array.Empty<Block>(), 
+            _Blocks = new MultiKeyLookup<Block>(blocks?.ToArray() ?? Array.Empty<Block>(),
                         ("Start", k => k.Start), ("End", k => k.End));
         }
 
@@ -128,11 +128,32 @@ namespace Griddlers.Library
             _Blocks.Add(new Block(Start, End, colour));
         }
 
+        private void RemoveBlock(int index)
+        {
+            Block? Block = GetLastBlock(index);
+            if (Block != null)
+            {
+                _Blocks.Remove("Start", index);
+                if (index > Block.Start && index < Block.End)
+                {
+                    _Blocks.Add(new Block(Block.Start, index - 1, Block.Colour));
+                    _Blocks.Add(new Block(index + 1, Block.End, Block.Colour));
+                }
+                else if (index != Block.End)
+                    _Blocks.Add(Block.SetStart(index + 1));
+                else if (index != Block.Start)
+                    _Blocks.Add(Block.SetEnd(index - 1));
+            }
+        }
+
         public void AddPoint(int index, string colour, int? item)
         {
             AddBlock(index, colour, item);
+        }
 
-
+        public void RemovePoint(int index)
+        {
+            RemoveBlock(index);
         }
     }
 }
