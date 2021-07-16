@@ -73,6 +73,15 @@ namespace Griddlers.Library
             bool End = index < _ItemsArray.Length - 1 && _ItemsArray[index].Colour == _ItemsArray[index + 1].Colour;
             return (Start || index == 0, End || index == _ItemsArray.Length - 1);
         }
+        public (bool, bool) ShouldAddDots(Block block)
+        {
+            Item[] Cache = _Items.AsArray();
+            int Start = Cache.FirstOrDefault(block.Is).Index;
+            int End = Cache.LastOrDefault(block.Is).Index;
+            bool AddStart = Where(Start - 1, End).GroupBy(g => g.Colour).Count() == 1;
+            bool AddEnd = Where(Start, End + 1).GroupBy(g => g.Colour).Count() == 1;
+            return (AddStart, AddEnd);
+        }
 
         public int GetDotCount(int pos)
         {

@@ -590,7 +590,7 @@ export const Home: React.FunctionComponent = () => {
                 <div className="col-lg-2">
                     {renderPathList()}
                 </div>
-                <div className="col" style={{ overflowY: "auto", height: "calc(78vh)" }}>
+                <div className="col" style={{ overflowY: "auto", height: "calc(89vh)" }}>
                     <div style={{ position: "relative", display: "inline-block", width: square, height: square }}>
                         {xBoxes}{yBoxes}
                     </div>

@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections;
-using System.Collections.Generic;
 
 namespace Griddlers.Library
 {
@@ -10,12 +8,11 @@ namespace Griddlers.Library
     /// of items around a position in a line.
     /// <para>
     /// If the position is X then the range after X is
-    /// between <see cref="LastItemAtEquality"/> and <see cref="Index"/>
+    /// between <see cref="EqualityIndex"/> and <see cref="Index"/>
     /// </para>
     /// </summary>
-    public class LineSegment : ItemRange, IEnumerable<Item>
+    public class LineSegment : ItemRange
     {
-        private new IEnumerable<Item> _Items => base._Items;
         private readonly bool IsForward;
 
         /// <summary>
@@ -23,22 +20,21 @@ namespace Griddlers.Library
         /// </summary>
         public Item? Item { get; private set; }
         /// <summary>
-        /// The index of the next item, possibly out of range
-        /// </summary>
-        public int Index { get; private set; }
-        /// <summary>
         /// <see cref="true"/> if the <see cref="Item"/> exists
         /// </summary>
         public bool Valid => Item.HasValue;
         /// <summary>
-        /// <see cref="true"/> if the next item index cannot be less than <see cref="Index"/>
+        /// The index of the next item, possibly out of range
         /// </summary>
-        public bool Eq => LastItemAtEquality == Index;
+        public int Index { get; private set; }
         /// <summary>
         /// The last item index that can be the next item
         /// </summary>
-        public int LastItemAtEquality { get; private set; }
-
+        public int EqualityIndex { get; private set; }
+        /// <summary>
+        /// <see cref="true"/> if the next item index cannot be less than <see cref="Index"/>
+        /// </summary>
+        public bool Eq => EqualityIndex == Index;
         public int IndexAtBlock { get; private set; }
 
         public LineSegment(Item[] items,
@@ -52,7 +48,7 @@ namespace Griddlers.Library
             IsForward = isForward;
             Item = item;
             Index = index;
-            LastItemAtEquality = equalityIndex;
+            EqualityIndex = equalityIndex;
             IndexAtBlock = index;
         }
 
@@ -67,10 +63,14 @@ namespace Griddlers.Library
                 SetStart(IndexAtBlock);
         }
 
-        public ItemRange With(LineSegment ls, bool gapOnly = false)
+        public ItemRange With(LineSegment ls, bool gapOnly = false, bool equalityOnly = false)
         {
-            int Start = gapOnly ? Index : Math.Max(LastItemAtEquality, ls.IndexAtBlock);
-            int End = gapOnly ? ls.Index : Math.Min(IndexAtBlock, ls.LastItemAtEquality);
+            (int Start, int End) = (EqualityIndex, ls.EqualityIndex);
+            if (!equalityOnly)
+            {
+                Start = gapOnly ? Index : Math.Max(EqualityIndex, ls.IndexAtBlock);
+                End = gapOnly ? ls.Index : Math.Min(IndexAtBlock, ls.EqualityIndex);            
+            }
             return CreateRange(Start, End);
         }
 
@@ -78,16 +78,6 @@ namespace Griddlers.Library
         {
             item = Item;
             return item.HasValue;
-        }
-
-        public IEnumerator<Item> GetEnumerator()
-        {
-            return ((IEnumerable<Item>)_Items).GetEnumerator();
-        }
-
-        IEnumerator IEnumerable.GetEnumerator()
-        {
-            return _Items.GetEnumerator();
         }
 
         public void Deconstruct(out Item? item,
@@ -99,7 +89,7 @@ namespace Griddlers.Library
             item = Item;
             equality = Eq;
             index = Index;
-            equalityIndex = LastItemAtEquality;
+            equalityIndex = EqualityIndex;
             indexAtBlock = IndexAtBlock;
         }
     }
