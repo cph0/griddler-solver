@@ -168,14 +168,15 @@ namespace Griddlers.Library
             int ItemShift = SumWhile(ie.Item1, gap, null, forward);
             var Iei = (ie.Item1, ie.Item2, ItemShift);
 
-            if (!gap.IsFull && (Iei.ItemShift > 1 || (Iei.ItemShift == 1 && !gap.HasPoints)))
+            if (!gap.IsFull(false) 
+                && (Iei.ItemShift > 1 || (Iei.ItemShift == 1 && !gap.HasPoints)))
                 Iei.Item2 = false;
 
-            if (gap.IsFull && (!Iei.Item2 || RanOutOfItems(Iei.Item1, forward)
+            if (gap.IsFull() && (!Iei.Item2 || RanOutOfItems(Iei.Item1, forward)
                 || !gap.Is(this[Iei.Item1])))
             {
                 IEnumerable<Item> Items = Where(ei, Iei.Item1, true);
-                Item[] UniqueItems = Items.Where(w => gap.Is(w)).ToArray();
+                Item[] UniqueItems = Items.Where(gap.Is).ToArray();
                 Item? Item = null;
 
                 if (UniqueItems.Length == 1)
@@ -183,7 +184,7 @@ namespace Griddlers.Library
                 else
                 {
                     Gap? LastGap = FindGapAtPos(gap.Start + (forward ? -1 : 1), !forward);
-                    if (LastGap?.IsFull == true)
+                    if (LastGap?.IsFull() == true)
                     {
                         UniqueItems = Pair()
                             .Where(w => LastGap.Is(forward ? w.Item1 : w.Item2)
@@ -197,12 +198,12 @@ namespace Griddlers.Library
                 }
 
                 if (!Item.HasValue)
-                    Item = !forward ? Items.FirstOrDefault(f => gap.Is(f))
-                        : Items.LastOrDefault(f => gap.Is(f));
+                    Item = !forward ? Items.FirstOrDefault(gap.Is)
+                        : Items.LastOrDefault(gap.Is);
 
                 Iei = (Item?.Index ?? -1, UniqueItems.Length == 1, 1);
             }
-            else if (!gap.IsFull && gap.HasPoints && !Iei.Item2)
+            else if (!gap.IsFull() && gap.HasPoints && !Iei.Item2)
             {
                 Block? LastBlock = forward ? gap.GetLastBlock(gap.End) : gap.GetNextBlock(gap.Start);
                 if (LastBlock != null)
@@ -416,8 +417,8 @@ namespace Griddlers.Library
         }
 
         public static bool IsolatedPart(Item item,
-                                        Block lastBlock,
                                         Block block,
+                                        Block lastBlock,
                                         bool forward = true)
         {
             if (forward && block.End <= lastBlock.Start + item.Value - 1)
@@ -522,7 +523,7 @@ namespace Griddlers.Library
 
                             if (Flag)
                             {
-                                int ItmIdx = 0;
+                                int ItmIdx = StartItem;
                                 for (int i = 0; i <= Skip.BlockCount; i++)
                                     IsolatedItems.TryAdd(i, Pushes.ContainsKey(i) ? ItmIdx - 1 : ItmIdx++);
 

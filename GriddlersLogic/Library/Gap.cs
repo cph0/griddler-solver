@@ -13,7 +13,6 @@ namespace Griddlers.Library
         public bool HasLastPoint => _Blocks.ContainsKey("End", End);
         public int NumberOfBlocks => _Blocks.Count;
         public bool HasPoints => NumberOfBlocks > 0;
-        public bool IsFull => _Blocks.GetValueOrDefault("Start", Start)?.End == End;
         public string Colour => GetBlockAtStart(Start)?.Colour ?? GetBlockAtEnd(End)?.Colour ?? string.Empty;
 
         public Gap(int start, int end, IEnumerable<Block>? blocks = null) : base(start, end)
@@ -21,6 +20,9 @@ namespace Griddlers.Library
             _Blocks = new MultiKeyLookup<Block>(blocks?.ToArray() ?? Array.Empty<Block>(),
                         ("Start", k => k.Start), ("End", k => k.End));
         }
+
+        public bool IsFull(bool oneBlock = true)
+            => _Blocks.Values.Sum(s => s.Size) == Size && (!oneBlock || NumberOfBlocks == 1);
 
         public bool Is(Item a)
             => Size == a.Value && Colour == a.Colour;
