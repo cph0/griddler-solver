@@ -625,10 +625,6 @@ namespace Griddlers.Library
             }
 
             Console.WriteLine($"Loop Count: {Count}");
-            //foreach (KeyValuePair<string, int> Method in MethodCounts)
-            //{
-            //    Console.WriteLine($"{Method.Key}: {Method.Value}");
-            //}
         }
 
         private static bool IsComplete(IEnumerable<Line> lines)
@@ -904,24 +900,23 @@ namespace Griddlers.Library
 
                         bool CombinedEqualityNoItem()
                         {
-                            if (EqualityE && Skip.LastGap != null 
-                                && Skip.LastGap.IsFull()
-                                && Index > IndexE)
+                            if (EqualityE && Skip.LastGap != null
+                                && Skip.LastGap.IsFull())
                             {
                                 int ItemShift = Line.SumWhile(IndexE, Gap, null, false);
                                 if (!Line.Where(IndexE - ItemShift, IndexE - 1)
-                                    .Any(a => Skip.LastGap.Is(a)))
+                                    .Any(Skip.LastGap.Is))
                                     return true;
                             }
 
-                            if (Equality && Index > IndexE)
+                            if (Equality)
                             {
                                 Gap? NextGap = Line.FindGapAtPos(Gap.End + 1);
                                 if (NextGap != null && NextGap.IsFull())
                                 {
                                     int ItemShift = Line.SumWhile(Index, Gap);
                                     if (!Line.Where(Index + 1, Index + ItemShift)
-                                        .Any(a => NextGap.Is(a)))
+                                        .Any(NextGap.Is))
                                         return true;
                                 }
                             }
@@ -932,6 +927,7 @@ namespace Griddlers.Library
                         if (NoItemForGap(Gap, EqualityE, ItemE)
                             || (Equality && EqualityE && Index > IndexE)
                             || (Equality && EqualityE && Sum > Gap.Size)
+                            || Range.All(a => a.Value > Gap.Size)
                             || CombinedEqualityNoItem())
                         {
                             yield return AddPoints(Line,
@@ -939,7 +935,8 @@ namespace Griddlers.Library
                                                    GriddlerPath.Action.GapDotsSum,
                                                    Gap.End);
                         }
-                        else if (ItemFillsGap(Gap, EqualityE, ItemE) && ItemE.HasValue)
+                        else if (ItemE.HasValue && (ItemFillsGap(Gap, EqualityE, ItemE)
+                            || (ItemE.Value.Value == Gap.Size && Index == IndexE)))
                         {
                             yield return AddPoints(Line,
                                                    Gap.Start,
@@ -1033,11 +1030,11 @@ namespace Griddlers.Library
                             (S, E) = Line.ShouldAddDots(IsolatedItem.Value);
                             return true;
                         }
-                        else if (Ls.All(Block.IsOrCantBe))
-                        {
-                            (S, E) = Ls.ShouldAddDots(Block);
-                            return true;
-                        }
+                        //else if (Ls.All(Block.IsOrCantBe))
+                        //{
+                        //    (S, E) = Ls.ShouldAddDots(Block);
+                        //    return true;
+                        //}
 
                         Block? LastBlock = Gap.GetLastBlock(Block.Start - 1);
                         if (LastBlock != null)
@@ -1099,7 +1096,7 @@ namespace Griddlers.Library
                         }
 
                         ItemRange Range = Ls.With(LsEnd);
-                        (S, E) = Range.ShouldAddDots(Block);
+                        (S, E) = Range.ShouldAddDots(Block, EqualityIndex, EqualityIndexE);
                         return Range.All(Block.IsOrCantBe);
                     }
 
@@ -1141,12 +1138,6 @@ namespace Griddlers.Library
                     if (Isolations.TryGetValue(Skip.BlockCount, out int IsolateOut))
                         IsolatedItem = IsolateOut;
 
-                    //if (Gap.IsFull)
-                    //{
-                    //    Continue();
-                    //    continue;
-                    //}
-
                     var (Item, Equality, Index, EqualityIndex, IndexAtBlock) = Ls;
                     LineSegment LsEnd = Line.GetItemAtPosB(Gap, Block);
                     var (ItemE, EqualityE, IndexE, EqualityIndexE, IndexAtBlockE) = LsEnd;
@@ -1178,11 +1169,13 @@ namespace Griddlers.Library
                         && s.Item2.Value <= Gap.End
                         - (Block.End + 1 + Line.GetDotCount(s.Item1.Index)) + 1))
                     {
+                        int PointsChange = Line.Points.Count;
                         yield return AddPoints(Line,
                                                Block.End + 1,
                                                GriddlerPath.Action.MustJoin,
                                                colour: Block.Colour);
-                        break; //change block count - break isolations
+                        if (Line.Points.Count != PointsChange)
+                            break; //change block count - break isolations
                     }
                     else if (Equality && EqualityE && Index + 1 == IndexE
                         && Gap.NumberOfBlocks == 3)
@@ -1196,12 +1189,14 @@ namespace Griddlers.Library
 
                             if (Isolated)
                             {
+                                int PointsChange = Line.Points.Count;
                                 yield return AddPoints(Line,
                                                        Block.End + 1,
                                                        GriddlerPath.Action.MustJoin,
                                                        NextBlock.Start - 1,
                                                        Block.Colour);
-                                break; //change block count - break isolations
+                                if (Line.Points.Count != PointsChange)
+                                    break; //change block count - break isolations
                             }
                         }
                     }
@@ -1210,6 +1205,12 @@ namespace Griddlers.Library
                     bool MinItemBackwards(out int m)
                     {
                         m = 0;
+
+                        if (Line.UniqueCount(Block, out Item Itm))
+                        {
+                            m = Itm.Value;
+                            return true;
+                        }
 
                         if (EqualityE && ItemE.HasValue)
                         {
@@ -1284,12 +1285,15 @@ namespace Griddlers.Library
                     if (MinItemForwards(out int m)
                         && Gap.Start + m - 1 > Block.End)
                     {
+                        int PointsChange = Line.Points.Count;
                         yield return AddPoints(Line,
                                                Block.End + 1,
                                                GriddlerPath.Action.MinItem,
                                                Gap.Start + m - 1,
                                                Block.Colour);
-                        continue;
+
+                        if(PointsChange != Line.Points.Count)
+                            break; //might be split block - breaks isolations
                     }
 
                     //single item Start
@@ -1304,13 +1308,15 @@ namespace Griddlers.Library
                             singleItem = Line[Skip.BlockCount].Value;
                             return true;
                         }
-                        else if (IsolatedItem.HasValue
-                            && (Gap.NumberOfBlocks == 1 || Skip.BlockCount == 0
-                            || Gap.GetLastBlock(Block.Start - 1) == null)
-                            && Block.End - Line[IsolatedItem.Value].Value >= Gap.Start)
-                        {
-                            singleItem = Line[IsolatedItem.Value].Value;
-                        }
+                        //breaks woman20x20, twoturledoves
+                        //else if (IsolatedItem.HasValue
+                        //    && (Gap.NumberOfBlocks == 1 || Skip.BlockCount == 0
+                        //    || Gap.GetLastBlock(Block.Start - 1) == null)
+                        //    && Block.End - Line[IsolatedItem.Value].Value >= Gap.Start)
+                        //{
+                        //    singleItem = Line[IsolatedItem.Value].Value;
+                        //    return true;
+                        //}
                         else if (Equality && EqualityE && Index == IndexE
                             && Gap.NumberOfBlocks == 1)
                         {
@@ -1348,11 +1354,12 @@ namespace Griddlers.Library
                             singleItem = Line[Skip.BlockCount].Value;
                             return true;
                         }
-                        //breaks sevenswansswimming45x35, daffodills30x35, +1 more
-                        //else if (isolatedItem && (Gap.NumberOfBlocks == 1
-                        //    || isolatedItem == Line.LineItems - 1 || !Gap.GetNextBlock(Block.End + 1))) {
-                        //    singleItem = Line[isolatedItem].Value;
-                        //}
+                        else if (IsolatedItem.HasValue && (Gap.NumberOfBlocks == 1
+                            || IsolatedItem.Value == Line.LineItems - 1 || Gap.GetNextBlock(Block.End + 1) == null))
+                        {
+                            singleItem = Line[IsolatedItem.Value].Value;
+                            return true;
+                        }
                         else if (Equality && IndexAtBlock == Index && Gap.NumberOfBlocks == 1
                             && (Index + 1 > Line.LineItems - 1
                             || !Line.FitsInSpace(Block, Gap, Line[Index + 1])))
@@ -1443,24 +1450,34 @@ namespace Griddlers.Library
                                                      r.End,
                                                      GriddlerPath.Action.HalfGapOverlap);
 
-                            if(Line.Points.Count != PointsChange)
+                            if (Line.Points.Count != PointsChange)
                                 break; //might be split block - break isolations
                         }
                         else if (Sum == Space.Item1)
                         {
+                            int PointsChange = Line.Points.Count;
+                            int DotsChange = Line.Dots.Count;
                             yield return FullPart(Line,
                                                   Gap.Start,
                                                   r.Start,
                                                   r.End,
                                                   GriddlerPath.Action.HalfGapFullPart);
-                            break;
+                            if (Line.Points.Count != PointsChange
+                                || Line.Dots.Count != DotsChange)
+                                break;
                         }
                     }
 
                     //half Gap overlap forwards
                     bool HalfGapOverlapForwards(out ItemRange r)
                     {
-                        if (Item.HasValue && EqualityE
+                        if (Ls.With(LsEnd).UniqueCount(Block, out Item item)
+                            && item.Index < IndexE)
+                        {
+                            r = Line.CreateRange(item.Index + 1, IndexE);
+                            return true;
+                        }
+                        else if (Item.HasValue && EqualityE
                             && IndexAtBlock + 1 <= Line.LineItems - 1)
                         {
                             r = Line.CreateRange(IndexAtBlock + 1, EqualityIndexE);
@@ -1484,7 +1501,7 @@ namespace Griddlers.Library
                                                      r.End,
                                                      GriddlerPath.Action.HalfGapOverlap);
 
-                            if(Line.Points.Count != PointsChange)
+                            if (Line.Points.Count != PointsChange)
                                 break; //might be split block - break isolations
                         }
                         else if (Sum == Space.Item1)

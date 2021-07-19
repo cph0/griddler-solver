@@ -10,13 +10,18 @@ namespace Griddlers.Library
     {
         public int Index { get; set; }
         public int BlockCount { get; set; }
-        public Gap? LastGap { get; set; }
+        public Gap? LastGap { get; private set; }
         public Block? LastBlock { get; private set; }
 
         public void Continue(Block block) 
         {
             BlockCount++;
             LastBlock = block;
+        }
+
+        public void Continue(Gap gap)
+        {
+            LastGap = gap;
         }
     }
 
@@ -94,7 +99,7 @@ namespace Griddlers.Library
 
         public Gap? FindGapAtPos(int index, bool forward = true)
         {
-            for (int i = index; forward ? i <= LineItems - 1 : i >= 0; i += (forward ? 1 : -1))
+            for (int i = index; forward ? i <= LineLength - 1 : i >= 0; i += (forward ? 1 : -1))
             {
                 if (_Gaps.TryGetValue("Start", i, out Gap Gap))
                     return Gap;
@@ -112,7 +117,8 @@ namespace Griddlers.Library
         public int SumWhile(int start,
                             Gap gap,
                             Block? block = null,
-                            bool forward = true)
+                            bool forward = true,
+                            bool? blockDir = null)
         {
             (int Sum, int Shift) = (0, 0);
             int StartPos = gap.Start;
@@ -121,20 +127,36 @@ namespace Griddlers.Library
 
             if (block != null)
             {
-                if (forward)
+                if (blockDir.GetValueOrDefault(forward))
                     EndPos = block.Start;
                 else
                     StartPos = block.End;
                 Range = EndPos - StartPos;
             }
 
+            int CrashPos(int sum)
+            {
+                int AdjS = !blockDir.GetValueOrDefault(true) ? 1 : 0;
+                int AdjE = blockDir.GetValueOrDefault() ? 1 : 0;
+                return forward ? StartPos + sum + AdjS : EndPos - sum - AdjE;
+            }
+
             for (int Index = start; forward ? Index < LineItems : Index >= 0; Index += forward ? 1 : -1)
             {
                 Item Item = this[Index];
                 var (Value, Colour) = Item;
+
+                //point crash
+                while (Points.TryGetValue(CrashPos(Sum), out string? Pt)
+                    && Pt != Colour)
+                {
+                    Sum++;
+                }
+
                 Sum += Value;
 
-                while (Points.TryGetValue(forward ? StartPos + Sum : EndPos - Sum, out string? Pt)
+                //dot crash
+                while (Points.TryGetValue(CrashPos(Sum), out string? Pt)
                     && Pt == Colour)
                 {
                     Sum++;
@@ -145,7 +167,8 @@ namespace Griddlers.Library
                     Shift++;
                 else
                 {
-                    if (block != null && Sum > gap.Size)
+                    //item can't be block as doesn't fit in gap!
+                    if (!blockDir.HasValue && block != null && Sum > gap.Size)
                         Shift--;
 
                     break;
@@ -209,9 +232,23 @@ namespace Griddlers.Library
                 if (LastBlock != null)
                 {
                     int ToItem = Iei.Item1 + ((forward ? 1 : -1) * (Iei.ItemShift - 1));
-                    if (UniqueCount(Where(ei, ToItem, true), gap, out Item UniqueItem)
-                        && UniqueItem.Index == ToItem)
-                        Iei.Item2 = true;
+                    if (UniqueCount(Where(ei, ToItem, true), LastBlock, out Item UniqueItem))
+                    {
+                        int Itm = UniqueItem.Index;
+                        bool Eq = Itm == ToItem;
+
+                        if (!Eq)
+                        {
+                            int Start = UniqueItem.Index + (forward ? 1 : -1);
+                            Itm += (forward ? 1 : -1) * SumWhile(Start,
+                                                                 gap,
+                                                                 LastBlock,
+                                                                 forward,
+                                                                 !forward);
+                        }
+
+                        Iei = (Itm, Eq, 1);
+                    }
                 }
             }
 
@@ -244,7 +281,7 @@ namespace Griddlers.Library
                         Item += ItemShift;
                     }
 
-                    Skip.LastGap = Gap;
+                    Skip.Continue(Gap);
                 }
             }
         }
@@ -262,10 +299,14 @@ namespace Griddlers.Library
         {
             foreach (var (Gap, Ls, Skip) in GetGaps(includeItems))
             {
+                bool SkipGap = false;//Gap.IsFull(false);
                 foreach (Block Block in Gap.GetBlocks())
                 {
-                    Ls.SetIndexAtBlock(SumWhile(Ls.Index, Gap, Block));
-                    yield return (Block, Gap, Ls, Skip);
+                    if (!SkipGap)
+                    {
+                        Ls.SetIndexAtBlock(SumWhile(Ls.Index, Gap, Block));
+                        yield return (Block, Gap, Ls, Skip);                    
+                    }
                     Skip.Continue(Block);
                 }
             }
@@ -570,6 +611,13 @@ namespace Griddlers.Library
                 }
 
                 BlockCount = Skip.BlockCount;
+            }
+
+            if (IsIsolated && StartItem > 0 && IsolatedItems.Count == 0
+                && BlockCount == LineItems - StartItem - 1)
+            {
+                for (int i = 0; i <= BlockCount; i++)
+                    IsolatedItems.TryAdd(i, i + StartItem);                
             }
 
             if (BlockCount != LineItems - 1 || StartItem > 0)
