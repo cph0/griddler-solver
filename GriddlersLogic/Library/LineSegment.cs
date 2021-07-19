@@ -68,8 +68,8 @@ namespace Griddlers.Library
             (int Start, int End) = (EqualityIndex, ls.EqualityIndex);
             if (!equalityOnly)
             {
-                Start = gapOnly ? Index : Math.Max(EqualityIndex, ls.IndexAtBlock);
-                End = gapOnly ? ls.Index : Math.Min(IndexAtBlock, ls.EqualityIndex);            
+                Start = gapOnly ? Math.Min(Index, ls.Index) : Math.Max(EqualityIndex, ls.IndexAtBlock);
+                End = gapOnly ? Math.Max(ls.Index, Index) : Math.Min(IndexAtBlock, ls.EqualityIndex);            
             }
             return CreateRange(Start, End);
         }
