@@ -12,12 +12,12 @@ interface Point {
     isDot: boolean;
     x: number;
     y: number;
-    green: boolean;
+    colour: string;
 }
 
 interface Item {
     value: number;
-    green: boolean;
+    colour: string;
 }
 
 interface GriddlerPathGroup {
@@ -377,7 +377,7 @@ export const Home: React.FunctionComponent = () => {
         let items = paths.map(g => {
             let open = true;
 
-            if (selectedGroup && g.group == selectedGroup.group)
+            if (selectedGroup && g.group === selectedGroup.group)
                 open = true;
 
             return (
@@ -439,14 +439,14 @@ export const Home: React.FunctionComponent = () => {
             let brdL, brdT: string = "none";
             let sClass: any = { ...gridStyle };
 
-            if (i % 5 == 0)
+            if (i % 5 === 0)
                 brdL = "1px solid black";
 
-            if (c % 5 == 0)
+            if (c % 5 === 0)
                 brdT = "1px solid black";
 
             if (selectedGroup
-                && selectedGroup.items.some(e => e.xPos == i && e.yPos == c))
+                && selectedGroup.items.some(e => e.xPos === i && e.yPos === c))
                 sClass.backgroundColor = "red";
 
             grid.push(
@@ -460,10 +460,10 @@ export const Home: React.FunctionComponent = () => {
             let sClass: any = { ...style };
 
             if (selectedGroup
-                && selectedGroup.items.some(e => e.xPos * 20 == pt.x && e.yPos * 20 == pt.y))
+                && selectedGroup.items.some(e => e.xPos * 20 === pt.x && e.yPos * 20 === pt.y))
                 sClass.backgroundColor = "red";
-            else if (pt.green)
-                sClass.backgroundColor = "lightgreen";
+            else
+                sClass.backgroundColor = pt.colour;
 
             pts.push(
                 <div style={{ ...sClass, top: pt.y, left: pt.x }}></div>
@@ -499,7 +499,7 @@ export const Home: React.FunctionComponent = () => {
                         position: "absolute",
                         left: left,
                         top: c * 20,
-                        backgroundColor: item.green ? "lightgreen" : ""
+                        backgroundColor: item.colour === 'lightgreen' ? "lightgreen" : ""
                     }} />
             )
             );
@@ -523,7 +523,7 @@ export const Home: React.FunctionComponent = () => {
                             position: "absolute",
                             left: c * 20,
                             top: top,
-                            backgroundColor: item.green ? "lightgreen" : ""
+                            backgroundColor: item.colour === 'lightgreen' ? "lightgreen" : ""
                         }} />
                 )
             );

@@ -554,10 +554,10 @@ namespace Tests
             (Dictionary<(int, int), Point> PtsOut, Dictionary<(int, int), Point> DtsOut)
                 = Logic.Run(Rows, Cols);
 
-            await Save(nameof(KissHerYuk30x30), Rows, Cols, Points);
+            await Save(nameof(KissHerYuk30x30), Rows, Cols, PtsOut);
 
             bool Same = (Points.Count == PtsOut.Count
-                && !Points.Select(s => (s.Key.Item1, s.Key.Item2, s.Value.Green)).Except(PtsOut.Select(s => (s.Key.Item1, s.Key.Item2, s.Value.Green))).Any()
+                && !Points.Select(s => (s.Key.Item1, s.Key.Item2, s.Value.Colour)).Except(PtsOut.Select(s => (s.Key.Item1, s.Key.Item2, s.Value.Colour))).Any()
                 && Dots.Count == DtsOut.Count && !Dots.Keys.Except(DtsOut.Keys).Any());
 
             Assert.True(Same);
@@ -582,7 +582,7 @@ namespace Tests
             await Save(nameof(Busker30x30), Rows, Cols, Points);
 
             //bool Same = (Points.Count == PtsOut.Count
-            //    && !Points.Select(s => (s.Key.Item1, s.Key.Item2, s.Value.Green)).Except(PtsOut.Select(s => (s.Key.Item1, s.Key.Item2, s.Value.Green))).Any()
+            //    && !Points.Select(s => (s.Key.Item1, s.Key.Item2, s.Value.Colour)).Except(PtsOut.Select(s => (s.Key.Item1, s.Key.Item2, s.Value.Colour))).Any()
             //    && DtsOut.Count == 304);
 
             Assert.True(false);
@@ -823,7 +823,7 @@ namespace Tests
             await Save(nameof(Jester35x35), Rows, Cols, Points);
 
             bool Same = (Points.Count == PtsOut.Count
-                && !Points.Select(s => (s.Key.Item1, s.Key.Item2, s.Value.Green)).Except(PtsOut.Select(s => (s.Key.Item1, s.Key.Item2, s.Value.Green))).Any()
+                && !Points.Select(s => (s.Key.Item1, s.Key.Item2, s.Value.Colour)).Except(PtsOut.Select(s => (s.Key.Item1, s.Key.Item2, s.Value.Colour))).Any()
                 && Dots.Count == DtsOut.Count && !Dots.Keys.Except(DtsOut.Keys).Any());
 
             Assert.True(Same);
