@@ -6,34 +6,44 @@ namespace Griddlers.Library
     {
         public readonly int Index { get; }
         public readonly int Value { get; }
-        public readonly bool Green { get; }
+        public readonly string Colour { get; }
 
-        public Item(int index, string v)
+        public Item(int index, string v, bool fromFile = true)
         {
             Index = index;
 
             string[] Parts = v.Split(".");
             Value = int.Parse(Parts[0]);
-            Green = Parts.Length > 1 && Parts[1] == "1";
+            Colour = GetColourFromFile(Parts);
         }
         public Item(GriddlerItem item)
         {
             Index = item.position;
             Value = item.value;
-            Green = item.green;
+            Colour = item.green ? "lightgreen" : "black";
         }
-        public Item(int v, bool g)
+        public Item(int v, string colour)
         {
             Index = 0;
             Value = v;
-            Green = g;
+            Colour = colour;
+        }
+
+        private static string GetColourFromFile(string[] fileString)
+        {
+            var colourString = fileString.Length > 1 ? fileString[1] : string.Empty;
+            return colourString switch
+            {
+                "1" => "lightgreen",
+                _ => "black"
+            };
         }
 
         public static int operator +(Item a, Item b)
         {
             int Sum = a.Value + b.Value;
 
-            if (a.Green == b.Green)
+            if (a.Colour == b.Colour)
                 Sum++;
 
             return Sum;
@@ -41,7 +51,7 @@ namespace Griddlers.Library
 
         public static bool operator ==(Item a, Item b)
         {
-            return a.Value == b.Value && a.Green == b.Green;
+            return a.Value == b.Value && a.Colour == b.Colour;
         }
 
         public static bool operator !=(Item a, Item b)
@@ -51,12 +61,12 @@ namespace Griddlers.Library
 
         public static bool operator ==(Item a, Point b)
         {
-            return a.Green == b.Green;
+            return a.Colour == b.Colour;
         }
 
         public static bool operator !=(Item a, Point b)
         {
-            return a.Green != b.Green;
+            return a.Colour != b.Colour;
         }
 
         public override int GetHashCode()

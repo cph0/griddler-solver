@@ -43,14 +43,14 @@ namespace Griddlers.Library
                 Rows = new Item[Rs.GetLength(0)][];
                 foreach (string?[] Row in Rs)
                 {
-                    Rows[Index] = Row.Select((s, i) => new Item(i, s)).ToArray();
+                    Rows[Index] = Row.Select((s, i) => new Item(i, s, true)).ToArray();
                     Index++;
                 }
                 Index = 0;
                 Cols = new Item[Cs.GetLength(0)][];
                 foreach (string?[] Col in Cs)
                 {
-                    Cols[Index] = Col.Select((s, i) => new Item(i, s)).ToArray();
+                    Cols[Index] = Col.Select((s, i) => new Item(i, s, true)).ToArray();
                     Index++;
                 }
             }

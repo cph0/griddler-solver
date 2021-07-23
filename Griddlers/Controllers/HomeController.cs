@@ -164,7 +164,7 @@ namespace Griddlers.Controllers
                                                 }).Select(s => new ClientGriddlerPathGroup(s.key, s.items))
                                                 .ToArray();
 
-            Point[] pts = Points.Keys.Select(s => new Point(false, s.Item1, s.Item2, false)).ToArray();
+            Point[] pts = Points.Keys.Select(s => new Point(false, s.Item1, s.Item2, "black")).ToArray();
 
             string json = JsonSerializer.Serialize(pts);
 

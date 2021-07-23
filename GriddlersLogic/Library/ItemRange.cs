@@ -7,7 +7,7 @@ namespace Griddlers.Library
     public class ItemRange
     {
         private readonly bool _UsingArray;
-        private readonly IDictionary<(int, bool), bool> _UniqueCounts;
+        private readonly IDictionary<(int, string), bool> _UniqueCounts;
         private bool? _ItemsOneValue;
         private bool? _ItemsOneColour;
         protected readonly IEnumerable<Item> _ItemsEnum;
@@ -30,7 +30,7 @@ namespace Griddlers.Library
             get
             {
                 if (!_ItemsOneColour.HasValue)
-                    _ItemsOneColour = _Items.GroupBy(g => g.Green).Count() == 1;
+                    _ItemsOneColour = _Items.GroupBy(g => g.Colour).Count() == 1;
 
                 return _ItemsOneColour.Value;
             }
@@ -43,7 +43,7 @@ namespace Griddlers.Library
             _UsingArray = false;
             _ItemsEnum = items;
             _ItemsArray = new Item[] { };
-            _UniqueCounts = new Dictionary<(int, bool), bool>(items.Count());
+            _UniqueCounts = new Dictionary<(int, string), bool>(items.Count());
         }
 
         public ItemRange(params Item[] items)
@@ -51,7 +51,7 @@ namespace Griddlers.Library
             _UsingArray = true;
             _ItemsEnum = items;
             _ItemsArray = items;
-            _UniqueCounts = new Dictionary<(int, bool), bool>(items.Length);
+            _UniqueCounts = new Dictionary<(int, string), bool>(items.Length);
         }
 
         public IEnumerable<(Item, Item)> Pair()
@@ -98,7 +98,7 @@ namespace Griddlers.Library
             int Dots = 0;
             foreach ((Item, Item) Item in Pair(items))
             {
-                if (Item.Item1.Green == Item.Item2.Green)
+                if (Item.Item1.Colour == Item.Item2.Colour)
                     Dots++;
             }
             return Dots;
@@ -108,12 +108,12 @@ namespace Griddlers.Library
         {
             bool Retval = false;
 
-            if (_UniqueCounts.TryGetValue((block.SolidCount, block.Green), out bool Out))
+            if (_UniqueCounts.TryGetValue((block.SolidCount, block.Colour), out bool Out))
                 Retval = Out;
             else
             {
                 Retval = _Items.Count(c => c >= block) == 1;
-                _UniqueCounts[(block.SolidCount, block.Green)] = Retval;
+                _UniqueCounts[(block.SolidCount, block.Colour)] = Retval;
             }
 
             return Retval;
