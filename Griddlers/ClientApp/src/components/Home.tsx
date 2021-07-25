@@ -29,8 +29,8 @@ interface GriddlerPathGroup {
 interface GriddlerPath {
     name: string;
     group: number;
-    xPos: number;
-    yPos: number;
+    x: number;
+    y: number;
 }
 
 class NodeLabel extends React.PureComponent<any, {}> {
@@ -384,7 +384,7 @@ export const Home: React.FunctionComponent = () => {
                 <div key={g.group}>
                     <p style={{ cursor: "pointer" }} onClick={() => onPathClick(g)}>{g.name}</p>
                     <Collapse isOpen={open}>
-                        {g.items.map((m, i) => <p key={i}>({m.xPos}, {m.yPos})</p>)}
+                        {g.items.map((m, i) => <p key={i}>({m.x}, {m.y})</p>)}
                     </Collapse>
                 </div>
             );
@@ -411,6 +411,7 @@ export const Home: React.FunctionComponent = () => {
     let yBoxes: JSX.Element[] = [];
     let dts: JSX.Element[] = [];
     let grid: JSX.Element[] = [];
+    const squareSize = 20;
 
     const style: CSSProperties = {
         position: "absolute",
@@ -446,11 +447,14 @@ export const Home: React.FunctionComponent = () => {
                 brdT = "1px solid black";
 
             if (selectedGroup
-                && selectedGroup.items.some(e => e.xPos === i && e.yPos === c))
+                && selectedGroup.items.some(e => e.x === i && e.y === c))
                 sClass.backgroundColor = "red";
 
             grid.push(
-                <div style={{ ...sClass, borderLeft: brdL, borderTop: brdT, top: c * 20, left: i * 20 }}></div>
+                <div style={{
+                    ...sClass, borderLeft: brdL, borderTop: brdT,
+                    top: c * squareSize, left: i * squareSize
+                }}></div>
             );
         }
     }
@@ -460,13 +464,16 @@ export const Home: React.FunctionComponent = () => {
             let sClass: any = { ...style };
 
             if (selectedGroup
-                && selectedGroup.items.some(e => e.xPos * 20 === pt.x && e.yPos * 20 === pt.y))
+                && selectedGroup.items.some(e => e.x === pt.x && e.y === pt.y))
                 sClass.backgroundColor = "red";
             else
                 sClass.backgroundColor = pt.colour;
 
             pts.push(
-                <div style={{ ...sClass, top: pt.y, left: pt.x }}></div>
+                <div style={{
+                    ...sClass, top: pt.y * squareSize,
+                    left: pt.x * squareSize
+                }}></div>
             );
         }
     }
@@ -474,18 +481,18 @@ export const Home: React.FunctionComponent = () => {
     for (let dot of dots) {
         if (dot) {
             let sClass = { ...dotStyle };
-
-
-
             dts.push(
-                <div style={{ ...sClass, top: dot.y + 8, left: dot.x + 8 }}></div>
+                <div style={{
+                    ...sClass, top: (dot.y * squareSize) + 8,
+                    left: (dot.x * squareSize) + 8
+                }}></div>
             );
         }
     }
 
     for (let i = 0; i < width; i++) {
         for (let c = 0; c < depth; c++) {
-            let left = (depth * 20) + (i * 20);
+            let left = (depth * squareSize) + (i * squareSize);
             let item = {} as Item;
 
             if (columns[i] && columns[i][c])
@@ -498,7 +505,7 @@ export const Home: React.FunctionComponent = () => {
                         height: "20px",
                         position: "absolute",
                         left: left,
-                        top: c * 20,
+                        top: c * squareSize,
                         backgroundColor: item.colour === 'lightgreen' ? "lightgreen" : ""
                     }} />
             )
@@ -508,7 +515,7 @@ export const Home: React.FunctionComponent = () => {
 
     for (let i = 0; i < height; i++) {
         for (let c = 0; c < depth; c++) {
-            let top = (depth * 20) + (i * 20);
+            let top = (depth * squareSize) + (i * squareSize);
             let item = {} as Item;
 
             if (rows[i] && rows[i][c])
@@ -521,7 +528,7 @@ export const Home: React.FunctionComponent = () => {
                             width: "20px",
                             height: "20px",
                             position: "absolute",
-                            left: c * 20,
+                            left: c * squareSize,
                             top: top,
                             backgroundColor: item.colour === 'lightgreen' ? "lightgreen" : ""
                         }} />
@@ -530,7 +537,7 @@ export const Home: React.FunctionComponent = () => {
         }
     }
 
-    let square = (depth * 20) + "px";
+    let square = (depth * squareSize) + "px";
 
     html = (
         <div>

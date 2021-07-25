@@ -5,9 +5,11 @@
         private readonly Item? _Item;
         private readonly Point[] _Points;
 
+        public int Start { get; set; }
+        public int End { get; set; }
+        public int Size => End - Start + 1;
+
         public int BlockIndex { get; private set; }
-        public int StartIndex { get; set; }
-        public int EndIndex { get; set; }
         public int SolidCount { get; set; }
         public string Colour { get; private set; }
         public bool Complete { get; set; }
@@ -31,8 +33,8 @@
         public Block(int start, int end, string colour)
         {
             _Points = new Point[] { };
-            StartIndex = start;
-            EndIndex = end;
+            Start = start;
+            End = end;
             Colour = colour;
         }
 
@@ -43,50 +45,18 @@
             Complete = complete;
 
             if (start.HasValue)
-                StartIndex = start.Value;
+                Start = start.Value;
 
             if (end.HasValue)
-                EndIndex = end.Value;
+                End = end.Value;
         }
 
-        public static bool operator ==(Block a, Item b)
-        {
-            return a.SolidCount == b.Value && a.Colour == b.Colour;
-        }
+        public bool Is(Item item)
+            => item.Value == SolidCount && item.Colour == Colour;
 
-        public static bool operator !=(Block a, Item b)
-        {
-            return a.SolidCount != b.Value || a.Colour != b.Colour;
-        }
+        public bool CanBe(Item item)
+            => item.Value >= SolidCount && item.Colour == Colour;
 
-        public static bool operator <=(Item a, Block b)
-        {
-            return a.Value <= b.SolidCount && a.Colour == b.Colour;
-        }
-
-        public static bool operator >=(Item a, Block b)
-        {
-            return a.Value >= b.SolidCount && a.Colour == b.Colour;
-        }
-
-        public static bool operator <(Item a, Block b)
-        {
-            return a.Value < b.SolidCount || a.Colour != b.Colour;
-        }
-
-        public static bool operator >(Item a, Block b)
-        {
-            return a.Value > b.SolidCount || a.Colour != b.Colour;
-        }
-
-        public override bool Equals(object? obj)
-        {
-            return base.Equals(obj);
-        }
-
-        public override int GetHashCode()
-        {
-            return base.GetHashCode();
-        }
+        public bool IsOrCantBe(Item item) => Is(item) || !CanBe(item);
     }
 }

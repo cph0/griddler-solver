@@ -54,6 +54,23 @@ namespace Griddlers.Library
             _UniqueCounts = new Dictionary<(int, string), bool>(items.Length);
         }
 
+        //public (bool, bool) ShouldAddDots(int index)
+        //{
+        //    bool Start = index > 0 && _ItemsArray[index].Colour == _ItemsArray[index - 1].Colour;
+        //    bool End = index < _ItemsArray.Length - 1 && _ItemsArray[index].Colour == _ItemsArray[index + 1].Colour;
+        //    return (Start || index == 0, End || index == _ItemsArray.Length - 1);
+        //}
+
+        public IEnumerable<Item> Where(int start, int end)
+            => Where(start, end, false);
+
+        protected IEnumerable<Item> Where(int start, int end, bool allowSwap)
+        {
+            (int Start, int End) = (Math.Min(start, end), Math.Max(start, end));
+            (Start, End) = !allowSwap ? (start, end) : (Start, End);
+            return _ItemsArray.Where(w => w.Index >= Start && w.Index <= End);
+        }
+
         public IEnumerable<(Item, Item)> Pair()
             => Pair(_Items);
         public static IEnumerable<(Item, Item)> Pair(IEnumerable<Item> items)
@@ -112,7 +129,7 @@ namespace Griddlers.Library
                 Retval = Out;
             else
             {
-                Retval = _Items.Count(c => c >= block) == 1;
+                Retval = _Items.Count(block.CanBe) == 1;
                 _UniqueCounts[(block.SolidCount, block.Colour)] = Retval;
             }
 
