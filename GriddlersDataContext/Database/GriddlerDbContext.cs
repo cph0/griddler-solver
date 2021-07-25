@@ -58,7 +58,7 @@ namespace Griddlers.Database
 
                 short Count = 0;
                 foreach (Point item in points)                
-                    Data.Rows.Add(item.Action, item.Xpos, item.Ypos, item.Grp, Count++);                
+                    Data.Rows.Add(item.Action, item.X, item.Y, item.Grp, Count++);                
 
                 DynamicParameters p = new DynamicParameters();
                 p.Add("@id", id);

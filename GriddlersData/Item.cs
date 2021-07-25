@@ -49,33 +49,7 @@ namespace Griddlers.Library
             return Sum;
         }
 
-        public static bool operator ==(Item a, Item b)
-        {
-            return a.Value == b.Value && a.Colour == b.Colour;
-        }
-
-        public static bool operator !=(Item a, Item b)
-        {
-            return !(a == b);
-        }
-
-        public static bool operator ==(Item a, Point b)
-        {
-            return a.Colour == b.Colour;
-        }
-
-        public static bool operator !=(Item a, Point b)
-        {
-            return a.Colour != b.Colour;
-        }
-
-        public override int GetHashCode()
-        {
-            return base.GetHashCode();
-        }
-        public override bool Equals(object? obj)
-        {
-            return base.Equals(obj);
-        }
+        public bool Is(Item item)
+            => item.Value == Value && item.Colour == Colour;
     }
 }

@@ -16,7 +16,6 @@ namespace Griddlers.Library
         private static int Current = 0;
 
         private static bool Staging = false;
-        private static int TreeLevel = 0;
         private static Dictionary<(int, int), Point> TreeStage = new Dictionary<(int, int), Point>();
         private static readonly List<TreeNode> Excludes = new List<TreeNode>();
 
@@ -55,9 +54,9 @@ namespace Griddlers.Library
             foreach (Point Point in All)
             {
                 if (Point.IsDot)
-                    Dots.TryAdd((Point.Xpos, Point.Ypos), Point);
+                    Dots.TryAdd((Point.X, Point.Y), Point);
                 else
-                    Points.TryAdd((Point.Xpos, Point.Ypos), Point);
+                    Points.TryAdd((Point.X, Point.Y), Point);
             }
 
             return (Points, Dots);
@@ -171,9 +170,9 @@ namespace Griddlers.Library
                 foreach (Point Point in Node.Points.Values)
                 {
                     if (Point.IsDot)
-                        dots.TryAdd((Point.Xpos, Point.Ypos), Point);
+                        dots.TryAdd((Point.X, Point.Y), Point);
                     else
-                        points.TryAdd((Point.Xpos, Point.Ypos), Point);
+                        points.TryAdd((Point.X, Point.Y), Point);
                 }
 
                 IEnumerable<Point> Stage = RunI(rows, columns);
@@ -219,9 +218,9 @@ namespace Griddlers.Library
                     foreach (Point Point in Current.Points.Values)
                     {
                         if (Point.IsDot)
-                            L.dots.TryAdd((Point.Xpos, Point.Ypos), Point);
+                            L.dots.TryAdd((Point.X, Point.Y), Point);
                         else
-                            L.points.TryAdd((Point.Xpos, Point.Ypos), Point);
+                            L.points.TryAdd((Point.X, Point.Y), Point);
                     }
                 }
                 else if (Current.Parent != null)
@@ -229,9 +228,9 @@ namespace Griddlers.Library
                     foreach (Point Point in Current.Points.Values)
                     {
                         if (Point.IsDot)
-                            L.dots.Remove((Point.Xpos, Point.Ypos));
+                            L.dots.Remove((Point.X, Point.Y));
                         else
-                            L.points.Remove((Point.Xpos, Point.Ypos));
+                            L.points.Remove((Point.X, Point.Y));
                     }
 
                     Current = Current.Parent;
@@ -331,8 +330,8 @@ namespace Griddlers.Library
             IEnumerable<Line> RowLines = rows.Select((s, si) => new Line(si, true, Width, s, L));
             IEnumerable<Line> ColumnLines = columns.Select((s, si) => new Line(si, false, Height, s, L));
 
-            IEnumerable<Point> Rows = L.FullLine(RowLines);
-            IEnumerable<Point> Columns = L.FullLine(ColumnLines);
+            IEnumerable<Point> Rows = L.FullLine(RowLines).SelectMany(s => s);
+            IEnumerable<Point> Columns = L.FullLine(ColumnLines).SelectMany(s => s);
 
             bool AnyZeroLines = rows.Any(a => a[0].Value == 0) || columns.Any(a => a[0].Value == 0);
             bool AnyFullLines = Rows.Any() || Columns.Any();
@@ -348,7 +347,7 @@ namespace Griddlers.Library
 
                 for (int c = 0; c < Width; c++)
                 {
-                    if (First[c] != Last[c])
+                    if (!First[c].Is(Last[c]))
                     {
                         Symmetry = false;
                         break;
@@ -368,7 +367,7 @@ namespace Griddlers.Library
 
                     for (int c = 0; c < Height; c++)
                     {
-                        if (First[c] != Last[c])
+                        if (!First[c].Is(Last[c]))
                         {
                             Symmetry = false;
                             break;
@@ -409,10 +408,10 @@ namespace Griddlers.Library
             L.Rows = rows.Select((s, si) => new Line(si, true, Width, s, L)).ToDictionary(k => k.LineIndex);
             L.Cols = columns.Select((s, si) => new Line(si, false, Height, s, L)).ToDictionary(k => k.LineIndex);
 
-            IEnumerable<Point> Rows = L.FullLine(L.Rows.Values);
-            IEnumerable<Point> Columns = L.FullLine(L.Cols.Values);
+            IEnumerable<Point> Rows = L.FullLine(L.Rows.Values).SelectMany(s => s);
+            IEnumerable<Point> Columns = L.FullLine(L.Cols.Values).SelectMany(s => s);
 
-            return (Rows.GroupBy(g => g.Ypos).Count(), Columns.GroupBy(g => g.Xpos).Count());
+            return (Rows.GroupBy(g => g.Y).Count(), Columns.GroupBy(g => g.X).Count());
         }
 
         /// <summary>
@@ -441,12 +440,11 @@ namespace Griddlers.Library
             L.Rows = rows.Select((s, si) => new Line(si, true, Width, s, L)).ToDictionary(k => k.LineIndex);
             L.Cols = columns.Select((s, si) => new Line(si, false, Height, s, L)).ToDictionary(k => k.LineIndex);
 
-            IEnumerable<Point> Rows = L.OverlapLine(L.Rows.Values);
-            IEnumerable<Point> Columns = L.OverlapLine(L.Cols.Values);
+            IEnumerable<Point> Rows = L.OverlapLine(L.Rows.Values).SelectMany(s => s);
+            IEnumerable<Point> Columns = L.OverlapLine(L.Cols.Values).SelectMany(s => s);
 
-            return (Rows.GroupBy(g => g.Ypos).Count(), Columns.GroupBy(g => g.Xpos).Count());
+            return (Rows.GroupBy(g => g.Y).Count(), Columns.GroupBy(g => g.X).Count());
         }
-
 
         private IEnumerable<Point> RunI(Item[][] rows, Item[][] columns)
         {
@@ -466,28 +464,34 @@ namespace Griddlers.Library
             Rows = rows.Select((s, si) => new Line(si, true, Width, s, this)).ToDictionary(k => k.LineIndex);
             Cols = columns.Select((s, si) => new Line(si, false, Height, s, this)).ToDictionary(k => k.LineIndex);
 
+            foreach (Line Row in Rows.Values)
+                Row.SetPairLines(Cols.Values);
+
+            foreach (Line Col in Cols.Values)
+                Col.SetPairLines(Rows.Values);
+
             //full rows <5ms
-            foreach (Point Point in FullLine(Rows.Values))
+            foreach (Point Point in FullLine(Rows.Values).SelectMany(s => s))
                 yield return Point;
 
             //full columns <5ms
-            foreach (Point Point in FullLine(Cols.Values))
+            foreach (Point Point in FullLine(Cols.Values).SelectMany(s => s))
                 yield return Point;
 
             //overlapping rows <20ms
-            foreach (Point Point in OverlapLine(Rows.Values))
+            foreach (Point Point in OverlapLine(Rows.Values).SelectMany(s => s))
                 yield return Point;
 
             //overlapping columns <20ms
-            foreach (Point Point in OverlapLine(Cols.Values))
+            foreach (Point Point in OverlapLine(Cols.Values).SelectMany(s => s))
                 yield return Point;
 
             //multi colour cross reference rows
-            foreach (Point Point in MultiColourCrossReference(Rows.Values))
+            foreach (Point Point in MultiColourCrossReference(Rows.Values).SelectMany(s => s))
                 yield return Point;
 
             //multi colour cross reference columns
-            foreach (Point Point in MultiColourCrossReference(Cols.Values))
+            foreach (Point Point in MultiColourCrossReference(Cols.Values).SelectMany(s => s))
                 yield return Point;
 
             foreach (Point Point in Run())
@@ -506,9 +510,9 @@ namespace Griddlers.Library
                     foreach (Point Point in TrialAndError(Rows.Values))
                     {
                         if (Point.IsDot)
-                            TestDotKeys.Add((Point.Xpos, Point.Ypos));
+                            TestDotKeys.Add((Point.X, Point.Y));
                         else
-                            TestPointKeys.Add((Point.Xpos, Point.Ypos));
+                            TestPointKeys.Add((Point.X, Point.Y));
                     }
 
                     //foreach (Point Point in TrialAndError(Cols.Values))
@@ -517,22 +521,21 @@ namespace Griddlers.Library
                     foreach (Point Point in Run())
                     {
                         if (Point.IsDot)
-                            TestDotKeys.Add((Point.Xpos, Point.Ypos));
+                            TestDotKeys.Add((Point.X, Point.Y));
                         else
-                            TestPointKeys.Add((Point.Xpos, Point.Ypos));
+                            TestPointKeys.Add((Point.X, Point.Y));
                     }
 
                     //undo
-                    if (points.Keys.Any(a => dots.ContainsKey(a)) //|| !Validate(Cols.Values)
-                        )
+                    if (points.Keys.Any(a => dots.ContainsKey(a)))
                     {
                         foreach ((int, int) PointKey in TestPointKeys)
                         {
                             if (PointKey.Item1 < Cols.Count)
-                                Rows[PointKey.Item1].IsComplete = false;
+                                Rows[PointKey.Item1].RemovePoint(PointKey.Item2);
 
                             if (PointKey.Item2 < Rows.Count)
-                                Cols[PointKey.Item2].IsComplete = false;
+                                Cols[PointKey.Item2].RemovePoint(PointKey.Item1);
 
                             points.Remove(PointKey);
                         }
@@ -540,10 +543,10 @@ namespace Griddlers.Library
                         foreach ((int, int) DotKey in TestDotKeys)
                         {
                             if (DotKey.Item1 < Cols.Count)
-                                Rows[DotKey.Item1].IsComplete = false;
+                                Rows[DotKey.Item1].RemoveDot(DotKey.Item2);
 
                             if (DotKey.Item2 < Rows.Count)
-                                Cols[DotKey.Item2].IsComplete = false;
+                                Cols[DotKey.Item2].RemoveDot(DotKey.Item1);
 
                             dots.Remove(DotKey);
                         }
@@ -580,38 +583,38 @@ namespace Griddlers.Library
                         break;
 
                     //row top edge <20ms
-                    foreach (Point Point in LineEdgeTL(Rows.Values))
+                    foreach (Point Point in LineEdgeTL(Rows.Values).SelectMany(s => s))
                         yield return Point;
 
                     //column left edge <20ms
-                    foreach (Point Point in LineEdgeTL(Cols.Values))
+                    foreach (Point Point in LineEdgeTL(Cols.Values).SelectMany(s => s))
                         yield return Point;
 
                     //row bottom edge <20ms
-                    foreach (Point Point in LineEdgeBR(Rows.Values))
+                    foreach (Point Point in LineEdgeBR(Rows.Values).SelectMany(s => s))
                         yield return Point;
 
                     //column right edge <20ms
-                    foreach (Point Point in LineEdgeBR(Cols.Values))
+                    foreach (Point Point in LineEdgeBR(Cols.Values).SelectMany(s => s))
                         yield return Point;
 
                     //row full line dots <5ms
-                    foreach (Point Point in FullLineDots(Rows.Values))
+                    foreach (Point Point in FullLineDots(Rows.Values).SelectMany(s => s))
                         yield return Point;
 
                     //column full line dots <5ms
-                    foreach (Point Point in FullLineDots(Cols.Values))
+                    foreach (Point Point in FullLineDots(Cols.Values).SelectMany(s => s))
                         yield return Point;
 
                     (int, int)[] PointsCompare = points.Keys.ToArray();
                     (int, int)[] DotsCompare = dots.Keys.ToArray();
 
                     //row line dots <300ms
-                    foreach (Point Point in LineDots(Rows.Values))
+                    foreach (Point Point in LineDots(Rows.Values).SelectMany(s => s))
                         yield return Point;
 
                     //column line dots <300ms
-                    foreach (Point Point in LineDots(Cols.Values))
+                    foreach (Point Point in LineDots(Cols.Values).SelectMany(s => s))
                         yield return Point;
 
                     IEnumerable<(int, int)> PointKeys = (from k in points.Keys.Except(PointsCompare)
@@ -631,11 +634,11 @@ namespace Griddlers.Library
                         yield return dots[DotKey];
 
                     //row line gaps <10ms
-                    foreach (Point Point in LineGaps(Rows.Values))
+                    foreach (Point Point in LineGaps(Rows.Values).SelectMany(s => s))
                         yield return Point;
 
                     //column line gaps <10ms
-                    foreach (Point Point in LineGaps(Cols.Values))
+                    foreach (Point Point in LineGaps(Cols.Values).SelectMany(s => s))
                         yield return Point;
 
                     foreach ((int, int) Item in points.Keys.Where(w => dots.ContainsKey(w)))
@@ -678,72 +681,38 @@ namespace Griddlers.Library
             //}
         }
 
-        private bool IsComplete(IEnumerable<Line> lines)
+        private static bool IsComplete(IEnumerable<Line> lines)
+            => lines.All(a => a.IsComplete);
+
+        public IEnumerable<Point> AddPoints(Line line,
+                                            int start,
+                                            GriddlerPath.Action action,
+                                            int? end = null,
+                                            string? colour = null)
         {
-            bool Complete = true;
-
-            foreach (Line Line in ForEachLine(lines))
-            {
-                if (Line.GetLinePointsValue(true) != Line.LineLength)
-                {
-                    Complete = false;
-                    break;
-                }
-                else
-                    Line.IsComplete = true;
-            }
-
-            return Complete;
-        }
-
-        private bool Validate(IEnumerable<Line> lines)
-        {
-            bool Valid = true;
-
-            foreach (Line Line in ForEachLine(lines))
-            {
-                int CurrentItem = 0;
-                
-                foreach ((int Pos, (int, int) Xy, Block Block, _, _, _) in ForEachLinePos(Line, (nS, wS, c, xy, gS) => nS && wS))
-                {
-                    if (Line.All(a => Block != a))
-                    {
-                        Valid = false;
-                        break;
-                    }
-
-                    //if (Block != Line[CurrentItem])
-                    //{
-                    //    Valid = false;
-                    //    break;
-                    //}
-
-                    CurrentItem++;
-                }
-
-                if (!Valid)
-                    break;
-            }
-
-            return Valid;
-        }
-
-
-        public IEnumerable<Point> AddPoints(Line line, int start, string colour, GriddlerPath.Action action, int? end = null, bool dot = false)
-        {
+            bool Dot = string.IsNullOrEmpty(colour);
             for (int Pos = start; Pos <= end.GetValueOrDefault(start); Pos++)
             {
+                if (Pos < 0 || Pos >= line.LineLength)
+                    continue;
+
                 var Xy = line.IsRow ? (Pos, line.LineIndex) : (line.LineIndex, Pos);
 
-                Point NewPoint = new Point(dot, Xy, colour, action);
-                bool New = (dot && !dots.ContainsKey(Xy)) || (!dot && !points.ContainsKey(Xy));
+                Point NewPoint = new Point(Dot, Xy, colour ?? "black", action);
+                bool New = (Dot && !dots.ContainsKey(Xy)) || (!Dot && !points.ContainsKey(Xy));
 
                 if (!Staging && !RemovedActions.Contains((byte)action))
                 {
-                    if (dot)
+                    if (Dot)
+                    {
                         dots.TryAdd(Xy, NewPoint);
+                        line.AddDot(Pos, action);
+                    }
                     else
+                    {
                         points.TryAdd(Xy, NewPoint);
+                        line.AddPoint(Pos, colour ?? "black", action);
+                    }
                 }
 
                 if (New && !RemovedActions.Contains((byte)action))
@@ -762,7 +731,9 @@ namespace Griddlers.Library
             }
         }
 
-        private IEnumerable<Line> ForEachLine(IEnumerable<Line> lines, Func<Line, bool>? run = null, int minLineValue = 1)
+        private static IEnumerable<Line> ForEachLine(IEnumerable<Line> lines,
+                                                     Func<Line, bool>? run = null,
+                                                     int minLineValue = 1)
         {
             foreach (Line L in lines)
             {
@@ -810,9 +781,9 @@ namespace Griddlers.Library
                     }
 
                     if (!WasSolid || ChangedColour)
-                        Block.StartIndex = Pos;
+                        Block.Start = Pos;
 
-                    Block.EndIndex = Pos;
+                    Block.End = Pos;
                     Block.SolidCount++;
                     SolidCount++;
 
@@ -832,21 +803,26 @@ namespace Griddlers.Library
             }
         }
 
-        private IEnumerable<Point> FullPart(Line line, int linePosition, int startItem, int endItem, GriddlerPath.Action action, bool complete = true)
+        private IEnumerable<Point> FullPart(Line line,
+                                            int linePosition,
+                                            int startItem,
+                                            int endItem,
+                                            GriddlerPath.Action action,
+                                            bool complete = true)
         {
             Point.Group++;
 
             foreach (Item Item in line.Skip(startItem).Take(endItem - startItem + 1))
             {
                 string Colour = Item.Colour;
-                foreach (Point Point in AddPoints(line, linePosition, Colour, action, linePosition + Item.Value - 1))
+                foreach (Point Point in AddPoints(line, linePosition, action, linePosition + Item.Value - 1, Colour))
                     yield return Point;
                 if (complete)
                     line.AddBlock(Item, true, linePosition, linePosition + Item.Value - 1);
                 linePosition += Item.Value;
                 if (linePosition < line.LineLength - 1 && line.GetDotCount(Item.Index) == 1)
                 {
-                    foreach (Point Pt in AddPoints(line, linePosition, Colour, action, dot: true))
+                    foreach (Point Pt in AddPoints(line, linePosition, action))
                         yield return Pt;
 
                     linePosition++;
@@ -854,7 +830,12 @@ namespace Griddlers.Library
             }
         }
 
-        private IEnumerable<Point> OverlapPart(Line line, int position, int lineEnd, int startItem, int endItem, GriddlerPath.Action action)
+        private IEnumerable<Point> OverlapPart(Line line,
+                                               int position,
+                                               int lineEnd,
+                                               int startItem,
+                                               int endItem,
+                                               GriddlerPath.Action action)
         {
             int LinePosition = position;
             bool[,] LineFlagsForward = new bool[lineEnd + 1, endItem + 1];
@@ -887,7 +868,7 @@ namespace Griddlers.Library
                 {
                     if (LineFlagsForward[Pos, Item.Index] && LineFlagsBackward[Pos, Item.Index])
                     {
-                        foreach (Point Pt in AddPoints(line, Pos, Item.Colour, action))
+                        foreach (Point Pt in AddPoints(line, Pos, action, colour: Item.Colour))
                             yield return Pt;
 
                         Any = true;
@@ -906,13 +887,15 @@ namespace Griddlers.Library
         /// </para>
         /// </summary>
         /// <param name="lines">The rows or colums</param>
-        private IEnumerable<Point> FullLine(IEnumerable<Line> lines)
+        private IEnumerable<IEnumerable<Point>> FullLine(IEnumerable<Line> lines)
         {
             foreach (Line Line in ForEachLine(lines, (line) => line.LineValue == line.LineLength))
             {
-                Line.IsComplete = true;
-                foreach (Point Pt in FullPart(Line, 0, 0, Line.LineItems - 1, GriddlerPath.Action.FullLine))
-                    yield return Pt;
+                yield return FullPart(Line,
+                                      0,
+                                      0,
+                                      Line.LineItems - 1,
+                                      GriddlerPath.Action.FullLine);
             }
         }
 
@@ -923,14 +906,18 @@ namespace Griddlers.Library
         /// </para>
         /// </summary>
         /// <param name="lines">The rows or colums</param>
-        private IEnumerable<Point> OverlapLine(IEnumerable<Line> lines)
+        private IEnumerable<IEnumerable<Point>> OverlapLine(IEnumerable<Line> lines)
         {
             static bool Run(Line line) =>
                 line.LineValue < line.LineLength && line.LineValue > line.LineLength / 2;
             foreach (Line Line in ForEachLine(lines, Run))
             {
-                foreach (Point Pt in OverlapPart(Line, 0, Line.LineLength - 1, 0, Line.LineItems - 1, GriddlerPath.Action.OverlapLine))
-                    yield return Pt;
+                yield return OverlapPart(Line,
+                                         0,
+                                         Line.LineLength - 1,
+                                         0,
+                                         Line.LineItems - 1,
+                                         GriddlerPath.Action.OverlapLine);
             }
         }
 
@@ -941,17 +928,14 @@ namespace Griddlers.Library
         /// </para>
         /// </summary>
         /// <param name="lines">The rows or colums</param>
-        private IEnumerable<Point> FullLineDots(IEnumerable<Line> lines)
+        private IEnumerable<IEnumerable<Point>> FullLineDots(IEnumerable<Line> lines)
         {
             foreach (Line Line in ForEachLine(lines, (line) => line.LineValue - line.GetDotCount() == line.GetLinePointsValue(), 0))
             {
                 Point.Group++;
-                Line.IsComplete = true;
-
                 for (int Pos = 0; Pos < Line.LineLength; Pos++)
                     if (!points.ContainsKey(Line.IsRow ? (Pos, Line.LineIndex) : (Line.LineIndex, Pos)))
-                        foreach (Point Pt in AddPoints(Line, Pos, "black", GriddlerPath.Action.FullLineDots, dot: true))
-                            yield return Pt;
+                        yield return AddPoints(Line, Pos, GriddlerPath.Action.FullLineDots);
             }
         }
 
@@ -967,11 +951,11 @@ namespace Griddlers.Library
         /// </para> 
         /// </summary>
         /// <param name="lines">The rows or colums</param>
-        private IEnumerable<Point> LineEdgeTL(IEnumerable<Line> lines)
+        private IEnumerable<IEnumerable<Point>> LineEdgeTL(IEnumerable<Line> lines)
         {
             foreach (Line Line in ForEachLine(lines))
             {
-                int LinePosition = 0, CurrentItem = 0, EndIndex = 0, FromIndex = 0;
+                int LinePosition = 0, CurrentItem = 0, End = 0, FromIndex = 0;
                 bool HadGap = false, ItemsOneValue = Line.ItemsOneValue;
 
                 foreach ((int Pos, (int, int) Xy, _, _, _, _) in ForEachLinePos(Line))
@@ -1042,14 +1026,17 @@ namespace Griddlers.Library
                                     if (Line.ShouldAddDots(CurrentItem).Item1)
                                     {
                                         EndDot = true;
-                                        foreach (Point Point in AddPoints(Line, Pos - 1, "black", GriddlerPath.Action.CompleteItem, dot: true))
-                                            yield return Point;
+                                        yield return AddPoints(Line,
+                                                               Pos - 1,
+                                                               GriddlerPath.Action.CompleteItem);
                                     }
-                                    if (Pos + CompleteCount < Line.LineLength && Line.ShouldAddDots(CurrentItem).Item2)
+                                    if (Pos + CompleteCount < Line.LineLength
+                                        && Line.ShouldAddDots(CurrentItem).Item2)
                                     {
                                         EndDot = true;
-                                        foreach (Point Point in AddPoints(Line, Pos + CompleteCount, "black", GriddlerPath.Action.CompleteItem, dot: true))
-                                            yield return Point;
+                                        yield return AddPoints(Line,
+                                                               Pos + CompleteCount,
+                                                               GriddlerPath.Action.CompleteItem);
                                     }
                                 }
                                 else if (CompleteCount > Line[CurrentItem].Value)
@@ -1096,21 +1083,28 @@ namespace Griddlers.Library
                                 if (ShiftCount > 0)
                                     Point.Group++;
 
-                                foreach (Point Point in AddPoints(Line, Pos - ShiftCount, Line[CurrentItem].Colour, GriddlerPath.Action.LineBackwardShift, Pos - 1))
-                                    yield return Point;
+                                yield return AddPoints(Line,
+                                                       Pos - ShiftCount,
+                                                       GriddlerPath.Action.LineBackwardShift,
+                                                       Pos - 1,
+                                                       Line[CurrentItem].Colour);
                             }
 
                             if (Line[CurrentItem].Value >= Pos - LinePosition + 1)
                                 Point.Group++;
 
                             //forward shift and end dot
-                            foreach (Point Point in AddPoints(Line, Pos + 1, Line[CurrentItem].Colour, GriddlerPath.Action.LineForwardShift, LinePosition + Line[CurrentItem].Value - 1))
-                                yield return Point;
+                            yield return AddPoints(Line,
+                                                   Pos + 1,
+                                                   GriddlerPath.Action.LineForwardShift,
+                                                   LinePosition + Line[CurrentItem].Value - 1,
+                                                   Line[CurrentItem].Colour);
                             if (Pos - LinePosition == 0 && Pos + Line[CurrentItem].Value < Line.LineLength && !EndDot
                                 && Line.ShouldAddDots(CurrentItem).Item2)
                             {
-                                foreach (Point Point in AddPoints(Line, Pos + Line[CurrentItem].Value, "black", GriddlerPath.Action.LineForwardShift, dot: true))
-                                    yield return Point;
+                                yield return AddPoints(Line,
+                                                       Pos + Line[CurrentItem].Value,
+                                                       GriddlerPath.Action.LineForwardShift);
                             }
 
                             Line.AddBlock(Line[CurrentItem],
@@ -1121,18 +1115,20 @@ namespace Griddlers.Library
                             //back dots
                             int BackReach = Pos - Line[CurrentItem].Value + (CompleteCount - 1);
                             if (CompleteCount > 0 && (Pos - LinePosition - 1 < Line[CurrentItem].Value || !ItemsOneValue || Line.LineItems == 1)
-                                && BackReach >= EndIndex)
+                                && BackReach >= End)
                             {
                                 Point.Group++;
-                                foreach (Point Point in AddPoints(Line, EndIndex, "black", GriddlerPath.Action.LineBackDots, BackReach, true))
-                                    yield return Point;
+                                yield return AddPoints(Line,
+                                                       End,
+                                                       GriddlerPath.Action.LineBackDots,
+                                                       BackReach);
                             }
 
                             if (CurrentItem == Line.LineItems - 1)
                                 break;
 
                             //3,4|---0-{LP}-{EI}----00
-                            EndIndex = Pos + Line[CurrentItem].Value;
+                            End = Pos + Line[CurrentItem].Value;
                             LinePosition += (Line[CurrentItem].Value + Line.GetDotCount(CurrentItem));
                             CurrentItem++;
                             FromIndex = Pos;
@@ -1160,11 +1156,11 @@ namespace Griddlers.Library
         /// </para>
         /// </summary>
         /// <param name="lines">The rows or colums</param>
-        private IEnumerable<Point> LineEdgeBR(IEnumerable<Line> lines)
+        private IEnumerable<IEnumerable<Point>> LineEdgeBR(IEnumerable<Line> lines)
         {
             foreach (Line Line in ForEachLine(lines))
             {
-                int LinePosition = 0, CurrentItem = Line.LineItems - 1, EndIndex = Line.LineLength - 1;
+                int LinePosition = 0, CurrentItem = Line.LineItems - 1, End = Line.LineLength - 1;
                 int FromIndex = Line.LineLength - 1;
                 bool HadGap = false, ItemsOneValue = Line.ItemsOneValue;
 
@@ -1234,14 +1230,16 @@ namespace Griddlers.Library
                                     if (Line.ShouldAddDots(CurrentItem).Item2)
                                     {
                                         EndDot = true;
-                                        foreach (Point Point in AddPoints(Line, Pos + 1, "black", GriddlerPath.Action.CompleteItem, dot: true))
-                                            yield return Point;
+                                        yield return AddPoints(Line,
+                                                               Pos + 1,
+                                                               GriddlerPath.Action.CompleteItem);
                                     }
                                     if (Pos - CompleteCount >= 0 && Line.ShouldAddDots(CurrentItem).Item1)
                                     {
                                         EndDot = true;
-                                        foreach (Point Point in AddPoints(Line, Pos - CompleteCount, "black", GriddlerPath.Action.CompleteItem, dot: true))
-                                            yield return Point;
+                                        yield return AddPoints(Line,
+                                                               Pos - CompleteCount,
+                                                               GriddlerPath.Action.CompleteItem);
                                     }
                                 }
                                 else if (CompleteCount > Line[CurrentItem].Value)
@@ -1253,8 +1251,11 @@ namespace Griddlers.Library
                                 if (ShiftCount > 0)
                                     Point.Group++;
 
-                                foreach (Point Point in AddPoints(Line, Pos + 1, Line[CurrentItem].Colour, GriddlerPath.Action.LineForwardShift, Pos + ShiftCount))
-                                    yield return Point;
+                                yield return AddPoints(Line,
+                                                       Pos + 1,
+                                                       GriddlerPath.Action.LineForwardShift,
+                                                       Pos + ShiftCount,
+                                                       Line[CurrentItem].Colour);
 
                                 if (!string.IsNullOrEmpty(HasError))
                                     Console.WriteLine(HasError);
@@ -1264,14 +1265,18 @@ namespace Griddlers.Library
                                 Point.Group++;
 
                             //forward shift and end dot
-                            foreach (Point Point in AddPoints(Line, Pos + 1 - (Line[CurrentItem].Value - ((Line.LineLength - Pos - 1) - LinePosition)), Line[CurrentItem].Colour, GriddlerPath.Action.LineBackwardShift, Pos - 1))
-                                yield return Point;
+                            yield return AddPoints(Line,
+                                                   Pos + 1 - (Line[CurrentItem].Value - ((Line.LineLength - Pos - 1) - LinePosition)),
+                                                   GriddlerPath.Action.LineBackwardShift,
+                                                   Pos - 1,
+                                                   Line[CurrentItem].Colour);
                             if (!EndDot && (Line.LineLength - Pos - 1) - LinePosition == 0
                                 && Line.LineLength - Line[CurrentItem].Value - LinePosition > 0
                                 && Line.ShouldAddDots(CurrentItem).Item1)
                             {
-                                foreach (Point Point in AddPoints(Line, Pos - Line[CurrentItem].Value, "black", GriddlerPath.Action.LineBackwardShift, dot: true))
-                                    yield return Point;
+                                yield return AddPoints(Line,
+                                                       Pos - Line[CurrentItem].Value,
+                                                       GriddlerPath.Action.LineBackwardShift);
                             }
 
                             Line.AddBlock(Line[CurrentItem],
@@ -1281,19 +1286,21 @@ namespace Griddlers.Library
 
                             //back dots
                             int BackReach = Pos + Line[CurrentItem].Value - (CompleteCount - 1);
-                            if (CompleteCount > 0 && BackReach <= EndIndex &&
+                            if (CompleteCount > 0 && BackReach <= End &&
                                 (Line.LineLength - Pos - 1 - LinePosition - 1 < Line[CurrentItem].Value
                                 || !ItemsOneValue || Line.LineItems == 1))
                             {
                                 Point.Group++;
-                                foreach (Point Point in AddPoints(Line, BackReach, "black", GriddlerPath.Action.LineBackDots, EndIndex, true))
-                                    yield return Point;
+                                yield return AddPoints(Line,
+                                                       BackReach,
+                                                       GriddlerPath.Action.LineBackDots,
+                                                       End);
                             }
 
                             if (CurrentItem == 0)
                                 break;
 
-                            EndIndex = Pos - Line[CurrentItem].Value;
+                            End = Pos - Line[CurrentItem].Value;
                             LinePosition += (Line[CurrentItem].Value + Line.GetDotCountB(CurrentItem));
                             CurrentItem--;
                             FromIndex = Pos;
@@ -1348,7 +1355,7 @@ namespace Griddlers.Library
         /// </para>
         /// </summary>
         /// <param name="lines">The rows or colums</param>
-        private IEnumerable<Point> LineGaps(IEnumerable<Line> lines)
+        private IEnumerable<IEnumerable<Point>> LineGaps(IEnumerable<Line> lines)
         {
             foreach (Line Line in ForEachLine(lines))
             {
@@ -1366,16 +1373,18 @@ namespace Griddlers.Library
 
                         if (GapSizeCopy > 0)
                         {
-                            LineSegment Ls = Line.GetItemAtPos(Pos - GapSizeCopy + IsEnd);
-                            LineSegment LsEnd = Line.GetItemAtPosB(Pos - 1 + IsEnd);
                             if (Line.MinItem > GapSizeCopy)
                             {
-                                foreach (Point Point in AddPoints(Line, Pos - GapSizeCopy + IsEnd, "black", GriddlerPath.Action.GapDotsMinItem, Pos + IsEnd - 1, true))
-                                    yield return Point;
+                                yield return AddPoints(Line,
+                                                       Pos - GapSizeCopy + IsEnd,
+                                                       GriddlerPath.Action.GapDotsMinItem,
+                                                       Pos + IsEnd - 1);
                             }
                             else
                             {
                                 //multiple solids
+                                LineSegment Ls = Line.GetItemAtPos(Pos - GapSizeCopy + IsEnd);
+                                LineSegment LsEnd = Line.GetItemAtPosB(Pos - 1 + IsEnd);
                                 ItemRange Range = Ls.With(LsEnd);
                                 int Sum = Range.Sum();
 
@@ -1383,7 +1392,7 @@ namespace Griddlers.Library
                                 Item? FirstColourItem = LsEnd.After.LastOrDefault(l => l.Index < LsEnd.Index &&
                                                                 l.Colour == Ls.RightBefore.First().Colour);
                                 if (LsEnd.Valid && LsEnd.Eq && FirstColourItem.HasValue
-                                    && Ls.RightBefore.First().EndIndex == Pos - GapSizeCopy + IsEnd - 2)
+                                    && Ls.RightBefore.First().End == Pos - GapSizeCopy + IsEnd - 2)
                                 {
                                     int ColourSum = new ItemRange(LsEnd.After.Where(w => w.Index > FirstColourItem.Value.Index)).Sum();
                                     if (ColourSum > GapSizeCopy)
@@ -1419,30 +1428,45 @@ namespace Griddlers.Library
                                     //    Action = GriddlerPath.Action.GapDotsNoMoreItemsB;
 
                                     Point.Group++;
-                                    foreach (Point Point in AddPoints(Line, Pos - GapSizeCopy + IsEnd, "black", Action, Pos + IsEnd - 1, true))
-                                        yield return Point;
+                                    yield return AddPoints(Line,
+                                                           Pos - GapSizeCopy + IsEnd,
+                                                           Action,
+                                                           Pos + IsEnd - 1);
                                 }
                                 else if (Ls.Valid && (LsEnd.Valid
                                     || (Ls.Eq && Ls.Index > 0 && LsEnd.ScV && Line[Ls.Index].Value != LsEnd.Sc)
                                     ) && Sum == GapSizeCopy)
                                 {
-                                    foreach (Point Point in FullPart(Line, Pos - GapSizeCopy + IsEnd, Ls.Index, LsEnd.Index, GriddlerPath.Action.GapFull))
-                                        yield return Point;
+                                    yield return FullPart(Line,
+                                                          Pos - GapSizeCopy + IsEnd,
+                                                          Ls.Index,
+                                                          LsEnd.Index,
+                                                          GriddlerPath.Action.GapFull);
                                 }
-                                else if (Ls.Valid && FirstSolid && Ls.Index <= LsEnd.Index && Ls.ItemsOneValue)
+                                else if (Ls.Valid && FirstSolid
+                                    && Ls.Index <= LsEnd.Index && Ls.ItemsOneValue)
                                 {
-                                    foreach (Point Point in FullPart(Line, Pos - GapSizeCopy + IsEnd, Ls.Index, Ls.Index, GriddlerPath.Action.GapFull, false))
-                                        yield return Point;
+                                    yield return FullPart(Line,
+                                                          Pos - GapSizeCopy + IsEnd,
+                                                          Ls.Index,
+                                                          Ls.Index,
+                                                          GriddlerPath.Action.GapFull,
+                                                          false);
                                 }
-                                else if (Ls.Valid && LsEnd.Valid && (Ls.Index == LsEnd.Index || Ls.Eq || LsEnd.Eq)
+                                else if (Ls.Valid && LsEnd.Valid
+                                    && (Ls.Index == LsEnd.Index || Ls.Eq || LsEnd.Eq)
                                     && Sum < GapSizeCopy && Sum > GapSizeCopy / 2)
                                 {
                                     GriddlerPath.Action Action = GriddlerPath.Action.GapOverlapSameItem;
                                     if (Ls.Eq || LsEnd.Eq)
                                         Action = GriddlerPath.Action.GapOverlap;
 
-                                    foreach (Point Point in OverlapPart(Line, Pos - GapSizeCopy + IsEnd, Pos - 1 + IsEnd, Ls.Index, LsEnd.Index, Action))
-                                        yield return Point;
+                                    yield return OverlapPart(Line,
+                                                             Pos - GapSizeCopy + IsEnd,
+                                                             Pos - 1 + IsEnd,
+                                                             Ls.Index,
+                                                             LsEnd.Index,
+                                                             Action);
                                 }
                             }
                             FirstSolid = false;
@@ -1479,7 +1503,7 @@ namespace Griddlers.Library
         /// </para>
         /// </summary>
         /// <param name="lines">The rows or colums</param>
-        private IEnumerable<Point> LineDots(IEnumerable<Line> lines)
+        private IEnumerable<IEnumerable<Point>> LineDots(IEnumerable<Line> lines)
         {
             foreach (Line Line in ForEachLine(lines))
             {
@@ -1513,12 +1537,57 @@ namespace Griddlers.Library
                         MaxItem = new Item(Line.MaxItem, "black");
                     }
 
+                    //must join
+                    //(bool Equality, bool EqualityE) = (Ls.Eq, LsEnd.Eq);
+                    //(int Index, int IndexE, Item? Item) = (Ls.ItemAtStartOfGap, LsEnd.ItemAtStartOfGap, Ls.Item);
+                    //(int EqualityIndex, int EqualityIndexE) = (Ls.LastItemAtEquality, LsEnd.LastItemAtEquality);
+                    //if (!Line.Dots.Contains(Block.End + 1)
+                    //    && !Line.Points.ContainsKey(Block.End + 1)
+                    //    && Line.Points.ContainsKey(Block.End + 2)
+                    //    && !ItemRange.Pair(Line.Where(EqualityIndex, EqualityIndexE))
+                    //    .Any(s => Block.CanBe(s.Item1)
+                    //    && s.Item1.Value <= Block.End - (StartOfGap + 1) + 1
+                    //    && s.Item2.Value <= (EndOfGap - 1)
+                    //    - (Block.End + 1 + Line.GetDotCount(s.Item1.Index)) + 1))
+                    //{
+                    //    int PointsChange = Line.Points.Count;
+                    //    yield return AddPoints(Line,
+                    //                           Block.End + 1,
+                    //                           GriddlerPath.Action.MustJoin,
+                    //                           colour: Block.Colour);
+                    //    if (Line.Points.Count != PointsChange)
+                    //        break; //change block count - break isolations
+                    //}
+                    //else if (Equality && EqualityE && Index + 1 == IndexE
+                    //    && Line.GetNumberOfBlocks(StartOfGap + 1, EndOfGap - 1) == 3)
+                    //{
+                    //    Block? LastBlock = Line.GetBlock(Block.Start - 1, false);
+                    //    Block? NextBlock = Line.GetBlock(Block.End + 1);
+
+                    //    if (LastBlock != null && NextBlock != null && Item.HasValue)
+                    //    {
+                    //        bool Isolated = Line.IsolatedPart(Item.Value, Block, LastBlock);
+
+                    //        if (Isolated)
+                    //        {
+                    //            int PointsChange = Line.Points.Count;
+                    //            yield return AddPoints(Line,
+                    //                                   Block.End + 1,
+                    //                                   GriddlerPath.Action.MustJoin,
+                    //                                   NextBlock.Start - 1,
+                    //                                   Block.Colour);
+                    //            if (Line.Points.Count != PointsChange)
+                    //                break; //change block count - break isolations
+                    //        }
+                    //    }
+                    //}
+
                     //No Join//3,2,5,...//|---.-00-0- to |---.-00.0-
                     if (!dots.ContainsKey(Xy)
                         && points.TryGetValue(Line.IsRow ? (Pos + 1, Line.LineIndex) : (Line.LineIndex, Pos + 1), out Point? Pt)
                         && Pt.Colour == Block.Colour)
                     {
-                        int Start = Block.StartIndex - 1, End = Line.LineLength;
+                        int Start = Block.Start - 1, End = Line.LineLength;
                         bool Flag = false;
                         string PrevPtG = Block.Colour;
                         for (int Pos2 = Pos + 1; Pos2 < Line.LineLength; Pos2++)
@@ -1550,12 +1619,12 @@ namespace Griddlers.Library
                             IEnumerable<Item> Items = Line.Triple().Where((w, i) => w.Item3.Index >= Ls.LastItemAtEquality
                                                                         && w.Item3.Index <= Ls.Index + 1
                                                                         && w.Item1.Colour == Block.Colour
-                                                                        && BlackOne == w.Item2
+                                                                        && BlackOne.Is(w.Item2)
                                                                         && w.Item3.Colour == Block.Colour)
                                                                 .Select(s => s.Item3);
                             Item? Second = Items.FirstOrDefault();
 
-                            if (!Second.HasValue 
+                            if (!Second.HasValue
                                 || (Items.Count() == 1
                                     && !Line.FindPossibleSolids(Pos + 1).Contains((Second.Value.Value, Second.Value.Colour))))
                                 Flag = true;
@@ -1564,8 +1633,9 @@ namespace Griddlers.Library
                         if (Flag)
                         {
                             Point.Group++;
-                            foreach (Point Point in AddPoints(Line, Pos, "black", GriddlerPath.Action.NoJoin, dot: true))
-                                yield return Point;
+                            yield return AddPoints(Line,
+                                                   Pos,
+                                                   GriddlerPath.Action.NoJoin);
                             break;
                         }
                     }
@@ -1619,7 +1689,7 @@ namespace Griddlers.Library
                         }
 
                         if (LsEnd.Valid && LsEnd.Gap.Any()
-                                && LsEnd.Before.All(a => a < Block))
+                                && LsEnd.Before.All(a => !Block.CanBe(a)))
                         {
                             end = LsEnd.Gap.Sum() + Line.GetDotCountB(LsEnd.Index + 1);
                             return true;
@@ -1632,8 +1702,11 @@ namespace Griddlers.Library
                     if (MinItemBackwards(out int En))
                     {
                         Point.Group++;
-                        foreach (Point Point in AddPoints(Line, EndOfGap - En - MinItem.Value, Block.Colour, GriddlerPath.Action.MinItem, Pos - Block.SolidCount - 1))
-                            yield return Point;
+                        yield return AddPoints(Line,
+                                               EndOfGap - En - MinItem.Value,
+                                               GriddlerPath.Action.MinItem,
+                                               Pos - Block.SolidCount - 1,
+                                               Block.Colour);
                     }
 
                     //min item forwards
@@ -1641,8 +1714,11 @@ namespace Griddlers.Library
                     {
                         Point.Group++;
                         int PointsChange = points.Count;
-                        foreach (Point Point in AddPoints(Line, Pos, Block.Colour, GriddlerPath.Action.MinItem, StartOfGap + St + Min))
-                            yield return Point;
+                        yield return AddPoints(Line,
+                                               Pos,
+                                               GriddlerPath.Action.MinItem,
+                                               StartOfGap + St + Min,
+                                               Block.Colour);
                         Break = points.Count - PointsChange > 0;
                     }
 
@@ -1673,7 +1749,7 @@ namespace Griddlers.Library
                         }
 
                         if (Start == End && Start < Line.LineItems - 1
-                            && Line[Start + 1] < Block
+                            && !Block.CanBe(Line[Start + 1])
                             && Line.IsEq(new ItemRange(Line[Start], Line[Start + 1]), Start + 1, StartOfGap, Pos - Block.SolidCount))
                         {
                             m = Line[End].Value;
@@ -1719,7 +1795,7 @@ namespace Griddlers.Library
                             End = Ls.Index;
 
                         if (Start == End && End > 0
-                            && Line[End - 1] < Block
+                            && !Block.CanBe(Line[End - 1])
                             && End != Ls.Index
                             && Line.IsEqB(new ItemRange(Line[End]), End - 1, Pos, EndOfGap)
                             //&& EndOfGap - Pos - Line[End].Value <= Line.GetDotCountB(End)
@@ -1733,7 +1809,7 @@ namespace Griddlers.Library
                             && LsEnd.UniqueCount(Block)
                             && Line.IsEqB(LsEnd.Gap, LsEnd.Index + 1, Pos, EndOfGap))
                         {
-                            Item Match = LsEnd.First(f => f >= Block);
+                            Item Match = LsEnd.First(Block.CanBe);
                             if (Match.Index == Line.LineItems - 1)
                             {
                                 m = Match.Value;
@@ -1757,53 +1833,67 @@ namespace Griddlers.Library
                     if (SingleItemStart(out int MaxItemS, out int GapStart))
                     {
                         Point.Group++;
-                        foreach (Point Point in AddPoints(Line, GapStart + 1, "black", GriddlerPath.Action.ItemBackwardReach, Pos - MaxItemS - 1, true))
-                            yield return Point;
+                        yield return AddPoints(Line,
+                                               GapStart + 1,
+                                               GriddlerPath.Action.ItemBackwardReach,
+                                               Pos - MaxItemS - 1);
                     }
 
                     //item forward reach//
-                    if (SingleItemEnd(out int MaxItemE, out int GapEnd) && Pos - Block.SolidCount + MaxItemE < GapEnd)
+                    if (SingleItemEnd(out int MaxItemE, out int GapEnd)
+                        && Pos - Block.SolidCount + MaxItemE < GapEnd)
                     {
                         Point.Group++;
                         int DotsChange = dots.Count;
-                        foreach (Point Point in AddPoints(Line, Pos - Block.SolidCount + MaxItemE, "black", GriddlerPath.Action.ItemForwardReach, GapEnd - 1, true))
-                            yield return Point;
+                        yield return AddPoints(Line,
+                                               Pos - Block.SolidCount + MaxItemE,
+                                               GriddlerPath.Action.ItemForwardReach,
+                                               GapEnd - 1);
                         Break = dots.Count - DotsChange > 0;
                     }
 
                     //Sum Dots Forward//1,1,1,4,...//|------0--// to |-----.0--
                     if (Ls.Valid && Pos - Block.SolidCount - 1 >= 0
-                        && Ls.Before.All(a => Block == a)
+                        && Ls.Before.All(Block.Is)
                         && Line.IsEq(Ls.Gap, Ls.Index - 1, StartOfGap, Pos - Block.SolidCount - 1))
                     {
                         Point.Group++;
-                        foreach (Point Point in AddPoints(Line, Pos - Block.SolidCount - 1, "black", GriddlerPath.Action.SumDotForward, dot: true))
-                            yield return Point;
+                        yield return AddPoints(Line,
+                                               Pos - Block.SolidCount - 1,
+                                               GriddlerPath.Action.SumDotForward);
                     }
 
                     ///Sum Dot Backward//...,3,1,1,3//-0----.000.|// to -0.---.000.|
-                    if (LsEnd.Valid && LsEnd.Before.All(a => Block == a)
+                    if (LsEnd.Valid && LsEnd.Before.All(Block.Is)
                         && Line.IsEqB(LsEnd.Gap, LsEnd.Index + 1, Pos, EndOfGap))
                     {
                         Point.Group++;
-                        foreach (Point Point in AddPoints(Line, Pos, "black", GriddlerPath.Action.SumDotBackward, dot: true))
-                            yield return Point;
+                        yield return AddPoints(Line,
+                                               Pos,
+                                               GriddlerPath.Action.SumDotBackward);
                     }
 
                     //Half gap overlap forwards//...,2,2//.--0----| to .--0--0-|
-                    if (!Break && Ls.Valid && Ls.Index > 0 && EndOfGap - (Pos + 1) >= Line[Ls.Index].Value)
+                    if (!Break && Ls.Valid && Ls.Index > 0
+                        && EndOfGap - (Pos + 1) >= Line[Ls.Index].Value)
                     {
                         ItemRange ER = Ls.With(LsEnd.ItemAtStartOfGap);//Ls.With(LsE);
                                                                        //need to check if Pos is on Item
-                        if (Ls.Index > Ls.ItemAtStartOfGap && Ls.Index <= LsEnd.ItemAtStartOfGap && ER.Any()
-                        && ER.Sum() <= EndOfGap - (Pos + 1) && ER.Sum() > (EndOfGap - (Pos + 1)) / 2
+                        if (Ls.Index > Ls.ItemAtStartOfGap
+                            && Ls.Index <= LsEnd.ItemAtStartOfGap && ER.Any()
+                        && ER.Sum() <= EndOfGap - (Pos + 1)
+                        && ER.Sum() > (EndOfGap - (Pos + 1)) / 2
                         && Line.IsEq(Ls.Gap, Ls.Index - 1, StartOfGap, Pos - Block.SolidCount)
                         )
                         {
                             Point.Group++;
                             int PointsChange = points.Count;
-                            foreach (Point Point in OverlapPart(Line, Pos + Line.GetDotCount(Ls.Index - 1), EndOfGap - 1, Ls.Index, LsEnd.ItemAtStartOfGap, GriddlerPath.Action.HalfGapOverlap))
-                                yield return Point;
+                            yield return OverlapPart(Line,
+                                                     Pos + Line.GetDotCount(Ls.Index - 1),
+                                                     EndOfGap - 1,
+                                                     Ls.Index,
+                                                     LsEnd.ItemAtStartOfGap,
+                                                     GriddlerPath.Action.HalfGapOverlap);
                             Break = points.Count - PointsChange > 0;
                         }
                     }
@@ -1811,10 +1901,8 @@ namespace Griddlers.Library
                     //Half gap overlap backwards//4,6,...//|.-----000000. to |.-000-000000.
                     if (Ls.Valid && Ls.Index > 0)
                     {
-                        int BlockIndex = Line.FirstOrDefault(w => Block == w)?.Index ?? -1;
-
+                        int BlockIndex = Line.FirstOrDefault(Block.Is)?.Index ?? -1;
                         ItemRange ER = new ItemRange(Line.Where(w => w.Index >= Ls.ItemAtStartOfGap && w.Index < BlockIndex));
-
 
                         if (NoMoreItems && ER.Any()
                         && ER.Sum() <= Pos - Block.SolidCount - 1 - StartOfGap
@@ -1823,8 +1911,12 @@ namespace Griddlers.Library
                         )
                         {
                             Point.Group++;
-                            foreach (Point Point in OverlapPart(Line, StartOfGap + 1, Pos - Block.SolidCount - 1, Ls.ItemAtStartOfGap, BlockIndex - 1, GriddlerPath.Action.HalfGapOverlap))
-                                yield return Point;
+                            yield return OverlapPart(Line,
+                                                     StartOfGap + 1,
+                                                     Pos - Block.SolidCount - 1,
+                                                     Ls.ItemAtStartOfGap,
+                                                     BlockIndex - 1,
+                                                     GriddlerPath.Action.HalfGapOverlap);
                         }
                     }
 
@@ -1854,8 +1946,10 @@ namespace Griddlers.Library
                         if (Start > -1 && Start <= End)
                         {
                             Point.Group++;
-                            foreach (Point Point in AddPoints(Line, Start, "black", GriddlerPath.Action.IsolatedItemsReach, End, true))
-                                yield return Point;
+                            yield return AddPoints(Line,
+                                                   Start,
+                                                   GriddlerPath.Action.IsolatedItemsReach,
+                                                   End);
                         }
                     }
 
@@ -1882,12 +1976,16 @@ namespace Griddlers.Library
                         {
                             if (Line.ShouldAddDots(Ls.Index - 1).Item2)
                             {
-                                foreach (Point Point in AddPoints(Line, Pos, "black", GriddlerPath.Action.HalfGapFullPart, dot: true))
-                                    yield return Point;
+                                yield return AddPoints(Line,
+                                                       Pos,
+                                                       GriddlerPath.Action.HalfGapFullPart);
                             }
 
-                            foreach (Point Point in FullPart(Line, Pos + Line.GetDotCount(Ls.Index - 1), Ls.Index, LsEnd.ItemAtStartOfGap, GriddlerPath.Action.HalfGapFullPart))
-                                yield return Point;
+                            yield return FullPart(Line,
+                                                  Pos + Line.GetDotCount(Ls.Index - 1),
+                                                  Ls.Index,
+                                                  LsEnd.ItemAtStartOfGap,
+                                                  GriddlerPath.Action.HalfGapFullPart);
 
                             break;
                         }
@@ -1905,7 +2003,7 @@ namespace Griddlers.Library
                             return true;
                         }
 
-                        if (Block == MaxItem)
+                        if (Block.Is(MaxItem))
                         {
                             bool Flag = true;
 
@@ -1934,36 +2032,6 @@ namespace Griddlers.Library
                             return true;
                         }
 
-                        if (dots.ContainsKey(Xy) && false)
-                        {
-                            int End = Line.LineLength;
-                            string PrevPtG = Block.Colour;
-                            for (int Pos2 = Pos + 1; Pos2 < Line.LineLength; Pos2++)
-                            {
-                                var PosXy = Line.IsRow ? (Pos2, Line.LineIndex) : (Line.LineIndex, Pos2);
-                                if ((!points.TryGetValue(PosXy, out Pt) || Pt.Colour != PrevPtG)
-                                    && dots.ContainsKey(PosXy))
-                                {
-                                    End = Pos2;
-                                    break;
-                                }
-                                else if (Pt != (object?)null)
-                                    PrevPtG = Pt.Colour;
-                            }
-
-                            Block NextBlock = new Block(-1, PrevPtG) { SolidCount = End - Pos - 1 };
-                            Item[] Matches = Line.Pair().Where(w => Block == w.Item1
-                                                                && NextBlock == w.Item2)
-                                                        .Select(s => s.Item1)
-                                                        .ToArray();
-
-                            if (Matches.Length == 1)
-                            {
-                                (s, e) = Line.ShouldAddDots(Matches[0].Index);
-                                return true;
-                            }
-                        }
-
                         return false;
                     }
 
@@ -1977,14 +2045,16 @@ namespace Griddlers.Library
 
                         if (Pos - Block.SolidCount - 1 > 0 && S)
                         {
-                            foreach (Point Point in AddPoints(Line, Pos - Block.SolidCount - 1, "black", GriddlerPath.Action.CompleteItem, dot: true))
-                                yield return Point;
+                            yield return AddPoints(Line,
+                                                   Pos - Block.SolidCount - 1,
+                                                   GriddlerPath.Action.CompleteItem);
                         }
 
                         if (E)
                         {
-                            foreach (Point Point in AddPoints(Line, Pos, "black", GriddlerPath.Action.CompleteItem, dot: true))
-                                yield return Point;
+                            yield return AddPoints(Line,
+                                                   Pos,
+                                                   GriddlerPath.Action.CompleteItem);
                         }
                     }
 
@@ -2002,7 +2072,7 @@ namespace Griddlers.Library
         /// </para>
         /// </summary>
         /// <param name="lines">The rows or colums</param>
-        private IEnumerable<Point> MultiColourCrossReference(IEnumerable<Line> lines)
+        private IEnumerable<IEnumerable<Point>> MultiColourCrossReference(IEnumerable<Line> lines)
         {
             int MaxLines = lines.First().IsRow ? Rows.Count : Cols.Count;
 
@@ -2031,8 +2101,8 @@ namespace Griddlers.Library
 
                         if (Colour == PrevColour)
                         {
-                            ColourCounts[ColourBlockIndex].EndIndex = Pos;
-                            ColourCounts[ColourBlockIndex].SolidCount++; 
+                            ColourCounts[ColourBlockIndex].End = Pos;
+                            ColourCounts[ColourBlockIndex].SolidCount++;
                         }
                         else
                         {
@@ -2048,21 +2118,27 @@ namespace Griddlers.Library
                         {
                             if (Item.Item2.Value == Item.Item1.SolidCount)
                             {
-                                foreach (Point Point in FullPart(Line, Item.Item1.StartIndex, Item.Item2.Index, Item.Item2.Index, GriddlerPath.Action.GapFull))
-                                    yield return Point;
+                                yield return FullPart(Line,
+                                                      Item.Item1.Start,
+                                                      Item.Item2.Index,
+                                                      Item.Item2.Index,
+                                                      GriddlerPath.Action.GapFull);
                             }
                             else if (Item.Item2.Value < Item.Item1.SolidCount
                                     && Item.Item2.Value >= Item.Item1.SolidCount / 2)
                             {
-                                foreach (Point Point in OverlapPart(Line, Item.Item1.StartIndex, Item.Item1.EndIndex, Item.Item2.Index, Item.Item2.Index, GriddlerPath.Action.GapFull))
-                                    yield return Point;
+                                yield return OverlapPart(Line,
+                                                         Item.Item1.Start,
+                                                         Item.Item1.End,
+                                                         Item.Item2.Index,
+                                                         Item.Item2.Index,
+                                                         GriddlerPath.Action.GapFull);
                             }
                         }
                     }
                 }
             }
         }
-
 
         /// <summary>
         /// Add one point at a time
@@ -2085,9 +2161,9 @@ namespace Griddlers.Library
                         if (Ls.Valid && Ls.Eq && Ls.Item.HasValue)
                         {
                             //add one point
-                            foreach (Point Point in AddPoints(Line, Pos, Ls.Item.Value.Colour, GriddlerPath.Action.TrialAndError, Pos))
+                            foreach (Point Point in AddPoints(Line, Pos, GriddlerPath.Action.TrialAndError, Pos, Ls.Item.Value.Colour))
                             {
-                                Trials.Add((Point.Xpos, Point.Ypos));
+                                Trials.Add((Point.X, Point.Y));
                                 yield return Point;
                             }
 

@@ -82,11 +82,11 @@ namespace Griddlers.Controllers
             public string Name { get; set; }
             public short Group { get; set; }
 
-            [JsonPropertyName("xPos")]
-            public byte Xpos { get; set; }
+            [JsonPropertyName("x")]
+            public byte X { get; set; }
 
-            [JsonPropertyName("yPos")]
-            public byte Ypos { get; set; }
+            [JsonPropertyName("y")]
+            public byte Y { get; set; }
 
             public ClientGriddlerPath(Point point) 
             {
@@ -97,16 +97,16 @@ namespace Griddlers.Controllers
                     Name = EnumValue;
 
                 Group = point.Grp;
-                Xpos = (byte)point.Xpos;
-                Ypos = (byte)point.Ypos;
+                X = (byte)point.X;
+                Y = (byte)point.Y;
             }
 
             public ClientGriddlerPath(GriddlerPath p) 
             {
                 Name = p.action_name;
                 Group = p.group_num;
-                Xpos = p.x_position;
-                Ypos = p.y_position;
+                X = p.x_position;
+                Y = p.y_position;
             }
         }
 
