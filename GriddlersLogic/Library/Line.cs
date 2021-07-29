@@ -11,13 +11,10 @@ namespace Griddlers.Library
         //TEMP - until points/dots are in this class
         private Logic Logic;
 
-        private Item[] _Items => _ItemsArray;
+        private new Item[] _Items => (Item[])base._Items;
         private readonly IDictionary<int, Block> _Blocks;
         private readonly IDictionary<int, Block> _BlocksByStart;
         private readonly IDictionary<int, Block> _BlocksByEnd;
-        private readonly IDictionary<int, LineSegment> _ItemsAtPos;
-        private readonly IDictionary<int, LineSegment> _ItemsAtPosB;
-        private readonly IDictionary<(int, int, int), (bool, bool, IDictionary<int, int>)> _Isolations;
         private int? _LineValue;
         private int? _MinItem;
         private int? _MaxItem;
@@ -26,7 +23,6 @@ namespace Griddlers.Library
         public IDictionary<int, string> Points { get; private set; }
         public HashSet<int> Dots { get; private set; }
         public bool IsComplete => Points.Count + Dots.Count == LineLength;
-        public int CompletePos { get; set; }
         public bool IsRow { get; private set; }
         public int LineLength { get; private set; }
         public int LineIndex { get; private set; }
@@ -68,7 +64,7 @@ namespace Griddlers.Library
                     bool isRow,
                     int lL,
                     Item[] items,
-                    Logic logic) : base(items)
+                    Logic logic) : base(items, 0, items.Length - 1, true)
         {
             Logic = logic;
             IsRow = isRow;
@@ -77,9 +73,6 @@ namespace Griddlers.Library
             _Blocks = new Dictionary<int, Block>(items.Length);
             _BlocksByStart = new Dictionary<int, Block>(items.Length);
             _BlocksByEnd = new Dictionary<int, Block>(items.Length);
-            _ItemsAtPos = new Dictionary<int, LineSegment>(lL);
-            _ItemsAtPosB = new Dictionary<int, LineSegment>(lL);
-            _Isolations = new Dictionary<(int, int, int), (bool, bool, IDictionary<int, int>)>();
             _PairLines = new Dictionary<int, Line>();
 
             Points = new Dictionary<int, string>(lL);
@@ -157,6 +150,146 @@ namespace Griddlers.Library
             }
         }
 
+        //public int SumWhile(int start,
+        //                    Gap gap,
+        //                    Block? block = null,
+        //                    bool forward = true,
+        //                    bool? blockDir = null)
+        //{
+        //    (int Sum, int Shift) = (0, 0);
+        //    int StartPos = gap.Start;
+        //    int EndPos = gap.End;
+        //    int Range = gap.Size;
+
+        //    if (block != null)
+        //    {
+        //        if (blockDir.GetValueOrDefault(forward))
+        //            EndPos = block.Start;
+        //        else
+        //            StartPos = block.End;
+        //        Range = EndPos - StartPos;
+        //    }
+
+        //    int CrashPos(int sum)
+        //    {
+        //        int AdjS = !blockDir.GetValueOrDefault(true) ? 1 : 0;
+        //        int AdjE = blockDir.GetValueOrDefault() ? 1 : 0;
+        //        return forward ? StartPos + sum + AdjS : EndPos - sum - AdjE;
+        //    }
+
+        //    for (int Index = start; forward ? Index < LineItems : Index >= 0; Index += forward ? 1 : -1)
+        //    {
+        //        Item Item = this[Index];
+        //        var (Value, Colour) = Item;
+
+        //        //point crash
+        //        while (Points.TryGetValue(CrashPos(Sum), out string? Pt)
+        //            && Pt != Colour)
+        //        {
+        //            Sum++;
+        //        }
+
+        //        Sum += Value;
+
+        //        //dot crash
+        //        while (Points.TryGetValue(CrashPos(Sum), out string? Pt)
+        //            && Pt == Colour)
+        //        {
+        //            Sum++;
+        //        }
+
+        //        if (Sum < Range || (Sum == Range
+        //            && (block == null || DotBetween(Item, block) == 0)))
+        //            Shift++;
+        //        else
+        //        {
+        //            //item can't be block as doesn't fit in gap!
+        //            if (!blockDir.HasValue && block != null && Sum > gap.Size)
+        //                Shift--;
+
+        //            break;
+        //        }
+
+        //        Sum += forward ? GetDotCount(Index) : GetDotCountB(Index);
+        //    }
+
+        //    return Shift;
+        //}
+
+        //private bool RanOutOfItems(int item, bool forward = true)
+        //    => forward ? item >= LineItems : item < 0;
+
+        //private (int, bool, int) AdjustItemIndexes(Gap gap,
+        //                                           int ei,
+        //                                           (int, bool) ie,
+        //                                           bool forward = true)
+        //{
+        //    int ItemShift = SumWhile(ie.Item1, gap, null, forward);
+        //    var Iei = (ie.Item1, ie.Item2, ItemShift);
+
+        //    if (!gap.IsFull(false)
+        //        && (Iei.ItemShift > 1 || (Iei.ItemShift == 1 && !gap.HasPoints)))
+        //        Iei.Item2 = false;
+
+        //    if (gap.IsFull() && (!Iei.Item2 || RanOutOfItems(Iei.Item1, forward)
+        //        || !gap.Is(this[Iei.Item1])))
+        //    {
+        //        IEnumerable<Item> Items = Where(ei, Iei.Item1, true);
+        //        Item[] UniqueItems = Items.Where(gap.Is).ToArray();
+        //        Item? Item = null;
+
+        //        if (UniqueItems.Length == 1)
+        //            Item = UniqueItems[0];
+        //        else
+        //        {
+        //            Gap? LastGap = FindGapAtPos(gap.Start + (forward ? -1 : 1), !forward);
+        //            if (LastGap?.IsFull() == true)
+        //            {
+        //                UniqueItems = Pair()
+        //                    .Where(w => LastGap.Is(forward ? w.Item1 : w.Item2)
+        //                    && gap.Is(forward ? w.Item2 : w.Item1))
+        //                    .Select(s => forward ? s.Item2 : s.Item1)
+        //                    .ToArray();
+
+        //                if (UniqueItems.Length == 1)
+        //                    Item = UniqueItems[0];
+        //            }
+        //        }
+
+        //        if (!Item.HasValue)
+        //            Item = !forward ? Items.FirstOrDefault(gap.Is)
+        //                : Items.LastOrDefault(gap.Is);
+
+        //        Iei = (Item?.Index ?? -1, UniqueItems.Length == 1, 1);
+        //    }
+        //    else if (!gap.IsFull() && gap.HasPoints && !Iei.Item2)
+        //    {
+        //        Block? LastBlock = forward ? gap.GetLastBlock(gap.End) : gap.GetNextBlock(gap.Start);
+        //        if (LastBlock != null)
+        //        {
+        //            int ToItem = Iei.Item1 + ((forward ? 1 : -1) * (Iei.ItemShift - 1));
+        //            if (UniqueCount(Where(ei, ToItem, true), LastBlock, out Item UniqueItem))
+        //            {
+        //                int Itm = UniqueItem.Index;
+        //                bool Eq = Itm == ToItem;
+
+        //                if (!Eq)
+        //                {
+        //                    int Start = UniqueItem.Index + (forward ? 1 : -1);
+        //                    Itm += (forward ? 1 : -1) * SumWhile(Start,
+        //                                                         gap,
+        //                                                         LastBlock,
+        //                                                         forward,
+        //                                                         !forward);
+        //                }
+
+        //                Iei = (Itm, Eq, 1);
+        //            }
+        //        }
+        //    }
+
+        //    return Iei;
+        //}
 
         private LineSegment GetItemAtPosition(int position, bool untilDot = true)
         {
@@ -305,11 +438,12 @@ namespace Griddlers.Library
 
             LastBlock.Complete = ScValid;
             IEnumerable<Item> Next = _Items.Where((w, wi) => wi >= ItemAtEquality && ((!Equality && wi <= Item) || wi == Item));
-            ItemRange Before = new ItemRange(_Items.Where((w, wi) => wi >= ItemAtEquality && wi < Item));
+            //ItemRange Before = new ItemRange(_Items.Where((w, wi) => wi >= ItemAtEquality && wi < Item));
+            ItemRange Before = CreateRange(ItemAtEquality, Item - 1);
             IEnumerable<Item> After = _Items.Where((w, wi) => wi >= Item);
-            //HashSet<Item> RightBefore = FindPossibleSolids(IsRow, LineLength, lineIndex, 1);
             HashSet<Block> RightBefore = new Block[] { LastBlock }.ToHashSet();
-            ItemRange Gap = new ItemRange(_Items.Where((w, wi) => wi >= ItemAtLastGap && wi < Item));
+            //ItemRange Gap = new ItemRange(_Items.Where((w, wi) => wi >= ItemAtLastGap && wi < Item));
+            ItemRange Gap = CreateRange(ItemAtLastGap, Item - 1);
 
             return new LineSegment(Next, true, TheItem, Equality, Before, After, RightBefore, Gap, ItemAtLastGap, ItemAtEquality);
         }
@@ -325,7 +459,6 @@ namespace Griddlers.Library
         /// </returns>
         private Dictionary<int, Dictionary<(int, string), int>> FindPossibleSolidsI(int start, bool onlyFirstSolid = true)
         {
-            Logic.AddMethodCount("FindPossibleSolids");
             Dictionary<int, Dictionary<(int, string), int>> PossibleSolids = new Dictionary<int, Dictionary<(int, string), int>>(50);
             bool WasSolid = false, AfterFirstSolid = false;
             string PrevColour = "black";
@@ -674,13 +807,22 @@ namespace Griddlers.Library
                 TheItem = _Items[Item];
 
             IEnumerable<Item> Next = _Items.Where((w, wi) => ((!Equality && wi >= Item) || wi == Item) && wi <= ItemAtEquality);
-            ItemRange Before = new ItemRange(_Items.Where((w, wi) => wi > Item && wi <= ItemAtEquality));
-            IEnumerable<Item> After = _Items.Where((w, wi) => wi <= Item);
-            //HashSet<Item> RightBefore = FindPossibleSolids(IsRow, LineLength, lineIndex, 1);
+            //ItemRange Before = new ItemRange(_Items.Where((w, wi) => wi > Item && wi <= ItemAtEquality));
+            ItemRange Before = CreateRange(Item + 1, ItemAtEquality);
+            IEnumerable <Item> After = _Items.Where((w, wi) => wi <= Item);
             HashSet<Block> RightBefore = new Block[] { new Block(ScValid, SolidCount) }.ToHashSet();
-            ItemRange Gap = new ItemRange(_Items.Where((w, wi) => wi > Item && wi <= ItemAtLastGap));
-
-            return new LineSegment(Next, false, TheItem, Equality, Before, After, RightBefore, Gap, ItemAtLastGap, ItemAtEquality);
+            //ItemRange Gap = new ItemRange(_Items.Where((w, wi) => wi > Item && wi <= ItemAtLastGap));
+            ItemRange Gap = CreateRange(Item + 1, ItemAtLastGap);
+            return new LineSegment(Next,
+                                   false,
+                                   TheItem,
+                                   Equality,
+                                   Before,
+                                   After,
+                                   RightBefore,
+                                   Gap,
+                                   ItemAtLastGap,
+                                   ItemAtEquality);
         }
 
         public void AddBlock(Item item, bool complete = false, int? start = null, int? end = null)
@@ -728,23 +870,6 @@ namespace Griddlers.Library
             return LineValue;
         }
 
-        public (bool, bool) ShouldAddDots(int index)
-        {
-            bool Start = index == 0 || _Items[index].Colour == _Items[index - 1].Colour;
-            bool End = index == _Items.Length - 1 || _Items[index].Colour == _ItemsArray[index + 1].Colour;
-            return (Start, End);
-        }
-
-        public int GetDotCount(int pos)
-        {
-            return ShouldAddDots(pos).Item2 ? 1 : 0;
-        }
-
-        public int GetDotCountB(int pos)
-        {
-            return ShouldAddDots(pos).Item1 ? 1 : 0;
-        }
-
         public bool IsEq(ItemRange u, int index, int start, int end)
             => IsEq(index, start, end, u.Sum());
         public bool IsEq(int index, int start, int end, int sum)
@@ -786,68 +911,12 @@ namespace Griddlers.Library
 
         public LineSegment GetItemAtPos(int pos, bool untilDot = true)
         {
-            LineSegment Ls;
-
-            //if (_ItemsAtPos.TryGetValue(pos, out LineSegment? Out))
-            //    Ls = Out;
-            //else if (_BlocksByEnd.TryGetValue(pos - 2, out Block? BlkOut))
-            //{
-            //    bool Valid = BlkOut.BlockIndex + 1 < LineItems;
-            //    IEnumerable<Item> Next = new Item[] { };
-            //    Item? TheItem = null;
-
-            //    if (Valid)
-            //    {                
-            //        Next = new Item[] { _Items[BlkOut.BlockIndex + 1] };
-            //        TheItem = _Items[BlkOut.BlockIndex + 1];
-            //    }
-
-            //    ItemRange Before = new ItemRange(this.Where((w, wi) => wi < BlkOut.BlockIndex + 1));
-            //    IEnumerable<Item> After = this.Where((w, wi) => wi >= BlkOut.BlockIndex + 1);
-            //    HashSet<Block> RightBefore = new HashSet<Block>() { BlkOut };
-            //    Ls = new LineSegment(Next, true, TheItem, BlkOut.BlockIndex + 1, untilDot, Before, After, RightBefore, new Item[] { });
-            //}
-            //else
-            //{
-                Ls = GetItemAtPosition(pos, untilDot);
-            //    _ItemsAtPos.TryAdd(pos, Ls);
-            //}
-
-            return Ls;
+            return GetItemAtPosition(pos, untilDot);
         }
 
         public LineSegment GetItemAtPosB(int pos, bool untilDot = true)
         {
-            LineSegment Ls;
-
-            //if (_ItemsAtPosB.TryGetValue(pos, out LineSegment? Out))
-            //    Ls = Out;
-            //else if (untilDot && _BlocksByStart.TryGetValue(pos + 2, out Block? BlkOut))
-            //{
-            //    bool Valid = BlkOut.BlockIndex - 1 >= 0;
-            //    IEnumerable<Item> Next = new Item[] { };
-            //    Item? TheItem = null;
-
-            //    if (Valid)
-            //    {
-            //        Next = new Item[] { _Items[BlkOut.BlockIndex - 1] };
-            //        TheItem = _Items[BlkOut.BlockIndex - 1];
-            //    }
-
-            //    ItemRange Before = new ItemRange(this.Where((w, wi) => wi > BlkOut.BlockIndex - 1));
-            //    IEnumerable<Item> After = this.Where((w, wi) => wi <= BlkOut.BlockIndex - 1);
-            //    HashSet<Block> RightBefore = new HashSet<Block>() { BlkOut };
-            //    Ls = new LineSegment(Next, false, TheItem, BlkOut.BlockIndex - 1, true, Before, After, RightBefore);
-            //}
-
-            //    Ls = (BlkOut.BlockIndex - 1, BlkOut.BlockIndex - 1 >= 0, true, BlkOut.SolidCount, true);
-            //else
-            //{
-                Ls = GetItemAtPositionB(pos, untilDot);
-              //  _ItemsAtPosB.TryAdd(pos, Ls);
-            //}
-
-            return Ls;
+            return GetItemAtPositionB(pos, untilDot);
         }
 
         /// <summary>
@@ -868,7 +937,6 @@ namespace Griddlers.Library
         /// </returns>
         private (bool, bool, IDictionary<int, int>) IsolatedPart(int position, int startItem, int endItem)
         {
-            Logic.AddMethodCount("IsolatedPart");
             //2,3,4,5//--00--0---0---- isolated 2,3,4 - invalid as could be 3,4,5
             bool IsIsolated = true, Valid = false, NotSolid = false, RestIsolated = false;
             string Colour = "black";
@@ -980,14 +1048,16 @@ namespace Griddlers.Library
                         if (CurrentItem < endItem + 1
                             && !new Block(-1, Pt.Colour) { SolidCount = SolidCount }.CanBe(_Items[CurrentItem]))
                         {
-                            bool NoMoreItems = UniqueCount(new Block(-1, Pt.Colour) { SolidCount = SolidCount });
-                            bool Flag = NoMoreItems;
+                            Block NoMoreItemBlock = new Block(-1, Pt.Colour) { SolidCount = SolidCount };
+                            //bool NoMoreItems = UniqueCount();
+                            bool Flag = false;
                             int Start = -1;
                             int Stop = 0;
 
-                            if (NoMoreItems)
+                            if (UniqueCount(NoMoreItemBlock, out Item Itm))
                             {
-                                Start = FirstOrDefault(new Block(-1, Pt.Colour) { SolidCount = SolidCount }.CanBe)?.Index ?? -1;
+                                Flag = true;
+                                Start = Itm.Index;//FirstOrDefault(new Block(-1, Pt.Colour) { SolidCount = SolidCount }.CanBe)?.Index ?? -1;
 
                                 for (int d = SolidBlockCount - 1; d >= 0; d--)
                                 {
@@ -1062,7 +1132,7 @@ namespace Griddlers.Library
                     if (IsIsolated && SolidBlockCount > 0
                         && SolidCount > 0 && CurrentItem < endItem + 1
                         && _Items[CurrentItem].Value >= SolidCount
-                        && UniqueCount(new Block(-1, Pt.Colour) { SolidCount = SolidCount }))
+                        && UniqueCount(new Block(-1, Pt.Colour) { SolidCount = SolidCount }, out Item _))
                     {
                         Valid = true;
                     }
@@ -1177,26 +1247,7 @@ namespace Griddlers.Library
         /// </returns>
         public (bool, bool, IDictionary<int, int>) GetIsolatedPart(int pos, int startItem, int endItem)
         {
-            (bool, bool, IDictionary<int, int>) ItemKey;
-
-            //if (_Isolations.TryGetValue((pos, startItem, endItem), out var Out))
-            //    ItemKey = Out;
-            //else if (pos == 0)
-            //{
-            //    bool IsolatedItemsValid = false;
-            //    Dictionary<int, int> IsolatedItems = new Dictionary<int, int>();
-
-
-
-            //    ItemKey = (false, IsolatedItemsValid, IsolatedItems);
-            //}
-            //else
-            //{
-                ItemKey = IsolatedPart(pos, startItem, endItem);
-            //    _Isolations[(pos, startItem, endItem)] = ItemKey;
-            //}
-
-            return ItemKey;
+            return IsolatedPart(pos, startItem, endItem);
         }
 
         /// <summary>
@@ -1205,7 +1256,6 @@ namespace Griddlers.Library
         /// <returns>A dictionary of the minimum/maximum items by position</returns>
         public IDictionary<int, (Item, Item)> GetMinMaxItems()
         {
-            Logic.AddMethodCount("GetLineMinMaxItems2");
             Dictionary<int, (Item, Item)> MinMaxItems = new Dictionary<int, (Item, Item)>();
             int GapIndex = -1, EndOfGap = -1;
             bool WasGap = false;
@@ -1218,7 +1268,7 @@ namespace Griddlers.Library
                 LineSegment Ls = GetItemAtPos(i + 1, false);
                 LineSegment LsEnd = GetItemAtPosB(i - 1, Dots.Contains(i));
 
-                if (Ls.Valid || LsEnd.Valid || (Ls.ItemAtStartOfGap == Ls.LastItemAtEquality))
+                if (Ls.Valid || LsEnd.Valid || (Ls.ItemAtStartOfGap == Ls.EqualityIndex))
                 {
                     Item Min = new Item(MaxItem, "black"), Max = new Item(0, "black");
                     int Start = 0, End = LineItems - 1;
@@ -1370,7 +1420,7 @@ namespace Griddlers.Library
                     MinMaxItems.TryAdd(i, (Min, Max));
                     WholeGap = true;
 
-                    if (Ls.ItemAtStartOfGap > -1 && Ls.ItemAtStartOfGap == Ls.LastItemAtEquality)
+                    if (Ls.ItemAtStartOfGap > -1 && Ls.ItemAtStartOfGap == Ls.EqualityIndex)
                         Start = Ls.ItemAtStartOfGap;
                     else
                         WholeGap = false;
@@ -1442,19 +1492,6 @@ namespace Griddlers.Library
             return MinMaxItems;
         }
 
-        public void ClearCaches(int pos)
-        {
-            _Isolations.Clear();
-
-            foreach (int Key in _ItemsAtPos.Keys.Where(w => w >= pos))
-                _ItemsAtPos.Remove(Key);
-
-            _ItemsAtPosB.Clear();
-
-            //breaks Highlights20x20
-            //foreach (int Key in _ItemsAtPosB.Keys.Where(w => w <= pos))
-            //    _ItemsAtPosB.Remove(Key);
-        }
         public int GetNumberOfBlocks(int start, int End) 
         {
             int Count = 0;

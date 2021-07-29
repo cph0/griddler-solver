@@ -1,6 +1,6 @@
 ﻿namespace Griddlers.Library
 {
-    public class Block
+    public class Block : ICanBeItem
     {
         private readonly Item? _Item;
         private readonly Point[] _Points;

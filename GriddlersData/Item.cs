@@ -2,7 +2,12 @@
 
 namespace Griddlers.Library
 {
-    public readonly struct Item
+    public interface IColour
+    {
+        string Colour { get; }
+    }
+
+    public readonly struct Item : IColour
     {
         public readonly int Index { get; }
         public readonly int Value { get; }

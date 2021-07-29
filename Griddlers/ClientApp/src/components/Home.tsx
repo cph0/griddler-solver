@@ -1,4 +1,4 @@
-import React, { useState, useEffect, CSSProperties } from "react";
+import React, { useState, useEffect, CSSProperties, useRef, createRef } from "react";
 import { Collapse, Progress } from "reactstrap";
 import * as signalR from "@aspnet/signalr";
 import { Tree, ReactD3TreeItem } from "react-d3-tree";
@@ -31,6 +31,92 @@ interface GriddlerPath {
     group: number;
     x: number;
     y: number;
+}
+
+export const useRect = () => {
+    const ref = createRef<HTMLDivElement>();
+    const [rect, setRect] = useState(getRect(ref ? ref.current : null))
+
+    const handleResize = React.useCallback(() => {
+        if (!ref.current) {
+            return;
+        }
+
+        // Update client rect
+        setRect(getRect(ref.current));
+    }, [ref]);
+
+    React.useLayoutEffect(() => {
+        const element = ref.current
+        if (!element) {
+            return;
+        }
+
+        handleResize();
+
+        if (typeof ResizeObserver === 'function') {
+            let resizeObserver: ResizeObserver | null = new ResizeObserver(() => handleResize())
+            resizeObserver.observe(element);
+
+            window.req
+
+            return () => {
+                if (!resizeObserver) {
+                    return;
+                }
+
+                resizeObserver.disconnect();
+                resizeObserver = null;
+            }
+        } else {
+            // Browser support, remove freely
+            window.addEventListener('resize', handleResize);
+
+            return () => {
+                window.removeEventListener('resize', handleResize);
+            }
+        }
+    }, [ref.current]);
+
+    return [ref, rect] as [React.RefObject<HTMLDivElement>, DOMRect];
+}
+
+function getRect(element: HTMLElement | null) {
+    if (!element) {
+        return {
+            bottom: 0,
+            height: 0,
+            left: 0,
+            right: 0,
+            top: 0,
+            width: 0,
+        }
+    }
+
+    return element.getBoundingClientRect()
+}
+
+function useSize() {
+    const ref = createRef<HTMLDivElement>();
+    //const rect = ref.current ? ref.current.getBoundingClientRect() : null;
+    const [dimensions, setDimensions] = useState<DOMRect>({} as DOMRect);
+
+    useEffect(() => {
+        if(ref.current)
+            setDimensions(ref.current.getBoundingClientRect());
+    }, [ref.current]);
+
+    return [ref, dimensions] as [React.RefObject<HTMLDivElement>, DOMRect];
+}
+
+function SizeMe() {
+    const [ref, rect] = useSize();
+    console.log('render');
+    return (
+        <div ref={ref} style={{ width: '100%', height: 'calc(100vh)'}}>
+            {rect.width} {rect.height}
+        </div>
+    );
 }
 
 class NodeLabel extends React.PureComponent<any, {}> {
@@ -78,6 +164,8 @@ export const Home: React.FunctionComponent = () => {
 
     const [showTree, setShowTree] = useState(false);
     const [treeData, setTreeData] = useState<ReactD3TreeItem>({} as ReactD3TreeItem);
+
+    const [shown, setShown] = useState(true);
 
     useEffect(() => {
         listGriddlers();
@@ -538,7 +626,6 @@ export const Home: React.FunctionComponent = () => {
     }
 
     let square = (depth * squareSize) + "px";
-
     html = (
         <div>
             <div className="row" style={{ marginTop: "10px", marginBottom: "10px" }}>
@@ -579,11 +666,13 @@ export const Home: React.FunctionComponent = () => {
                     transitionDuration={0} allowForeignObjects={true}
                     nodeLabelComponent={{ render: <NodeLabel /> }} />
             </div>}
+            <button onClick={() => setShown(!shown)}>Test</button>
             <div className="row">
-                <div className="col-lg-2">
+                {shown && <div className="col-lg-2">
                     {renderPathList()}
-                </div>
+                </div>}
                 <div className="col" style={{ overflowY: "auto", height: "calc(78vh)" }}>
+                    <SizeMe />
                     <div style={{ position: "relative", display: "inline-block", width: square, height: square }}>
                         {xBoxes}{yBoxes}
                     </div>

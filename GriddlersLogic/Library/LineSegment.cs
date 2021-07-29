@@ -1,4 +1,4 @@
-﻿using System.Collections;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -13,9 +13,8 @@ namespace Griddlers.Library
     /// between <see cref="LastItemAtEquality"/> and <see cref="Index"/>
     /// </para>
     /// </summary>
-    public class LineSegment : ItemRange, IEnumerable<Item>
+    public class LineSegment : ItemRange
     {
-        private IEnumerable<Item> _Items => _ItemsEnum;
         private readonly bool IsForward;
 
         /// <summary>
@@ -33,7 +32,7 @@ namespace Griddlers.Library
         /// <summary>
         /// <see cref="true"/> if the next item index cannot be less than <see cref="Index"/>
         /// </summary>
-        public bool Eq { get; private set; }
+        public bool Eq { get; private set; } //=> EqualityIndex == Index;
         public bool ScV => RightBefore.First().Complete;
         public int Sc => RightBefore.First().SolidCount;
         public ItemRange Before { get; private set; }
@@ -53,7 +52,8 @@ namespace Griddlers.Library
         /// <summary>
         /// The last item index that can be the next item
         /// </summary>
-        public int LastItemAtEquality { get; private set; }
+        public int EqualityIndex { get; private set; }
+        public int IndexAtBlock => Index;
 
         public LineSegment(IEnumerable<Item> items,
                             bool isForward,
@@ -64,7 +64,10 @@ namespace Griddlers.Library
                             HashSet<Block> rB,
                             ItemRange gap,
                             int itemAtStartOfGap,
-                            int lastItemAtEquality) : base(items)
+                            int equalityIndex) : base(items.ToArray(),
+                                                      0,
+                                                      0,
+                                                      true)
         {
             IsForward = isForward;
             Item = item;
@@ -82,24 +85,18 @@ namespace Griddlers.Library
             RightBefore = rB;
             Gap = gap;
             ItemAtStartOfGap = itemAtStartOfGap;
-            LastItemAtEquality = lastItemAtEquality;
+            EqualityIndex = equalityIndex;
         }
 
-        public ItemRange With(LineSegment ls, bool includeItem = true)
+        public ItemRange With(LineSegment ls, bool gapOnly = false, bool equalityOnly = false)
         {
-            if (IsForward && Index <= ls.Index) //F, F | B
-                return new ItemRange(After.Where(w => w.Index < ls.Index || (includeItem && w.Index == ls.Index)));
-            else if (Index <= ls.Index) // B B
-                return new ItemRange(ls.After.Where(w => w.Index > Index || (includeItem && w.Index == Index)));
-            else if (!ls.IsForward) // F | B, B
-                return new ItemRange(ls.Where(w => w.Index <= Index));
-            else // F F
-                return new ItemRange(ls.After.Where(w => w.Index <= Index));
-        }
-
-        public ItemRange With(int index)
-        {
-            return new ItemRange(After.Where(w => w.Index <= index));
+            (int Start, int End) = (EqualityIndex, ls.EqualityIndex);
+            if (!equalityOnly)
+            {
+                Start = gapOnly ? Math.Min(Index, ls.Index) : Math.Max(EqualityIndex, ls.IndexAtBlock);
+                End = gapOnly ? Math.Max(ls.Index, Index) : Math.Min(IndexAtBlock, ls.EqualityIndex);
+            }
+            return CreateRange(Start, End);
         }
 
         public bool GetItem(out Item? item)
@@ -108,14 +105,17 @@ namespace Griddlers.Library
             return item.HasValue;
         }
 
-        public IEnumerator<Item> GetEnumerator()
+        public void Deconstruct(out Item? item,
+                                out bool equality,
+                                out int index,
+                                out int equalityIndex,
+                                out int indexAtBlock)
         {
-            return ((IEnumerable<Item>)_Items).GetEnumerator();
-        }
-
-        IEnumerator IEnumerable.GetEnumerator()
-        {
-            return _Items.GetEnumerator();
+            item = Item;
+            equality = Eq;
+            index = Index;
+            equalityIndex = EqualityIndex;
+            indexAtBlock = IndexAtBlock;
         }
     }
 }
