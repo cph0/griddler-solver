@@ -368,7 +368,7 @@ namespace Griddlers.Library
                     PartEquality = false;
 
                 //until dot
-                if (Block.Size == GapSize && Item < LineItems)
+                if (Block.Size == GapSize && Item < LineItems && LastItemAtEquality + 1 >= 0)
                 {
                     int UniqueCount = 0, TempItem = 0;
 
