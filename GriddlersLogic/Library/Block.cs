@@ -7,13 +7,11 @@
 
         public int Start { get; set; }
         public int End { get; set; }
-        public int Size => End - Start + 1;
+        public int Size { get; set; }//=> End - Start + 1;
 
         public int BlockIndex { get; private set; }
-        public int SolidCount { get; set; }
         public string Colour { get; private set; }
         public bool Complete { get; set; }
-        public bool KnowItem => _Item.HasValue;
 
         public Block(int index, string colour)
         {
@@ -26,7 +24,7 @@
         {
             _Points = new Point[] { };
             Complete = c;
-            SolidCount = sC;
+            Size = sC;
             Colour = "black";
         }
 
@@ -41,7 +39,7 @@
         public Block(Item item, bool complete, int? start, int? end) : this(item.Index, item.Colour)
         {
             _Item = item;
-            SolidCount = item.Value;
+            Size = item.Value;
             Complete = complete;
 
             if (start.HasValue)
@@ -52,10 +50,10 @@
         }
 
         public bool Is(Item item)
-            => item.Value == SolidCount && item.Colour == Colour;
+            => item.Value == Size && item.Colour == Colour;
 
         public bool CanBe(Item item)
-            => item.Value >= SolidCount && item.Colour == Colour;
+            => item.Value >= Size && item.Colour == Colour;
 
         public bool IsOrCantBe(Item item) => Is(item) || !CanBe(item);
     }

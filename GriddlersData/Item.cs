@@ -34,6 +34,12 @@ namespace Griddlers.Library
             Colour = colour;
         }
 
+        public void Deconstruct(out int value, out string colour)
+        {
+            value = Value;
+            colour = Colour;
+        }
+
         private static string GetColourFromFile(string[] fileString)
         {
             var colourString = fileString.Length > 1 ? fileString[1] : string.Empty;

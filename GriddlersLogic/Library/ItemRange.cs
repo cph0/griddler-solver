@@ -6,7 +6,7 @@ namespace Griddlers.Library
 {
     public interface ICanBeItem : IColour
     {
-        int SolidCount { get; }
+        int Size { get; }
         bool CanBe(Item item);
     }
 
@@ -16,7 +16,7 @@ namespace Griddlers.Library
         private readonly IDictionary<(int, string), Item> _UniqueCounts;
         private bool? _ItemsOneValue;
         private bool? _ItemsOneColour;
-        private readonly Item[] _ItemsArray;
+        protected Item[] _ItemsArray;
         private IEnumerable<Item> ItemsEnum => Where(Start, End);
         protected IEnumerable<Item> _Items => _UsingArray ? _ItemsArray : ItemsEnum;
         public int Start { get; private set; }
@@ -158,7 +158,7 @@ namespace Griddlers.Library
         {
             bool Retval;
 
-            if (_UniqueCounts.TryGetValue((block.SolidCount, block.Colour), out Item Out))
+            if (_UniqueCounts.TryGetValue((block.Size, block.Colour), out Item Out))
             {
                 item = Out;
                 Retval = true;
@@ -167,7 +167,7 @@ namespace Griddlers.Library
             {
                 Retval = UniqueCount(_Items, block, out item);
                 if (Retval)
-                    _UniqueCounts[(block.SolidCount, block.Colour)] = item;
+                    _UniqueCounts[(block.Size, block.Colour)] = item;
             }
 
             return Retval;
