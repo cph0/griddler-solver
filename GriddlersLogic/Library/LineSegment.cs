@@ -34,7 +34,10 @@ namespace Griddlers.Library
         /// </summary>
         public bool Eq { get; private set; } //=> EqualityIndex == Index;
         public bool ScV => RightBefore.First().Complete;
-        public int Sc => RightBefore.First().SolidCount;
+        public int Sc => RightBefore.First().Size;
+        /// <summary>
+        /// The items that come before <see cref="Item"/>
+        /// </summary>
         public ItemRange Before { get; private set; }
         /// <summary>
         /// The items including and after <see cref="Item"/>, may be empty
@@ -53,7 +56,7 @@ namespace Griddlers.Library
         /// The last item index that can be the next item
         /// </summary>
         public int EqualityIndex { get; private set; }
-        public int IndexAtBlock => Index;
+        public int IndexAtBlock { get; private set; }
 
         public LineSegment(IEnumerable<Item> items,
                             bool isForward,
@@ -86,6 +89,26 @@ namespace Griddlers.Library
             Gap = gap;
             ItemAtStartOfGap = itemAtStartOfGap;
             EqualityIndex = equalityIndex;
+            IndexAtBlock = Index;
+        }
+
+        public LineSegment SetIndexAtBlock(int indexAtBlock,
+                                           Item? item,
+                                           IEnumerable<Item> next,
+                                           ItemRange before,
+                                           IEnumerable<Item> after,
+                                           ItemRange gap) 
+        {
+            IndexAtBlock = indexAtBlock;
+            Eq = false;
+            ItemAtStartOfGap = Index;
+            Index = indexAtBlock;
+            Item = item;
+            _ItemsArray = next.ToArray();
+            Before = before;
+            After = after;
+            Gap = gap;
+            return this;
         }
 
         public ItemRange With(LineSegment ls, bool gapOnly = false, bool equalityOnly = false)

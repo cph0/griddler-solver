@@ -1,4 +1,4 @@
-import React, { useState, useEffect, CSSProperties, useRef, createRef } from "react";
+import React, { useState, useEffect, CSSProperties } from "react";
 import { Collapse, Progress } from "reactstrap";
 import * as signalR from "@aspnet/signalr";
 import { Tree, ReactD3TreeItem } from "react-d3-tree";
@@ -33,92 +33,6 @@ interface GriddlerPath {
     y: number;
 }
 
-export const useRect = () => {
-    const ref = createRef<HTMLDivElement>();
-    const [rect, setRect] = useState(getRect(ref ? ref.current : null))
-
-    const handleResize = React.useCallback(() => {
-        if (!ref.current) {
-            return;
-        }
-
-        // Update client rect
-        setRect(getRect(ref.current));
-    }, [ref]);
-
-    React.useLayoutEffect(() => {
-        const element = ref.current
-        if (!element) {
-            return;
-        }
-
-        handleResize();
-
-        if (typeof ResizeObserver === 'function') {
-            let resizeObserver: ResizeObserver | null = new ResizeObserver(() => handleResize())
-            resizeObserver.observe(element);
-
-            window.req
-
-            return () => {
-                if (!resizeObserver) {
-                    return;
-                }
-
-                resizeObserver.disconnect();
-                resizeObserver = null;
-            }
-        } else {
-            // Browser support, remove freely
-            window.addEventListener('resize', handleResize);
-
-            return () => {
-                window.removeEventListener('resize', handleResize);
-            }
-        }
-    }, [ref.current]);
-
-    return [ref, rect] as [React.RefObject<HTMLDivElement>, DOMRect];
-}
-
-function getRect(element: HTMLElement | null) {
-    if (!element) {
-        return {
-            bottom: 0,
-            height: 0,
-            left: 0,
-            right: 0,
-            top: 0,
-            width: 0,
-        }
-    }
-
-    return element.getBoundingClientRect()
-}
-
-function useSize() {
-    const ref = createRef<HTMLDivElement>();
-    //const rect = ref.current ? ref.current.getBoundingClientRect() : null;
-    const [dimensions, setDimensions] = useState<DOMRect>({} as DOMRect);
-
-    useEffect(() => {
-        if(ref.current)
-            setDimensions(ref.current.getBoundingClientRect());
-    }, [ref.current]);
-
-    return [ref, dimensions] as [React.RefObject<HTMLDivElement>, DOMRect];
-}
-
-function SizeMe() {
-    const [ref, rect] = useSize();
-    console.log('render');
-    return (
-        <div ref={ref} style={{ width: '100%', height: 'calc(100vh)'}}>
-            {rect.width} {rect.height}
-        </div>
-    );
-}
-
 class NodeLabel extends React.PureComponent<any, {}> {
     render() {
         const { nodeData } = this.props
@@ -143,8 +57,8 @@ const createArray = (first: number, second: number): Item[][] => {
 }
 
 export const Home: React.FunctionComponent = () => {
-    let rows: Item[][] = createArray(10, 4);
-    let columns: Item[][] = createArray(10, 4);
+    //let rows: Item[][] = createArray(10, 4);
+    //let columns: Item[][] = createArray(10, 4);
 
     let uploadRef: HTMLInputElement | null = null;
     let hubConnection: signalR.HubConnection | null = null;
@@ -153,6 +67,8 @@ export const Home: React.FunctionComponent = () => {
     const [width, setWidth] = useState(10);
     const [height, setHeight] = useState(10);
     const [depth, setDepth] = useState(4);
+    const [rows, setRows] = useState([]);
+    const [columns, setColumns] = useState([]);
     const [sG, setSg] = useState("Bird10x10");
     const [points, setPoints] = useState<Point[]>([]);
     const [dots, setDots] = useState<Point[]>([]);
@@ -164,8 +80,6 @@ export const Home: React.FunctionComponent = () => {
 
     const [showTree, setShowTree] = useState(false);
     const [treeData, setTreeData] = useState<ReactD3TreeItem>({} as ReactD3TreeItem);
-
-    const [shown, setShown] = useState(true);
 
     useEffect(() => {
         listGriddlers();
@@ -208,41 +122,41 @@ export const Home: React.FunctionComponent = () => {
             });
     }
 
-    const onWidthChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-        let width = parseInt(event.target.value);
-        if (!width)
-            width = 1;
+    //const onWidthChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    //    let width = parseInt(event.target.value);
+    //    if (!width)
+    //        width = 1;
 
-        columns = createArray(width, depth);
-        setWidth(width);
-    }
+    //    columns = createArray(width, depth);
+    //    setWidth(width);
+    //}
 
-    const onHeightChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-        let height = parseInt(event.target.value);
-        if (!height)
-            height = 1;
+    //const onHeightChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    //    let height = parseInt(event.target.value);
+    //    if (!height)
+    //        height = 1;
 
-        rows = createArray(height, depth);
-        setHeight(height);
-    }
+    //    rows = createArray(height, depth);
+    //    setHeight(height);
+    //}
 
-    const onDepthChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-        let depth = parseInt(event.target.value);
-        if (!depth)
-            depth = 1;
+    //const onDepthChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    //    let depth = parseInt(event.target.value);
+    //    if (!depth)
+    //        depth = 1;
 
-        columns = createArray(width, depth);
-        rows = createArray(height, depth);
-        setDepth(depth);
-    }
+    //    columns = createArray(width, depth);
+    //    rows = createArray(height, depth);
+    //    setDepth(depth);
+    //}
 
-    const onRowChange = (event: React.ChangeEvent<HTMLInputElement>, i: number, c: number) => {
-        rows[i][c].value = parseInt(event.target.value);
-    }
+    //const onRowChange = (event: React.ChangeEvent<HTMLInputElement>, i: number, c: number) => {
+    //    rows[i][c].value = parseInt(event.target.value);
+    //}
 
-    const onColumnChange = (event: React.ChangeEvent<HTMLInputElement>, i: number, c: number) => {
-        columns[i][c].value = parseInt(event.target.value);
-    }
+    //const onColumnChange = (event: React.ChangeEvent<HTMLInputElement>, i: number, c: number) => {
+    //    columns[i][c].value = parseInt(event.target.value);
+    //}
 
     const onSelectGriddler = (event: React.ChangeEvent<HTMLSelectElement>) => {
         setSg(event.target.value);
@@ -260,8 +174,8 @@ export const Home: React.FunctionComponent = () => {
         })
             .then(responce => responce.json() as Promise<any>)
             .then(data => {
-                rows = data.r;
-                columns = data.c;
+                setRows(data.r);
+                setColumns(data.c);
                 setWidth(data.w);
                 setHeight(data.h);
                 setDepth(data.d);
@@ -284,8 +198,8 @@ export const Home: React.FunctionComponent = () => {
         })
             .then(responce => responce.json() as Promise<any>)
             .then(data => {
-                rows = data.r;
-                columns = data.c;
+                setRows(data.r);
+                setColumns(data.c);
                 setWidth(data.w);
                 setHeight(data.h);
                 setDepth(data.d);
@@ -323,7 +237,7 @@ export const Home: React.FunctionComponent = () => {
             .then(data => {
                 if (data.pt.isDot) {
                     setDots(prevState => {
-                        let prevDots =[...prevState];
+                        let prevDots = [...prevState];
                         prevDots.splice(prevDots.length - 1, 1);
                         return prevDots;
                     });
@@ -382,8 +296,8 @@ export const Home: React.FunctionComponent = () => {
         })
             .then(responce => responce.json() as Promise<any>)
             .then(data => {
-                rows = data.r;
-                columns = data.c;
+                setRows(data.r);
+                setColumns(data.c);
 
                 setWidth(data.w);
                 setHeight(data.h);
@@ -465,7 +379,7 @@ export const Home: React.FunctionComponent = () => {
         let items = paths.map(g => {
             let open = true;
 
-            if (selectedGroup && g.group === selectedGroup.group)
+            if (selectedGroup && g.group == selectedGroup.group)
                 open = true;
 
             return (
@@ -528,21 +442,21 @@ export const Home: React.FunctionComponent = () => {
             let brdL, brdT: string = "none";
             let sClass: any = { ...gridStyle };
 
-            if (i % 5 === 0)
+            if (i % 5 == 0)
                 brdL = "1px solid black";
 
-            if (c % 5 === 0)
+            if (c % 5 == 0)
                 brdT = "1px solid black";
 
-            if (selectedGroup
-                && selectedGroup.items.some(e => e.x === i && e.y === c))
+            if (selectedGroup && selectedGroup.items.some(e => e.x == i && e.y == c))
                 sClass.backgroundColor = "red";
 
             grid.push(
-                <div style={{
-                    ...sClass, borderLeft: brdL, borderTop: brdT,
-                    top: c * squareSize, left: i * squareSize
-                }}></div>
+                <div key={`${i}_${c}`}
+                    style={{
+                        ...sClass, borderLeft: brdL, borderTop: brdT,
+                        top: c * squareSize, left: i * squareSize
+                    }}></div>
             );
         }
     }
@@ -552,16 +466,17 @@ export const Home: React.FunctionComponent = () => {
             let sClass: any = { ...style };
 
             if (selectedGroup
-                && selectedGroup.items.some(e => e.x === pt.x && e.y === pt.y))
+                && selectedGroup.items.some(e => e.x == pt.x && e.y == pt.y))
                 sClass.backgroundColor = "red";
             else
                 sClass.backgroundColor = pt.colour;
 
             pts.push(
-                <div style={{
-                    ...sClass, top: pt.y * squareSize,
-                    left: pt.x * squareSize
-                }}></div>
+                <div key={`${pt.x}_${pt.y}`}
+                    style={{
+                        ...sClass, top: pt.y * squareSize,
+                        left: pt.x * squareSize
+                    }}></div>
             );
         }
     }
@@ -569,11 +484,13 @@ export const Home: React.FunctionComponent = () => {
     for (let dot of dots) {
         if (dot) {
             let sClass = { ...dotStyle };
+
             dts.push(
-                <div style={{
-                    ...sClass, top: (dot.y * squareSize) + 8,
-                    left: (dot.x * squareSize) + 8
-                }}></div>
+                <div key={`${dot.x}_${dot.y}`}
+                    style={{
+                        ...sClass, top: (dot.y * squareSize) + 8,
+                        left: (dot.x * squareSize) + 8
+                    }}></div>
             );
         }
     }
@@ -587,14 +504,18 @@ export const Home: React.FunctionComponent = () => {
                 item = columns[i][c];
 
             xBoxes.push((
-                <input type="text" value={item.value} onChange={(e) => onColumnChange(e, i, c)}
+                <input
+                    key={`${i}_${c}`}
+                    type="text"
+                    value={item.value}
+                    onChange={() => { }}
                     style={{
                         width: "20px",
                         height: "20px",
                         position: "absolute",
                         left: left,
                         top: c * squareSize,
-                        backgroundColor: item.colour === 'lightgreen' ? "lightgreen" : ""
+                        backgroundColor: item.colour !== 'black' ? item.colour : ""
                     }} />
             )
             );
@@ -611,14 +532,18 @@ export const Home: React.FunctionComponent = () => {
 
             yBoxes.push(
                 (
-                    <input type="text" value={item.value} onChange={(e) => onRowChange(e, i, c)}
+                    <input
+                        key={`${i}_${c}`}
+                        type="text"
+                        value={item.value}
+                        onChange={() => { }}
                         style={{
                             width: "20px",
                             height: "20px",
                             position: "absolute",
                             left: c * squareSize,
                             top: top,
-                            backgroundColor: item.colour === 'lightgreen' ? "lightgreen" : ""
+                            backgroundColor: item.colour !== 'black' ? item.colour : ""
                         }} />
                 )
             );
@@ -626,6 +551,7 @@ export const Home: React.FunctionComponent = () => {
     }
 
     let square = (depth * squareSize) + "px";
+
     html = (
         <div>
             <div className="row" style={{ marginTop: "10px", marginBottom: "10px" }}>
@@ -651,12 +577,6 @@ export const Home: React.FunctionComponent = () => {
                 <button className="btn btn-primary btn-sm" onClick={(e) => upload()}>Upload</button>
                 <input type="file" ref={el => uploadRef = el}></input>
             </div>
-            <div style={{ marginTop: "5px", marginBottom: "10px" }}>
-                <input onChange={(e) => onWidthChange(e)} value={width} />
-                <input onChange={(e) => onHeightChange(e)} value={height} />
-                <input onChange={(e) => onDepthChange(e)} value={depth} />
-                <button className="btn btn-primary btn-sm" onClick={(e) => run()}>Run</button>
-            </div>
             <div>
                 <Progress max={width * height}
                     value={points.length + dots.length} />
@@ -666,13 +586,11 @@ export const Home: React.FunctionComponent = () => {
                     transitionDuration={0} allowForeignObjects={true}
                     nodeLabelComponent={{ render: <NodeLabel /> }} />
             </div>}
-            <button onClick={() => setShown(!shown)}>Test</button>
             <div className="row">
-                {shown && <div className="col-lg-2">
+                <div className="col-lg-2">
                     {renderPathList()}
-                </div>}
-                <div className="col" style={{ overflowY: "auto", height: "calc(78vh)" }}>
-                    <SizeMe />
+                </div>
+                <div className="col" style={{ overflowY: "auto", height: "calc(89vh)" }}>
                     <div style={{ position: "relative", display: "inline-block", width: square, height: square }}>
                         {xBoxes}{yBoxes}
                     </div>
