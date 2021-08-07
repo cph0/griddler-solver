@@ -945,8 +945,7 @@ namespace Griddlers.Library
                                 NoMoreItems = true;
                             else
                             {
-                                LineSegment LsEnd = Line.GetItemAtPosB(GapEnd - 1);
-
+                                LineSegment LsEnd = Line.GetItemAtPositionB(GapEnd, null);
                                 if (LsEnd.Valid && LsEnd.Eq && LsEnd.Index == CurrentItem)
                                     NoMoreItems = true;
                             }
@@ -1152,7 +1151,7 @@ namespace Griddlers.Library
                                 NoMoreItems = true;
                             else
                             {
-                                LineSegment Ls = Line.GetItemAtPos(GapStart + 1);
+                                LineSegment Ls = Line.GetItemAtPosition(GapStart);
                                 if (Ls.Valid && Ls.Eq && Ls.Index == CurrentItem)
                                     NoMoreItems = true;
                             }
@@ -1370,7 +1369,7 @@ namespace Griddlers.Library
                                 }
                                 else
                                 {
-                                    LineSegment LsEnd = Line.GetItemAtPosB(Pos - 1 + IsEnd);
+                                    LineSegment LsEnd = Line.GetItemAtPositionB(Pos + IsEnd, null);
                                     var (ItemE, EqualityE, IndexE, EqualityIndexE, _) = LsEnd;
                                     ItemRange Range = Line.CreateRange(Math.Min(Index, IndexE), Math.Max(Index, IndexE));//Ls.With(LsEnd, true);
                                     int Sum = Range.Sum();
@@ -1501,11 +1500,10 @@ namespace Griddlers.Library
                     bool Break = false;
 
                     (int StartOfGap, int EndOfGap, bool WasSolid) = Line.FindGapStartEnd(Pos - 1, Pos);
-
                     LineSegment Ls = Line.GetItemAtPosition(StartOfGap, Block, EndOfGap);
-                    //LineSegment Ls = Line.GetItemAtPos(Pos + 1, false);
                     var (Item, Equality, Index, EqualityIndex, _) = Ls;
-                    LineSegment LsEnd = Line.GetItemAtPosB(Pos - 1, false);
+                    LineSegment LsEnd = Line.GetItemAtPositionB(Pos - 1, false);
+                    //LineSegment LsEnd = Line.GetItemAtPositionB(EndOfGap, Block, StartOfGap);
                     var (ItemE, EqualityE, IndexE, EqualityIndexE, _) = LsEnd;
 
                     IsolatedItem = Block.BlockIndex;
@@ -1596,7 +1594,7 @@ namespace Griddlers.Library
 
                         Block BlackOne = new Block(-1, Block.Colour == "black" ? "lightgreen" : "black") { Size = 1 };
                         if (!Flag && !Line.ItemsOneColour
-                            && Line.Where(w => w.Index >= Ls.EqualityIndex && w.Index <= Index + 1)
+                            && Line.Where(Ls.EqualityIndex, Index + 1)
                             .All(a => a.Value < End - Start - 1))
                         {
                             IEnumerable<Item> Items = Line.Triple().Where((w, i) => w.Item3.Index >= Ls.EqualityIndex
@@ -2138,7 +2136,7 @@ namespace Griddlers.Library
                     if (!points.ContainsKey(Xy) && !dots.ContainsKey(Xy)
                         && !IncorrectTrials.Contains(Xy))
                     {
-                        LineSegment Ls = Line.GetItemAtPos(Pos);
+                        LineSegment Ls = Line.GetItemAtPosition(Pos);
 
                         if (Ls.Valid && Ls.Eq && Ls.Item.HasValue)
                         {
