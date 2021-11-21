@@ -7,60 +7,59 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
-namespace Griddlers
+namespace Griddlers;
+
+public class Startup
 {
-    public class Startup
+    public Startup(IConfiguration configuration)
     {
-        public Startup(IConfiguration configuration)
+        Configuration = configuration;
+    }
+
+    public IConfiguration Configuration { get; }
+
+    // This method gets called by the runtime. Use this method to add services to the container.
+    public void ConfigureServices(IServiceCollection services)
+    {
+        services.AddRazorPages();
+        services.AddSignalR();
+        services.AddSpaStaticFiles(configuration =>
         {
-            Configuration = configuration;
+            configuration.RootPath = "ClientApp/build";
+        });
+    }
+
+    // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
+    public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
+    {
+        if (env.IsDevelopment())
+        {
+            app.UseDeveloperExceptionPage();
+        }
+        else
+        {
+            app.UseExceptionHandler("/Home/Error");
         }
 
-        public IConfiguration Configuration { get; }
+        app.UseStaticFiles();
+        app.UseSpaStaticFiles();
+        app.UseRouting();
 
-        // This method gets called by the runtime. Use this method to add services to the container.
-        public void ConfigureServices(IServiceCollection services)
+        app.UseEndpoints(e =>
         {
-            services.AddRazorPages();
-            services.AddSignalR();
-            services.AddSpaStaticFiles(configuration =>
-            {
-                configuration.RootPath = "ClientApp/build";
-            });
-        }
+            e.MapRazorPages();
+            e.MapHub<GriddlerHub>("/griddlerhub");
+            e.MapControllerRoute("default", "{controller=Home}/{action=Index}/{id?}");
+        });
 
-        // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
+        app.UseSpa(spa =>
         {
+            spa.Options.SourcePath = Path.Join(env.ContentRootPath, "ClientApp");
+
             if (env.IsDevelopment())
             {
-                app.UseDeveloperExceptionPage();
+                spa.UseReactDevelopmentServer("start");
             }
-            else
-            {
-                app.UseExceptionHandler("/Home/Error");
-            }
-
-            app.UseStaticFiles();
-            app.UseSpaStaticFiles();
-            app.UseRouting();           
-
-            app.UseEndpoints(e =>
-            {
-                e.MapRazorPages();
-                e.MapHub<GriddlerHub>("/griddlerhub");
-                e.MapControllerRoute("default", "{controller=Home}/{action=Index}/{id?}");
-            });
-
-            app.UseSpa(spa =>
-            {
-                spa.Options.SourcePath = Path.Join(env.ContentRootPath, "ClientApp");
-
-                if (env.IsDevelopment())
-                {
-                    spa.UseReactDevelopmentServer("start");
-                }
-            });
-        }
+        });
     }
 }
