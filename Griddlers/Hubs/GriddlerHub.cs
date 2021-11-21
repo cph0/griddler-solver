@@ -2,15 +2,14 @@
 using Microsoft.AspNetCore.SignalR;
 using System.Threading.Tasks;
 
-namespace Griddlers.Hubs
-{
-    public interface IGriddlerHub
-    {
-        Task SendPoint(Point pt);
-    }
+namespace Griddlers.Hubs;
 
-    public class GriddlerHub : Hub<IGriddlerHub>
-    {
-        
-    }
+public interface IGriddlerHub
+{
+    Task SendPoint(Point pt);
+}
+
+public class GriddlerHub : Hub<IGriddlerHub>
+{
+
 }
