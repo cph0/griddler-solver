@@ -237,7 +237,7 @@ export const Home: React.FunctionComponent = () => {
             .then(data => {
                 if (data.pt.isDot) {
                     setDots(prevState => {
-                        let prevDots = [...prevState];
+                        let prevDots =[...prevState];
                         prevDots.splice(prevDots.length - 1, 1);
                         return prevDots;
                     });
@@ -468,7 +468,7 @@ export const Home: React.FunctionComponent = () => {
             if (selectedGroup
                 && selectedGroup.items.some(e => e.x == pt.x && e.y == pt.y))
                 sClass.backgroundColor = "red";
-            else
+            else 
                 sClass.backgroundColor = pt.colour;
 
             pts.push(
