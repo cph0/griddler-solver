@@ -599,6 +599,12 @@ public class Logic
                     StrayDog = true;
                 }
 
+                //ship35x35 - stray dogs x=14...
+
+                //kingkong30x30
+
+                //kissheryuk30x30
+
                 //busker30x30 - does not solve
                 //points.TryAdd((3, 13), new Point(false, 3, 13, false));
                 //points.TryAdd((0, 15), new Point(false, 0, 15, false));
