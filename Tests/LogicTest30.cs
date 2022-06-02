@@ -322,9 +322,9 @@ public partial class LogicTest : LogicTestBase
         Assert.True(Same);
     }
 
-    [Fact]
+    //[Fact]
     //https://nonogramskatana.files.wordpress.com/2017/01/wp-1483883191274.png
-    public async Task KingKong30x30()
+    private async Task KingKong30x30()
     {
         //inputs
         (Item[][] Rows, Item[][] Cols) = await Library.GetSourceData(nameof(KingKong30x30));
@@ -538,9 +538,9 @@ public partial class LogicTest : LogicTestBase
         Assert.True(Same);
     }
 
-    [Fact]
+    //[Fact]
     //hanjie super - issue 27
-    public async Task KissHerYuk30x30()
+    private async Task KissHerYuk30x30()
     {
         //inputs
         (Item[][] Rows, Item[][] Cols) = await Library.GetSourceData(nameof(KissHerYuk30x30));
