@@ -757,9 +757,9 @@ public partial class LogicTest : LogicTestBase
         Assert.True(Same);
     }
 
-    //[Fact]
+    [Fact]
     //hanjie super - issue 27
-    private async Task Ship35x35()
+    public async Task Ship35x35()
     {
         //inputs
         (Item[][] Rows, Item[][] Cols) = await Library.GetSourceData(nameof(Ship35x35));
@@ -831,9 +831,9 @@ public partial class LogicTest : LogicTestBase
         Assert.True(Same);
     }
 
-    //[Fact]
+    [Fact]
     //hanjie super - issue 27
-    private async Task RoundTheTree35x35()
+    public async Task RoundTheTree35x35()
     {
         //inputs
         (Item[][] Rows, Item[][] Cols) = await Library.GetSourceData(nameof(RoundTheTree35x35));

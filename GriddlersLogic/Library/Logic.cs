@@ -599,9 +599,9 @@ public class Logic
                     StrayDog = true;
                 }
 
-                //ship35x35 - stray dogs x=14...
-
                 //kingkong30x30
+
+                //jester35x35
 
                 //kissheryuk30x30
 
