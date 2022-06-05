@@ -599,26 +599,33 @@ public class Logic
                     StrayDog = true;
                 }
 
+                var list = new List<Point>();
+
                 //kingkong30x30
 
-                //jester35x35
+                //jester35x35 - does not solve
+                //list.AddRange(AddPoints(Rows[33], 11, GriddlerPath.Action.CompleteItem, 12, "lightgreen"));
+                //list.AddRange(AddPoints(Rows[28], 5, GriddlerPath.Action.CompleteItem));
 
-                //kissheryuk30x30
+                //kissheryuk30x30 - does not solve
+                //list.AddRange(AddPoints(Rows[17], 7, GriddlerPath.Action.ItemBackwardReach, colour: "lightgreen"));
+                //list.AddRange(AddPoints(Rows[17], 6, GriddlerPath.Action.ItemBackwardReach, colour: "black"));
+                //list.AddRange(AddPoints(Rows[15], 6, GriddlerPath.Action.ItemBackwardReach, colour: "lightgreen"));
 
                 //busker30x30 - does not solve
-                //points.TryAdd((3, 13), new Point(false, 3, 13, false));
-                //points.TryAdd((0, 15), new Point(false, 0, 15, false));
-                //points.TryAdd((7, 23), new Point(false, 7, 23, true));
-                //points.TryAdd((7, 25), new Point(false, 7, 25, false)); //bug
 
-                //FourCallingBirds25x35 - does not solve
-                //points.TryAdd((6, 13), new Point(false, 6, 13, false));
-                //points.TryAdd((6, 14), new Point(false, 6, 14, false));
-                //points.TryAdd((6, 15), new Point(false, 6, 15, false));
+                //FourCallingBirds25x35
+                //list.AddRange(AddPoints(Cols[6], 14, GriddlerPath.Action.ItemBackwardReach, 15, "black"));
 
                 //FiveGoldRing25x35 - does not solve
-                //dots.TryAdd((9, 11), new Point(true, 9, 11, false));
-                //dots.TryAdd((9, 13), new Point(true, 9, 13, false));
+                //list.AddRange(AddPoints(Rows[23], 19, GriddlerPath.Action.CompleteItem));
+                //list.AddRange(AddPoints(Cols[10], 14, GriddlerPath.Action.ItemBackwardReach, 18));
+                //list.AddRange(AddPoints(Rows[11], 12, GriddlerPath.Action.CompleteItem));
+                //list.AddRange(AddPoints(Rows[8], 10, GriddlerPath.Action.CompleteItem));
+                //list.AddRange(AddPoints(Cols[10], 10, GriddlerPath.Action.CompleteItem, 11));
+
+                foreach (var item in list)
+                    yield return item;
 
                 if (PointsChange == points.Count && DotsChange == dots.Count)
                     break;
@@ -1015,7 +1022,7 @@ public class Logic
                 int? IsolatedItem = null;
                 if (Isolations.TryGetValue(Skip.BlockCount, out int IsolateOut))
                     IsolatedItem = IsolateOut;
-                var (_, _, _, EqualityIndex, _) = Ls;
+                var (Item, _, _, EqualityIndex, IndexAtBlock) = Ls;
                 bool CompleteItem(out bool S, out bool E, out int? ItmIdx)
                 {
                     (S, E) = (Line.ItemsOneColour, Line.ItemsOneColour);
@@ -1023,6 +1030,12 @@ public class Logic
 
                     if (Line.MaxItem == Block.Size)
                         return true;
+                    else if (IndexAtBlock == EqualityIndex && Item.HasValue
+                        && Block.Is(Item.Value))
+                    {
+                        (S, E) = Line.ShouldAddDots(EqualityIndex);
+                        return true;
+                    }
                     else if (IsLineIsolated && Skip.BlockCount < Line.LineItems
                         && Line[Skip.BlockCount].Value == Block.Size)
                     {
@@ -1057,7 +1070,7 @@ public class Logic
                     }
 
                     LineSegment LsEnd = Line.GetItemAtPosB(Gap, Block);
-                    var (ItemE, EqualityE, IndexE, EqualityIndexE, _) = LsEnd;
+                    var (_, _, _, EqualityIndexE, _) = LsEnd;
 
                     if (LastBlock != null)
                     {
@@ -1574,12 +1587,12 @@ public class Logic
             if (Line.LineIndex == 0 || Line.LineIndex == MaxLines - 1)
             {
                 List<Block> ColourCounts = new List<Block>(10);
-                string PrevColour = "black";
+                var PrevColour = string.Empty;
                 int Start = 0;
 
                 for (int Pos = 0; Pos < Line.LineLength; Pos++)
                 {
-                    string Colour = "black";
+                    var Colour = string.Empty;
 
                     if (Line.IsRow)
                     {
@@ -1592,34 +1605,66 @@ public class Logic
                         Colour = Rows[Pos][ItemIndex].Colour;
                     }
 
+                    if (Pos == 0)
+                        PrevColour = Colour;
+
                     if (Colour != PrevColour)
                     {
-                        ColourCounts.Add(new Block(Start, Pos, Colour));
+                        ColourCounts.Add(new Block(Start, Pos - 1, PrevColour));
                         Start = Pos;
                         PrevColour = Colour;
                     }
                 }
+                ColourCounts.Add(new Block(Start, Line.LineLength - 1, PrevColour));
 
-                if (Line.Count(c => c.Colour == "green") == ColourCounts.Count(c => c.Colour == "green"))
+                if (Line.Count(c => c.Colour == "lightgreen") == ColourCounts.Count(c => c.Colour == "lightgreen"))
                 {
-                    foreach ((Block, Item) Item in ColourCounts.Where(w => w.Colour == "green").Zip(Line))
+                    foreach (var (Block, Item) in ColourCounts.Where(w => w.Colour == "lightgreen").Zip(Line))
                     {
-                        if (Item.Item2.Value == Item.Item1.Size)
+                        if (Item.Value == Block.Size)
                         {
                             yield return FullPart(Line,
-                                                  Item.Item1.Start,
-                                                  Item.Item2.Index,
-                                                  Item.Item2.Index,
+                                                  Block.Start,
+                                                  Item.Index,
+                                                  Item.Index,
                                                   GriddlerPath.Action.GapFull);
                         }
-                        else if (Item.Item2.Value < Item.Item1.Size
-                                && Item.Item2.Value >= Item.Item1.Size / 2)
+                        else if (Item.Value < Block.Size && Item.Value >= Block.Size / 2)
                         {
                             yield return OverlapPart(Line,
-                                                     Item.Item1.Start,
-                                                     Item.Item1.End,
-                                                     Item.Item2.Index,
-                                                     Item.Item2.Index,
+                                                     Block.Start,
+                                                     Block.End,
+                                                     Item.Index,
+                                                     Item.Index,
+                                                     GriddlerPath.Action.GapOverlap);
+                        }
+                    }
+                }
+                else
+                {
+                    var uniqueMatches = Line.Where(w => ColourCounts.Count(c => c.Colour == w.Colour
+                                && c.Size >= w.Value) == 1);
+
+                    foreach (var Item in uniqueMatches)
+                    {
+                        var Block = ColourCounts.Single(s => s.Colour == Item.Colour
+                        && s.Size >= Item.Value);
+
+                        if (Item.Value == Block.Size)
+                        {
+                            yield return FullPart(Line,
+                                                  Block.Start,
+                                                  Item.Index,
+                                                  Item.Index,
+                                                  GriddlerPath.Action.GapFull);
+                        }
+                        else if (Item.Value < Block.Size && Item.Value >= Block.Size / 2)
+                        {
+                            yield return OverlapPart(Line,
+                                                     Block.Start,
+                                                     Block.End,
+                                                     Item.Index,
+                                                     Item.Index,
                                                      GriddlerPath.Action.GapFull);
                         }
                     }
