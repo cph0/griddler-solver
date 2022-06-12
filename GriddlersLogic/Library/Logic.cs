@@ -612,7 +612,13 @@ public class Logic
                 //list.AddRange(AddPoints(Rows[17], 6, GriddlerPath.Action.ItemBackwardReach, colour: "black"));
                 //list.AddRange(AddPoints(Rows[15], 6, GriddlerPath.Action.ItemBackwardReach, colour: "lightgreen"));
 
-                //busker30x30 - does not solve
+                //busker30x30
+                //list.AddRange(AddPoints(Rows[27], 16, GriddlerPath.Action.CompleteItem));
+                //list.AddRange(AddPoints(Rows[27], 5, GriddlerPath.Action.CompleteItem, 6));
+                //list.AddRange(AddPoints(Rows[24], 18, GriddlerPath.Action.MinItem, colour: "black"));
+                //list.AddRange(AddPoints(Cols[13], 0, GriddlerPath.Action.CompleteItem, 3));
+                //list.AddRange(AddPoints(Rows[4], 9, GriddlerPath.Action.CompleteItem));
+                //list.AddRange(AddPoints(Rows[4], 13, GriddlerPath.Action.MinItem, 14, "lightgreen"));
 
                 //FourCallingBirds25x35
                 //list.AddRange(AddPoints(Cols[6], 14, GriddlerPath.Action.ItemBackwardReach, 15, "black"));
@@ -1277,27 +1283,18 @@ public class Logic
                 {
                     m = 0;
 
+                    if (Ls.EqAtBlock.GetValueOrDefault())
+                    {
+                        m = ItemRange.Sum(Line.Where(Index, IndexAtBlock));
+                        return true;
+                    }
+
                     if (Line.UniqueCount(Block, out Item Itm))
                     {
                         m = Itm.Value;
                         return true;
-                    }
+                    }                  
 
-                    if (Equality && Item.HasValue)
-                    {
-                        Block? LastBlock = Gap.GetLastBlock(Block.Start - 1);
-                        if (LastBlock != null)
-                        {
-                            int ItemShift = Line.SumWhile(Index, Gap, Block);
-                            bool Isolated = Line.IsolatedPart(Item.Value, Block, LastBlock);
-
-                            if (ItemShift == 1 && Isolated)
-                            {
-                                m = ItemRange.Sum(Line.Where(Index, Index + 1));
-                                return true;
-                            }
-                        }
-                    }
                     m = Ls.With(LsEnd).Min(Block);
                     return true;
                 };

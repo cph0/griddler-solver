@@ -36,6 +36,7 @@ public class LineSegment : ItemRange
     /// </summary>
     public bool Eq => EqualityIndex == Index;
     public int IndexAtBlock { get; private set; }
+    public bool? EqAtBlock { get; private set; }
 
     public LineSegment(Item[] items,
                        bool isForward,
@@ -61,6 +62,11 @@ public class LineSegment : ItemRange
             SetEnd(IndexAtBlock);
         else
             SetStart(IndexAtBlock);
+    }
+
+    public void SetEqualityAtBlock(bool isolated) 
+    {
+        EqAtBlock = isolated && EqAtBlock.GetValueOrDefault(true);
     }
 
     public ItemRange With(LineSegment ls, bool gapOnly = false, bool equalityOnly = false)
