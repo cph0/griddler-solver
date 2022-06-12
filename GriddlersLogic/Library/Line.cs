@@ -300,12 +300,23 @@ public class Line : ItemRange, IEnumerable<Item>
         foreach (var (Gap, Ls, Skip) in GetGaps(includeItems))
         {
             bool SkipGap = false;//Gap.IsFull(false);
+            Block? LastBlock = null;
+            int Index = Ls.Index;
             foreach (Block Block in Gap.GetBlocks())
             {
                 if (!SkipGap)
                 {
+                    if (Ls.Eq && Index < LineItems && LastBlock != null)
+                    {
+                        int ItemShift = SumWhile(Ls.Index, Gap, Block);
+                        var isolated = IsolatedPart(this[Index], Block, LastBlock);
+                        Ls.SetEqualityAtBlock(isolated && ItemShift == Index - Ls.Index + 1);
+                        Index++;
+                    }
+
                     Ls.SetIndexAtBlock(SumWhile(Ls.Index, Gap, Block));
                     yield return (Block, Gap, Ls, Skip);
+                    LastBlock = Block;
                 }
                 Skip.Continue(Block);
             }
