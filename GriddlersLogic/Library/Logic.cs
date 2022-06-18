@@ -613,15 +613,10 @@ public class Logic
                 //list.AddRange(AddPoints(Rows[15], 6, GriddlerPath.Action.ItemBackwardReach, colour: "lightgreen"));
 
                 //busker30x30
-                //list.AddRange(AddPoints(Rows[27], 16, GriddlerPath.Action.CompleteItem));
-                //list.AddRange(AddPoints(Rows[27], 5, GriddlerPath.Action.CompleteItem, 6));
-                //list.AddRange(AddPoints(Rows[24], 18, GriddlerPath.Action.MinItem, colour: "black"));
-                //list.AddRange(AddPoints(Cols[13], 0, GriddlerPath.Action.CompleteItem, 3));
-                //list.AddRange(AddPoints(Rows[4], 9, GriddlerPath.Action.CompleteItem));
                 //list.AddRange(AddPoints(Rows[4], 13, GriddlerPath.Action.MinItem, 14, "lightgreen"));
 
                 //FourCallingBirds25x35
-                //list.AddRange(AddPoints(Cols[6], 14, GriddlerPath.Action.ItemBackwardReach, 15, "black"));
+                //list.AddRange(AddPoints(Cols[6], 13, GriddlerPath.Action.ItemBackwardReach, 15, "black"));
 
                 //FiveGoldRing25x35 - does not solve
                 //list.AddRange(AddPoints(Rows[23], 19, GriddlerPath.Action.CompleteItem));
@@ -936,6 +931,15 @@ public class Logic
                                 int ItemShift = Line.SumWhile(Index, Gap);
                                 if (!Line.Where(Index + 1, Index + ItemShift)
                                     .Any(NextGap.Is))
+                                    return true;
+                            }
+                            else if (NextGap != null && NextGap.HasFirstPoint
+                                        && Index < Line.LineItems - 1)
+                            {
+                                var ItemShift = Line.SumWhile(Index, Gap);
+                                var firstBlock = NextGap.GetBlockAtStart(NextGap.Start);
+                                if (firstBlock != null && !Line.Where(Index + 1, Index + ItemShift)
+                                    .Any(firstBlock.CanBe))
                                     return true;
                             }
                         }
@@ -1293,7 +1297,7 @@ public class Logic
                     {
                         m = Itm.Value;
                         return true;
-                    }                  
+                    }
 
                     m = Ls.With(LsEnd).Min(Block);
                     return true;
@@ -1613,6 +1617,36 @@ public class Logic
                     }
                 }
                 ColourCounts.Add(new Block(Start, Line.LineLength - 1, PrevColour));
+
+                foreach (Line Line2 in ForEachLine(Line.LineIndex == 0 ? lines : lines.Reverse()))
+                {
+                    var matches = ColourCounts
+                        .Where(a => !Line2.Any(l => l.Colour == a.Colour))
+                        .SelectMany(s => {
+                            var list = new List<Block>(s.Size);
+                            for (int Pos = s.Start; Pos < s.End; Pos++)
+                                list.Add(new Block(Pos, Pos, s.Colour));
+                            return list;
+                        })
+                        .Where(a => {
+                            if(Line.LineIndex == 0)
+                                return Line2.LineIndex < (Line2.IsRow ? Cols : Rows)[a.Start][0].Value;
+
+                            return Line2.LineLength - Line2.LineIndex < (Line2.IsRow ? Cols : Rows)[a.Start][0].Value;
+                        })
+                        .ToArray();
+
+                    if (matches.Length == 0)
+                        break;
+                    
+                    foreach (var item in matches)
+                    {
+                        yield return AddPoints(Line2,
+                                               item.Start,
+                                               GriddlerPath.Action.CompleteItem,
+                                               item.End);
+                    }                    
+                }
 
                 if (Line.Count(c => c.Colour == "lightgreen") == ColourCounts.Count(c => c.Colour == "lightgreen"))
                 {
