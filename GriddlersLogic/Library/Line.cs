@@ -630,6 +630,18 @@ public class Line : ItemRange, IEnumerable<Item>
             for (int i = 0; i <= BlockCount; i++)
                 IsolatedItems.TryAdd(i, i + StartItem);
         }
+        else if (IsIsolated && IsolatedItems.Count == 0
+            && BlockIndexes.TryGetValue(BlockCount, out var lastBlock))
+        {
+            var canBeLastBlock = _Items
+                .Where(w => w.Index > BlockCount + StartItem)
+                .Where(lastBlock.CanBe).Any();
+            if (!canBeLastBlock)
+            {
+                for (int i = 0; i <= BlockCount; i++)
+                    IsolatedItems.TryAdd(i, i + StartItem);
+            }
+        }
 
         if (BlockCount != LineItems - 1 || StartItem > 0)
             IsIsolated = false;

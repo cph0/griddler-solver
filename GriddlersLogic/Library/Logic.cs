@@ -1328,15 +1328,6 @@ public class Logic
                         singleItem = Line[Skip.BlockCount].Value;
                         return true;
                     }
-                    //breaks woman20x20, twoturledoves
-                    //else if (IsolatedItem.HasValue
-                    //    && (Gap.NumberOfBlocks == 1 || Skip.BlockCount == 0
-                    //    || Gap.GetLastBlock(Block.Start - 1) == null)
-                    //    && Block.End - Line[IsolatedItem.Value].Value >= Gap.Start)
-                    //{
-                    //    singleItem = Line[IsolatedItem.Value].Value;
-                    //    return true;
-                    //}
                     else if (Equality && EqualityE && Index == IndexE
                         && Gap.NumberOfBlocks == 1)
                     {
@@ -1374,8 +1365,8 @@ public class Logic
                         singleItem = Line[Skip.BlockCount].Value;
                         return true;
                     }
-                    else if (IsolatedItem.HasValue && (Gap.NumberOfBlocks == 1
-                        || IsolatedItem.Value == Line.LineItems - 1 || Gap.GetNextBlock(Block.End + 1) == null))
+                    else if (IsolatedItem.HasValue 
+                        && IsolatedItem.Value == Line.LineItems - 1)
                     {
                         singleItem = Line[IsolatedItem.Value].Value;
                         return true;
@@ -1567,6 +1558,23 @@ public class Logic
                                                NextBlock.End - NextItem.Value);
                     }
                 }
+
+                //isolated items push
+                if (IsolatedItem.HasValue 
+                    && Isolations.TryGetValue(Skip.BlockCount + 1, out var NextIsolated2)
+                    && IsolatedItem.Value != NextIsolated2)
+                {
+                    var ThisItem = Line[IsolatedItem.Value];
+                    Block? NextBlock = Gap.GetNextBlock(Block.End + 1);
+                    if (NextBlock != null)
+                    {
+                        yield return AddPoints(Line,
+                                               NextBlock.Start - ThisItem.Value - ItemRange.DotBetween(Block, NextBlock),
+                                               GriddlerPath.Action.IsolatedItemsReach,
+                                               Block.Start - 1,
+                                               colour: ThisItem.Colour);
+                    }
+                }
             }
         }
     }
@@ -1622,14 +1630,16 @@ public class Logic
                 {
                     var matches = ColourCounts
                         .Where(a => !Line2.Any(l => l.Colour == a.Colour))
-                        .SelectMany(s => {
+                        .SelectMany(s =>
+                        {
                             var list = new List<Block>(s.Size);
                             for (int Pos = s.Start; Pos < s.End; Pos++)
                                 list.Add(new Block(Pos, Pos, s.Colour));
                             return list;
                         })
-                        .Where(a => {
-                            if(Line.LineIndex == 0)
+                        .Where(a =>
+                        {
+                            if (Line.LineIndex == 0)
                                 return Line2.LineIndex < (Line2.IsRow ? Cols : Rows)[a.Start][0].Value;
 
                             return Line2.LineLength - Line2.LineIndex < (Line2.IsRow ? Cols : Rows)[a.Start][0].Value;
@@ -1638,14 +1648,14 @@ public class Logic
 
                     if (matches.Length == 0)
                         break;
-                    
+
                     foreach (var item in matches)
                     {
                         yield return AddPoints(Line2,
                                                item.Start,
                                                GriddlerPath.Action.CompleteItem,
                                                item.End);
-                    }                    
+                    }
                 }
 
                 if (Line.Count(c => c.Colour == "lightgreen") == ColourCounts.Count(c => c.Colour == "lightgreen"))
