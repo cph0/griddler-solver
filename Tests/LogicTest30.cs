@@ -106,9 +106,9 @@ public partial class LogicTest : LogicTestBase
         Assert.True(Same);
     }
 
-    //[Fact]
+    [Fact]
     //hanjie super - issue 27
-    private async Task FourCallingBirds25x35()
+    public async Task FourCallingBirds25x35()
     {
         //inputs
         (Item[][] Rows, Item[][] Cols) = await Library.GetSourceData(nameof(FourCallingBirds25x35));
