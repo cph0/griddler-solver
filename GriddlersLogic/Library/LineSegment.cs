@@ -18,7 +18,7 @@ public class LineSegment : ItemRange
     /// <summary>
     /// The next item, if any
     /// </summary>
-    public Item? Item { get; private set; }
+    public Item? Item { get; }
     /// <summary>
     /// <see cref="true"/> if the <see cref="Item"/> exists
     /// </summary>
@@ -26,17 +26,18 @@ public class LineSegment : ItemRange
     /// <summary>
     /// The index of the next item, possibly out of range
     /// </summary>
-    public int Index { get; private set; }
+    public int Index { get; }
     /// <summary>
     /// The last item index that can be the next item
     /// </summary>
-    public int EqualityIndex { get; private set; }
+    public int EqualityIndex { get; }
     /// <summary>
     /// <see cref="true"/> if the next item index cannot be less than <see cref="Index"/>
     /// </summary>
     public bool Eq => EqualityIndex == Index;
     public int IndexAtBlock { get; private set; }
-    public bool? EqAtBlock { get; private set; }
+    public int EqualityIndexAtBlock { get; private set; } = -1;
+    public bool EqAtBlock => EqualityIndexAtBlock == IndexAtBlock;
 
     public LineSegment(Item[] items,
                        bool isForward,
@@ -64,9 +65,31 @@ public class LineSegment : ItemRange
             SetStart(IndexAtBlock);
     }
 
-    public void SetEqualityAtBlock(bool isolated) 
+    public bool? SetEqualityAtBlock(Gap gap,
+                                   Block block,
+                                   Block? lastBlock,
+                                   Item item,
+                                   Item? lastItem,
+                                   bool? eqAtBlock)
     {
-        EqAtBlock = isolated && EqAtBlock.GetValueOrDefault(true);
+        var Isolated = false;
+        var DoesNotFitInSpace = false;
+        if (lastBlock != null && lastItem.HasValue)
+            Isolated = IsolatedPart(lastItem.Value, block, lastBlock);
+        else if (lastBlock == null)
+            DoesNotFitInSpace = !FitsInSpace(gap, block, item);
+
+        var Match = DoesNotFitInSpace || Isolated;
+        if (eqAtBlock.GetValueOrDefault(true) && Match)
+        {
+            if (lastItem.HasValue)
+                EqualityIndexAtBlock = lastItem.Value.Index + 1;
+            else
+                EqualityIndexAtBlock = item.Index;
+            eqAtBlock = true;
+        }
+
+        return Match ? eqAtBlock : false;
     }
 
     public ItemRange With(LineSegment ls, bool gapOnly = false, bool equalityOnly = false)
@@ -74,7 +97,7 @@ public class LineSegment : ItemRange
         (int Start, int End) = (EqualityIndex, ls.EqualityIndex);
         if (!equalityOnly)
         {
-            Start = gapOnly ? Math.Min(Index, ls.Index) : Math.Max(EqualityIndex, ls.IndexAtBlock);
+            Start = gapOnly ? Math.Min(Index, ls.Index) : Math.Max(EqualityIndexAtBlock, Math.Max(EqualityIndex, ls.IndexAtBlock));
             End = gapOnly ? Math.Max(ls.Index, Index) : Math.Min(IndexAtBlock, ls.EqualityIndex);
         }
         return CreateRange(Start, End);
