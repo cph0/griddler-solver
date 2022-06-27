@@ -615,15 +615,11 @@ public class Logic
                 //busker30x30
                 //list.AddRange(AddPoints(Rows[4], 13, GriddlerPath.Action.MinItem, 14, "lightgreen"));
 
-                //FourCallingBirds25x35
-                //list.AddRange(AddPoints(Cols[6], 13, GriddlerPath.Action.ItemBackwardReach, 15, "black"));
-
-                //FiveGoldRing25x35 - does not solve
-                //list.AddRange(AddPoints(Rows[23], 19, GriddlerPath.Action.CompleteItem));
+                //FiveGoldRings25x35 - does not solve
                 //list.AddRange(AddPoints(Cols[10], 14, GriddlerPath.Action.ItemBackwardReach, 18));
                 //list.AddRange(AddPoints(Rows[11], 12, GriddlerPath.Action.CompleteItem));
-                //list.AddRange(AddPoints(Rows[8], 10, GriddlerPath.Action.CompleteItem));
-                //list.AddRange(AddPoints(Cols[10], 10, GriddlerPath.Action.CompleteItem, 11));
+
+                //Pumpkin30x30!!
 
                 foreach (var item in list)
                     yield return item;
@@ -1082,20 +1078,6 @@ public class Logic
                     LineSegment LsEnd = Line.GetItemAtPosB(Gap, Block);
                     var (_, _, _, EqualityIndexE, _) = LsEnd;
 
-                    if (LastBlock != null)
-                    {
-                        ItemRange ItemsInRange = Ls.With(LsEnd, false, true);
-                        if (ItemsInRange.Any(Block.Is)
-                            && !ItemsInRange.Any(s => Line.FitsInSpace(LastBlock, Block, s)) //relax this!
-                            && !ItemsInRange.Pair().Any(f => LastBlock.CanBe(f.Item1)
-                            && f.Item2.Value > Block.Size)
-                            && ItemsInRange.All(e => Line.IsolatedPart(e, Block, LastBlock)))
-                        {
-                            (S, E) = ItemsInRange.ShouldAddDots(Block);
-                            return true;
-                        }
-                    }
-
                     Block? NextBlock = Gap.GetNextBlock(Block.End + 1);
                     if (NextBlock != null)
                     {
@@ -1287,7 +1269,7 @@ public class Logic
                 {
                     m = 0;
 
-                    if (Ls.EqAtBlock.GetValueOrDefault())
+                    if (Ls.EqAtBlock)
                     {
                         m = ItemRange.Sum(Line.Where(Index, IndexAtBlock));
                         return true;

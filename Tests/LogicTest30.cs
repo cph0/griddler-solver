@@ -202,9 +202,9 @@ public partial class LogicTest : LogicTestBase
         Assert.True(Same);
     }
 
-    [Fact]
+    //[Fact]
     //https://nonogramskatana.files.wordpress.com/2017/01/wp-1483883309075.png
-    public async Task Pumpkin30x30()
+    private async Task Pumpkin30x30()
     {
         //inputs
         (Item[][] Rows, Item[][] Cols) = await Library.GetSourceData(nameof(Pumpkin30x30));

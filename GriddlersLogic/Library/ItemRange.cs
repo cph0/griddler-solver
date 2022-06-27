@@ -152,6 +152,46 @@ public class ItemRange
             .Aggregate(0, (acc, a) => acc + DotBetween(a.Item1, a.Item2));
     }
 
+    public static (int, int, int) SpaceBetween(Range block,
+                                               Range nextBlock,
+                                               Item item)
+    {
+        int End = nextBlock.Start;
+        int Start = block.End;
+        int LeftDotCount = 0;
+        int RightDotCount = 0;
+
+        if (block is Block)
+            LeftDotCount = DotBetween(block as Block, item);
+        else
+            Start = block.Start - 1;
+
+        if (nextBlock is Block)
+            RightDotCount = DotBetween(nextBlock as Block, item);
+        else
+            End = nextBlock.End + 1;
+
+        return (End - Start - 1 - LeftDotCount - RightDotCount, LeftDotCount, RightDotCount);
+    }
+
+    public static bool FitsInSpace(Range block, Range nextBlock, Item item)
+    {
+        return item.Value <= SpaceBetween(block, nextBlock, item).Item1;
+    }
+
+    public static bool IsolatedPart(Item item,
+                                    Block block,
+                                    Block lastBlock,
+                                    bool forward = true)
+    {
+        if (forward && block.End <= lastBlock.Start + item.Value - 1)
+            return false;
+        else if (!forward && block.Start >= lastBlock.End - item.Value + 1)
+            return false;
+
+        return true;
+    }
+
     public bool UniqueCount(ICanBeItem block, out Item item)
     {
         bool Retval;

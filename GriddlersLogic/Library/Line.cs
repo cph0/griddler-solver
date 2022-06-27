@@ -302,19 +302,24 @@ public class Line : ItemRange, IEnumerable<Item>
             bool SkipGap = false;//Gap.IsFull(false);
             Block? LastBlock = null;
             int Index = Ls.Index;
+            bool? EqualityAtBlock = null;
             foreach (Block Block in Gap.GetBlocks())
             {
                 if (!SkipGap)
                 {
-                    if (Ls.Eq && Index < LineItems && LastBlock != null)
+                    int ItemShift = SumWhile(Ls.Index, Gap, Block);
+                    if (Ls.Eq && Index < LineItems)
                     {
-                        int ItemShift = SumWhile(Ls.Index, Gap, Block);
-                        var isolated = IsolatedPart(this[Index], Block, LastBlock);
-                        Ls.SetEqualityAtBlock(isolated && ItemShift == Index - Ls.Index + 1);
+                        EqualityAtBlock = Ls.SetEqualityAtBlock(Gap,
+                                                                Block,
+                                                                LastBlock,
+                                                                this[Index],
+                                                                Index > 0 ? this[Index - 1] : null,
+                                                                EqualityAtBlock);
                         Index++;
                     }
 
-                    Ls.SetIndexAtBlock(SumWhile(Ls.Index, Gap, Block));
+                    Ls.SetIndexAtBlock(ItemShift);
                     yield return (Block, Gap, Ls, Skip);
                     LastBlock = Block;
                 }
@@ -391,34 +396,7 @@ public class Line : ItemRange, IEnumerable<Item>
 
         _Gaps.Add(new Gap(Start, End));
     }
-
-    public static (int, int, int) SpaceBetween(Range block,
-                                               Range nextBlock,
-                                               Item item)
-    {
-        int End = nextBlock.Start;
-        int Start = block.End;
-        int LeftDotCount = 0;
-        int RightDotCount = 0;
-
-        if (block is Block)
-            LeftDotCount = DotBetween(block as Block, item);
-        else
-            Start = block.Start - 1;
-
-        if (nextBlock is Block)
-            RightDotCount = DotBetween(nextBlock as Block, item);
-        else
-            End = nextBlock.End + 1;
-
-        return (End - Start - 1 - LeftDotCount - RightDotCount, LeftDotCount, RightDotCount);
-    }
-
-    public static bool FitsInSpace(Range block, Range nextBlock, Item item)
-    {
-        return item.Value <= SpaceBetween(block, nextBlock, item).Item1;
-    }
-
+    
     public void AddDot(int index,
                        GriddlerPath.Action action,
                        bool fromPair = false)
@@ -466,19 +444,6 @@ public class Line : ItemRange, IEnumerable<Item>
 
         if (!fromPair && _PairLines.TryGetValue(index, out Line? line))
             line.RemovePoint(LineIndex, true);
-    }
-
-    public static bool IsolatedPart(Item item,
-                                    Block block,
-                                    Block lastBlock,
-                                    bool forward = true)
-    {
-        if (forward && block.End <= lastBlock.Start + item.Value - 1)
-            return false;
-        else if (!forward && block.Start >= lastBlock.End - item.Value + 1)
-            return false;
-
-        return true;
     }
 
     /// <summary>
