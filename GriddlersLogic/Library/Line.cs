@@ -31,11 +31,11 @@ public class Line : ItemRange, IEnumerable<Item>
     private int? _LineValue;
     private int? _MinItem;
     private int? _MaxItem;
-    private IDictionary<int, Line> _PairLines;
+    private IReadOnlyDictionary<int, Line> _PairLines;
     private readonly MultiKeyLookup<Gap> _Gaps;
 
     public IDictionary<int, string> Points { get; private set; }
-    public HashSet<int> Dots { get; private set; }
+    public ISet<int> Dots { get; private set; }
     public bool IsComplete => Points.Count + Dots.Count == LineLength;
     public bool IsRow { get; private set; }
     public int LineLength { get; private set; }
