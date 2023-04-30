@@ -1,5 +1,6 @@
 ﻿using Griddlers.Database;
 using System;
+using System.Collections.Frozen;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -449,8 +450,8 @@ public class Logic
         int Count = 0;
         int LoopCount = -1;
 
-        Rows = rows.Select((s, si) => new Line(si, true, Width, s)).ToDictionary(k => k.LineIndex);
-        Cols = columns.Select((s, si) => new Line(si, false, Height, s)).ToDictionary(k => k.LineIndex);
+        Rows = rows.Select((s, si) => new Line(si, true, Width, s)).ToFrozenDictionary(k => k.LineIndex);
+        Cols = columns.Select((s, si) => new Line(si, false, Height, s)).ToFrozenDictionary(k => k.LineIndex);
 
         foreach (Line Row in Rows.Values)
             Row.SetPairLines(Cols.Values);
