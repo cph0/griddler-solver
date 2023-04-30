@@ -56,7 +56,7 @@ public class TreeNode
         return Points.Count == node.Points.Count && !Points.Keys.Except(node.Points.Keys).Any();
     }
 
-    public void SetNodes(IEnumerable<Point> points, List<TreeNode>? excludes = null)
+    public void SetNodes(IEnumerable<Point> points, IList<TreeNode>? excludes = null)
     {
         //if (excludes != null)
         //    Excludes = excludes;

@@ -11,20 +11,20 @@ public class Logic
 {
     private static IEnumerator<Point>? Stream;
     private static bool Streaming = false;
-    private static List<Point> StreamCache = new List<Point>();
+    private static IList<Point> StreamCache = new List<Point>();
     private static int Current = 0;
 
     private static bool Staging = false;
-    private static readonly List<TreeNode> Excludes = new List<TreeNode>();
+    private static readonly IList<TreeNode> Excludes = new List<TreeNode>();
 
-    private readonly HashSet<byte> RemovedActions = new HashSet<byte>();
+    private readonly ISet<byte> RemovedActions = new HashSet<byte>();
 
-    public Dictionary<(int, int), Point> dots = new Dictionary<(int, int), Point>();
-    public Dictionary<(int, int), Point> points = new Dictionary<(int, int), Point>();
+    public IDictionary<(int, int), Point> dots = new Dictionary<(int, int), Point>();
+    public IDictionary<(int, int), Point> points = new Dictionary<(int, int), Point>();
     private IReadOnlyDictionary<int, Line> Rows = new Dictionary<int, Line>();
     private IReadOnlyDictionary<int, Line> Cols = new Dictionary<int, Line>();
-    private readonly HashSet<(int, int)> Trials = new HashSet<(int, int)>();
-    private readonly HashSet<(int, int)> IncorrectTrials = new HashSet<(int, int)>();
+    private readonly ISet<(int, int)> Trials = new HashSet<(int, int)>();
+    private readonly ISet<(int, int)> IncorrectTrials = new HashSet<(int, int)>();
 
     public static (Dictionary<(int, int), Point>, Dictionary<(int, int), Point>) Run(Item[][] rows, Item[][] columns)
     {
