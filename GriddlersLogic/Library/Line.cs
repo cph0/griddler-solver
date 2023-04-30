@@ -1,6 +1,7 @@
 ﻿using Griddlers.Database;
 using MultiKeyLookup;
 using System.Collections;
+using System.Collections.Frozen;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -94,7 +95,7 @@ public class Line : ItemRange, IEnumerable<Item>
 
     public void SetPairLines(IEnumerable<Line> lines)
     {
-        _PairLines = lines.ToDictionary(k => k.LineIndex);
+        _PairLines = lines.ToFrozenDictionary(k => k.LineIndex);
     }
 
     public Gap? FindGapAtPos(int index, bool forward = true)
