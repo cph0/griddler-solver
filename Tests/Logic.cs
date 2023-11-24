@@ -10,7 +10,6 @@ namespace Tests;
 
 public class LogicTestBase
 {
-    private readonly string FileRoot = $"{Library.TryGetSolutionDirectoryInfo().FullName}\\GriddlersDataContext\\Data\\";
     protected async Task Save(string fileName,
                         Item[][] rows,
                         Item[][] cols,

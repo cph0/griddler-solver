@@ -52,14 +52,14 @@ public class Startup
             e.MapControllerRoute("default", "{controller=Home}/{action=Index}/{id?}");
         });
 
-        app.UseSpa(spa =>
-        {
-            spa.Options.SourcePath = Path.Join(env.ContentRootPath, "ClientApp");
+        // app.UseSpa(spa =>
+        // {
+        //     spa.Options.SourcePath = Path.Join(env.ContentRootPath, "ClientApp");
 
-            if (env.IsDevelopment())
-            {
-                spa.UseReactDevelopmentServer("start");
-            }
-        });
+        //     if (env.IsDevelopment())
+        //     {
+        //         spa.UseReactDevelopmentServer("start");
+        //     }
+        // });
     }
 }
