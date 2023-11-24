@@ -8,9 +8,16 @@ namespace Griddlers.Library;
 
 public class Library
 {
-    private static readonly string FileRoot = $"{TryGetSolutionDirectoryInfo().FullName}\\GriddlersDataContext\\Data\\";
+    public static string FileRoot => GetFileRoot();
 
-    public static DirectoryInfo TryGetSolutionDirectoryInfo(string? currentPath = null)
+    private static string GetFileRoot() 
+    {
+        var root = TryGetSolutionDirectoryInfo().FullName;
+        var unixSlash = root.Contains('/') ? '/' : '\\';
+        return $"{root}{unixSlash}GriddlersDataContext{unixSlash}Data{unixSlash}";
+    }
+
+    private static DirectoryInfo TryGetSolutionDirectoryInfo(string? currentPath = null)
     {
         var directory = new DirectoryInfo(
             currentPath ?? Directory.GetCurrentDirectory());
