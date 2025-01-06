@@ -1,10 +1,10 @@
 import * as React from 'react';
-import { Route } from 'react-router-dom';
+import { Route, Routes } from 'react-router-dom';
 import { Layout } from './components/Layout';
 import { Home } from './components/Home';
 import { Actions } from './components/Actions';
 
-export const routes = <Layout>
-    <Route exact path='/' component={Home} />
-    <Route exact path='/Actions' component={Actions} />
-</Layout>;
+export const routes = <Routes>
+    <Route path='/' element={<Layout><Home /></Layout>} />
+    <Route path='/Actions' element={<Layout><Actions/></Layout>} />
+</Routes>;

@@ -1,5 +1,5 @@
 import React from "react";
-import ReactDOM from "react-dom";
+import { createRoot } from 'react-dom/client';
 import { BrowserRouter } from "react-router-dom";
 import { routes } from "./routes";
 import '../src/css/site.css';
@@ -7,10 +7,12 @@ import '../src/css/vendor.css';
 //import 'bootstrap';
 
 const baseUrl = document.getElementsByTagName('base')[0].getAttribute('href')!;
+const root = createRoot(document.getElementById('root')!);
 
-ReactDOM.render(
+root.render(
   <React.StrictMode>
-        <BrowserRouter children={routes} basename={baseUrl} />
+        <BrowserRouter basename={baseUrl}>
+          {routes}
+        </BrowserRouter>
   </React.StrictMode>,
-  document.getElementById('root')
 );

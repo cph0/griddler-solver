@@ -1,7 +1,11 @@
-import React, { useState, useEffect, CSSProperties } from "react";
+import React, { useState, useEffect, CSSProperties, JSX, useRef } from "react";
 import { Collapse, Progress } from "reactstrap";
 import * as signalR from "@aspnet/signalr";
-import { Tree, ReactD3TreeItem } from "react-d3-tree";
+import { RawNodeDatum, Tree } from "react-d3-tree";
+import { BarChart, CartesianGrid, XAxis, YAxis, Tooltip, Legend, Bar, ResponsiveContainer } from "recharts";
+//import manifest from "../manifest.json" with { type: "json" };
+
+const api = "https://localhost:5001";
 
 interface Griddler {
     id: number;
@@ -33,7 +37,7 @@ interface GriddlerPath {
     y: number;
 }
 
-class NodeLabel extends React.PureComponent<any, {}> {
+class NodeLabel extends React.PureComponent<any, object> {
     render() {
         const { nodeData } = this.props
         return (
@@ -45,7 +49,7 @@ class NodeLabel extends React.PureComponent<any, {}> {
 }
 
 const createArray = (first: number, second: number): Item[][] => {
-    let x = new Array(first);
+    const x = new Array(first);
     for (let i = 0; i < first; i++) {
         x[i] = [];
         for (let c = 0; c < second; c++) {
@@ -56,13 +60,23 @@ const createArray = (first: number, second: number): Item[][] => {
     return x;
 }
 
-export const Home: React.FunctionComponent = () => {
+function useTest(){}
+
+function test(){
+    return () => useTest();
+}
+
+interface ChartData {
+    name: string;
+    value: number;
+}
+
+export const Home = () => {
     //let rows: Item[][] = createArray(10, 4);
     //let columns: Item[][] = createArray(10, 4);
 
-    let uploadRef: HTMLInputElement | null = null;
-    let hubConnection: signalR.HubConnection | null = null;
 
+    const uploadRef = useRef<HTMLInputElement>(null);
     const [griddlers, setGriddlers] = useState<Griddler[]>([]);
     const [width, setWidth] = useState(10);
     const [height, setHeight] = useState(10);
@@ -79,12 +93,23 @@ export const Home: React.FunctionComponent = () => {
     const [streaming, setStreaming] = useState(false);
 
     const [showTree, setShowTree] = useState(false);
-    const [treeData, setTreeData] = useState<ReactD3TreeItem>({} as ReactD3TreeItem);
+    const [treeData, setTreeData] = useState<RawNodeDatum>({} as RawNodeDatum);
 
     useEffect(() => {
+        const listGriddlers = () => {
+            fetch(`${api}/Home/ListGriddlers`, {
+                method: "GET", headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+                .then(responce => responce.json() as Promise<any>)
+                .then(data => {
+                    setGriddlers(data);
+                });
+        }
         listGriddlers();
 
-        hubConnection = new signalR.HubConnectionBuilder().withUrl("/griddlerhub").build();
+        const hubConnection = new signalR.HubConnectionBuilder().withUrl("/griddlerhub").build();
 
         hubConnection.on("SendPoint", (pt) => {
             if (pt.isDot) {
@@ -104,12 +129,12 @@ export const Home: React.FunctionComponent = () => {
     }, []);
 
     const run = () => {
-        var body = {
+        const body = {
             rows: rows,
             columns: columns
         };
 
-        fetch("/Home/GetData", {
+        fetch(`${api}/Home/GetData`, {
             method: "POST", headers: {
                 'Content-Type': 'application/json'
             }, body: JSON.stringify(body)
@@ -163,11 +188,11 @@ export const Home: React.FunctionComponent = () => {
     }
 
     const get = (e: React.MouseEvent<HTMLButtonElement>) => {
-        var body = {
+        const body = {
             sG: sG
         };
 
-        fetch("/Home/GetGriddler", {
+        fetch(`${api}/Home/GetGriddler`, {
             method: "POST", headers: {
                 'Content-Type': 'application/json'
             }, body: JSON.stringify(body)
@@ -191,7 +216,7 @@ export const Home: React.FunctionComponent = () => {
             sG: sG
         };
 
-        fetch("/Home/StreamGriddler", {
+        fetch(`${api}/Home/StreamGriddler`, {
             method: "POST", headers: {
                 'Content-Type': 'application/json'
             }, body: JSON.stringify(body)
@@ -211,7 +236,7 @@ export const Home: React.FunctionComponent = () => {
     }
 
     const next = (e: React.MouseEvent<HTMLButtonElement>) => {
-        fetch("/Home/StreamGriddlerNext", {
+        fetch(`${api}/Home/StreamGriddlerNext`, {
             method: "POST", headers: {
                 'Content-Type': 'application/json'
             }
@@ -228,7 +253,7 @@ export const Home: React.FunctionComponent = () => {
     }
 
     const previous = (e: React.MouseEvent<HTMLButtonElement>) => {
-        fetch("/Home/StreamGriddlerPrevious", {
+        fetch(`${api}/Home/StreamGriddlerPrevious`, {
             method: "POST", headers: {
                 'Content-Type': 'application/json'
             }
@@ -237,14 +262,14 @@ export const Home: React.FunctionComponent = () => {
             .then(data => {
                 if (data.pt.isDot) {
                     setDots(prevState => {
-                        let prevDots =[...prevState];
+                        const prevDots =[...prevState];
                         prevDots.splice(prevDots.length - 1, 1);
                         return prevDots;
                     });
                 }
                 else {
                     setPoints(prevState => {
-                        let prevPts = [...prevState];
+                        const prevPts = [...prevState];
                         prevPts.splice(prevPts.length - 1, 1);
                         return prevPts;
                     });
@@ -258,7 +283,7 @@ export const Home: React.FunctionComponent = () => {
         if (streaming)
             url = "/Home/StreamGriddlerStop";
 
-        fetch(url, {
+        fetch(`${api}${url}`, {
             method: "POST", headers: {
                 'Content-Type': 'application/json'
             }
@@ -274,7 +299,7 @@ export const Home: React.FunctionComponent = () => {
             sG: sG
         };
 
-        fetch("/Home/GetTreeTest", {
+        fetch(`${api}/Home/GetTreeTest`, {
             method: "POST", headers: {
                 'Content-Type': 'application/json'
             }, body: JSON.stringify(body)
@@ -289,7 +314,7 @@ export const Home: React.FunctionComponent = () => {
 
     const getDb = (e: React.MouseEvent<HTMLButtonElement>) => {
 
-        fetch("/Home/GetGriddlerDb?id=" + sG, {
+        fetch(`${api}/Home/GetGriddlerDb?id=` + sG, {
             method: "GET", headers: {
                 'Content-Type': 'application/json'
             }
@@ -306,22 +331,10 @@ export const Home: React.FunctionComponent = () => {
                 setDots(data.dots);
                 setPaths(data.paths);
             });
-    }
-
-    const listGriddlers = () => {
-        fetch("/Home/ListGriddlers", {
-            method: "GET", headers: {
-                'Content-Type': 'application/json'
-            }
-        })
-            .then(responce => responce.json() as Promise<any>)
-            .then(data => {
-                setGriddlers(data);
-            });
-    }
+    }    
 
     const listGriddlersDb = () => {
-        fetch("/Home/ListGriddlersDb", {
+        fetch(`${api}/Home/ListGriddlersDb`, {
             method: "GET", headers: {
                 'Content-Type': 'application/json'
             }
@@ -333,13 +346,13 @@ export const Home: React.FunctionComponent = () => {
     }
 
     const upload = () => {
-        if (uploadRef && uploadRef.files && uploadRef.files.length > 0) {
-            let file = uploadRef.files[0];
+        if (uploadRef?.current && uploadRef.current.files && uploadRef.current.files.length > 0) {
+            const file = uploadRef.current.files[0];
 
-            let formData = new FormData();
+            const formData = new FormData();
             formData.append("file", file);
 
-            fetch("/Home/UploadImage", {
+            fetch(`${api}/Home/UploadImage`, {
                 method: "POST", body: formData
             })
                 .then(responce => responce.json() as Promise<any>)
@@ -358,61 +371,11 @@ export const Home: React.FunctionComponent = () => {
         setSelectedGroup(selected);
     }
 
-    const renderGriddlerList = () => {
-        let html = null;
-        let items = [];
-
-        items = griddlers.map(g => <option key={g.name} value={g.name}>{g.name}</option>);
-
-        html = (
-            <select className="form-control" onChange={(e) => onSelectGriddler(e)} value={sG}>
-                {items}
-            </select>
-        );
-
-        return html;
-    }
-
-    const renderPathList = () => {
-        let html = null;
-
-        let items = paths.map(g => {
-            let open = true;
-
-            if (selectedGroup && g.group == selectedGroup.group)
-                open = true;
-
-            return (
-                <div key={g.group}>
-                    <p style={{ cursor: "pointer" }} onClick={() => onPathClick(g)}>{g.name}</p>
-                    <Collapse isOpen={open}>
-                        {g.items.map((m, i) => <p key={i}>({m.x}, {m.y})</p>)}
-                    </Collapse>
-                </div>
-            );
-        });
-
-        html = (
-            <div style={{
-                display: "inline-block",
-                position: "relative",
-                width: "150px",
-                height: "calc(70vh)",
-                overflowY: "auto"
-            }}>
-                {items}
-            </div>
-        );
-
-        return html;
-    }
-
-    let html: JSX.Element;
-    let pts: JSX.Element[] = [];
-    let xBoxes: JSX.Element[] = [];
-    let yBoxes: JSX.Element[] = [];
-    let dts: JSX.Element[] = [];
-    let grid: JSX.Element[] = [];
+    const pts: JSX.Element[] = [];
+    const xBoxes: JSX.Element[] = [];
+    const yBoxes: JSX.Element[] = [];
+    const dts: JSX.Element[] = [];
+    const grid: JSX.Element[] = [];
     const squareSize = 20;
 
     const style: CSSProperties = {
@@ -439,17 +402,17 @@ export const Home: React.FunctionComponent = () => {
 
     for (let i = 0; i < width; i++) {
         for (let c = 0; c < height; c++) {
-            let brdL, brdT: string = "none";
-            let sClass: any = { ...gridStyle };
+             let brdL, brdT: string = "none";
+             const sClass = { 
+                ...gridStyle,
+                //backgroundColor: selectedGroup?.items.some(e => e.x == i && e.y == c) ? "red" : "white"
+             };
 
             if (i % 5 == 0)
                 brdL = "1px solid black";
 
             if (c % 5 == 0)
                 brdT = "1px solid black";
-
-            if (selectedGroup && selectedGroup.items.some(e => e.x == i && e.y == c))
-                sClass.backgroundColor = "red";
 
             grid.push(
                 <div key={`${i}_${c}`}
@@ -461,9 +424,9 @@ export const Home: React.FunctionComponent = () => {
         }
     }
 
-    for (let pt of points) {
+    for (const pt of points) {
         if (pt) {
-            let sClass: any = { ...style };
+            const sClass = { ...style };
 
             if (selectedGroup
                 && selectedGroup.items.some(e => e.x == pt.x && e.y == pt.y))
@@ -481,9 +444,9 @@ export const Home: React.FunctionComponent = () => {
         }
     }
 
-    for (let dot of dots) {
+    for (const dot of dots) {
         if (dot) {
-            let sClass = { ...dotStyle };
+            const sClass = { ...dotStyle };
 
             dts.push(
                 <div key={`${dot.x}_${dot.y}`}
@@ -497,7 +460,7 @@ export const Home: React.FunctionComponent = () => {
 
     for (let i = 0; i < width; i++) {
         for (let c = 0; c < depth; c++) {
-            let left = (depth * squareSize) + (i * squareSize);
+            const left = (depth * squareSize) + (i * squareSize);
             let item = {} as Item;
 
             if (columns[i] && columns[i][c])
@@ -524,7 +487,7 @@ export const Home: React.FunctionComponent = () => {
 
     for (let i = 0; i < height; i++) {
         for (let c = 0; c < depth; c++) {
-            let top = (depth * squareSize) + (i * squareSize);
+            const top = (depth * squareSize) + (i * squareSize);
             let item = {} as Item;
 
             if (rows[i] && rows[i][c])
@@ -550,9 +513,9 @@ export const Home: React.FunctionComponent = () => {
         }
     }
 
-    let square = (depth * squareSize) + "px";
+    const square = (depth * squareSize) + "px";
 
-    html = (
+    return (
         <div>
             <div className="row" style={{ marginTop: "10px", marginBottom: "10px" }}>
                 <div className="col-md-6">
@@ -560,7 +523,9 @@ export const Home: React.FunctionComponent = () => {
                         <div className="input-group-btn">
                             <button className="btn btn-primary" onClick={(e) => get(e)}>Get</button>
                         </div>
-                        {renderGriddlerList()}
+                        <select className="form-control" onChange={(e) => onSelectGriddler(e)} value={sG}>
+                            {griddlers.map(g => <option key={g.name} value={g.name}>{g.name}</option>)}
+                        </select>
                         <div className="input-group-btn">
                             <button className="btn btn-primary" onClick={(e) => getTree(e)}>Tree</button>
                             <button className="btn btn-primary" onClick={(e) => stream(e)}>Stream</button>
@@ -574,8 +539,8 @@ export const Home: React.FunctionComponent = () => {
                 </div>
             </div>
             <div style={{ display: "none" }}>
-                <button className="btn btn-primary btn-sm" onClick={(e) => upload()}>Upload</button>
-                <input type="file" ref={el => uploadRef = el}></input>
+                <button className="btn btn-primary btn-sm" onClick={() => upload()}>Upload</button>
+                <input type="file" ref={uploadRef}></input>
             </div>
             <div>
                 <Progress max={width * height}
@@ -583,12 +548,34 @@ export const Home: React.FunctionComponent = () => {
             </div>
             {showTree && <div style={{ width: "100%", height: "calc(100vh)" }}>
                 <Tree data={treeData} orientation="vertical"
-                    transitionDuration={0} allowForeignObjects={true}
-                    nodeLabelComponent={{ render: <NodeLabel /> }} />
+                    transitionDuration={0}
+                    renderCustomNodeElement={props=><NodeLabel {...props} />} />
             </div>}
             <div className="row">
-                <div className="col-lg-2">
-                    {renderPathList()}
+                <div className="col-lg-2">                
+                    <div style={{
+                        display: "inline-block",
+                        position: "relative",
+                        width: "150px",
+                        height: "calc(70vh)",
+                        overflowY: "auto"
+                    }}>
+                        {paths.map(g => {
+                            let open = true;
+
+                            if (selectedGroup && g.group == selectedGroup.group)
+                                open = true;
+
+                            return (
+                                <div key={g.group}>
+                                    <p style={{ cursor: "pointer" }} onClick={() => onPathClick(g)}>{g.name}</p>
+                                    <Collapse isOpen={open}>
+                                        {g.items.map((m, i) => <p key={i}>({m.x}, {m.y})</p>)}
+                                    </Collapse>
+                                </div>
+                            );
+                        })}
+                    </div>
                 </div>
                 <div className="col" style={{ overflowY: "auto", height: "calc(89vh)" }}>
                     <div style={{ position: "relative", display: "inline-block", width: square, height: square }}>
@@ -599,6 +586,4 @@ export const Home: React.FunctionComponent = () => {
             </div>
         </div>
     );
-
-    return html;
 }
