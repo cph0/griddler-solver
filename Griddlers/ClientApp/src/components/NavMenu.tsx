@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { Link, NavLink } from 'react-router-dom';
 
-export class NavMenu extends React.Component<{}, {}> {
+export class NavMenu extends React.Component<object, object> {
     public render() {
         return <div className='main-nav'>
                 <div className='navbar navbar-inverse'>
@@ -18,12 +18,12 @@ export class NavMenu extends React.Component<{}, {}> {
                 <div className='navbar-collapse collapse'>
                     <ul className='nav navbar-nav'>
                         <li>
-                            <NavLink to={ '/' } exact activeClassName='active'>
+                            <NavLink to={ '/' }>
                                 <span className='glyphicon glyphicon-home'></span> Home
                             </NavLink>
                         </li>
                         <li>
-                            <NavLink to={'/Actions'} exact activeClassName='active'>
+                            <NavLink to={'/Actions'}>
                                 <span className='glyphicon glyphicon-home'></span> Actions
                             </NavLink>
                         </li>

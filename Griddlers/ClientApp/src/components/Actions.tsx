@@ -27,9 +27,7 @@ export const Actions: React.FunctionComponent = () => {
             });
     }
 
-    let html;
-
-    html = (
+    const html = (
         <div>
             <div className="row" style={{ marginTop: "10px", marginBottom: "10px" }}>
                 <div className="col-md-6">
