@@ -91,7 +91,7 @@ public static class ImageLogic
 
         if (data != null)
         {
-            Image<Rgba32> image = Image.Load(data);
+            var image = Image.Load<Rgba32>(data);
             ProcessImageLine(true, image, rows, image.Height, image.Width);
             ProcessImageLine(false, image, columns, image.Width, image.Height);
 
