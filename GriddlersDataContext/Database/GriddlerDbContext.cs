@@ -94,7 +94,7 @@ public class GriddlerDbContext : DbContext
                 }
             }
 
-            (Item[][] Rows, Item[][] Cols) = (new Item[][] { }, new Item[][] { });
+            var (Rows, Cols) = (Array.Empty<Item[]>(), Array.Empty<Item[]>());
             Rows = new Item[Griddler.height][];
             Cols = new Item[Griddler.width][];
 

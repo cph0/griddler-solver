@@ -5,7 +5,9 @@ namespace Griddlers.Library
 {
     public record Point(bool IsDot, int X, int Y, string Colour)
     {
+#pragma warning disable CA2211 // Non-constant fields should not be visible
         public static short Group;
+#pragma warning restore CA2211 // Non-constant fields should not be visible
 
         public GriddlerPath.Action Action { get; private set; }
         public DateTime Time { get; private set; }

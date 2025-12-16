@@ -1,12 +1,13 @@
 ﻿using Griddlers.Library;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 
 namespace GriddlersConsole;
 
-class Program
+sealed class Program
 {
     static async Task Main(string[] args)
     {
@@ -14,7 +15,7 @@ class Program
         {
             Console.WriteLine("Enter griddler name or Y to exit:");
 
-            string Name = Console.ReadLine();
+            string Name = Console.ReadLine()!;
 
             if (Name == "Y")
                 break;
@@ -57,7 +58,7 @@ class Program
                 if (Pos < Column.Length)
                 {
                     Value = Column[Pos].Value;
-                    Cell = Value.ToString();
+                    Cell = Value.ToString(CultureInfo.InvariantCulture);
                 }
 
                 ColumnString = $"{ColumnString} {Cell}{(Value < 10 ? " " : string.Empty)}";
@@ -87,7 +88,7 @@ class Program
             {
                 string Cell = "   ";
 
-                if (Points.TryGetValue((Pos, RowIndex), out Point Pt))
+                if (Points.TryGetValue((Pos, RowIndex), out var Pt))
                 {
                     Cell = "███";
 

@@ -12,6 +12,7 @@ using Griddlers.Hubs;
 using System.Text.RegularExpressions;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Globalization;
 
 namespace Griddlers.Controllers;
 
@@ -19,6 +20,7 @@ public class HomeController : Controller
 {
     //private GriddlerDbContext db;
     private IHubContext<GriddlerHub, IGriddlerHub> HubContext;
+    private static readonly string[] sourceArray = new string[] { "Acorns25x25", "Agile20x30", "Balanced20x30", "Beg20x20", "Boy25x25" };
 
     public HomeController(
         //GriddlerDbContext theDb,
@@ -29,10 +31,10 @@ public class HomeController : Controller
         HubContext = hubContext;
     }
 
-    private class Data
+    private sealed class Data
     {
-        public int?[][] rows { get; set; } = new int?[][] { };
-        public int?[][] columns { get; set; } = new int?[][] { };
+        public int?[][] rows { get; set; } = [];
+        public int?[][] columns { get; set; } = [];
     }
 
     public class SG
@@ -40,7 +42,7 @@ public class HomeController : Controller
         public string sG { get; set; } = "";
     }
 
-    private class ImageData
+    private sealed class ImageData
     {
         public IFormFile? file { get; set; }
     }
@@ -92,7 +94,7 @@ public class HomeController : Controller
         {
             Name = string.Empty;
 
-            string? EnumValue = Enum.GetName(typeof(GriddlerPath.Action), point.Action);
+            string? EnumValue = Enum.GetName(point.Action);
             if (EnumValue != null)
                 Name = EnumValue;
 
@@ -145,7 +147,7 @@ public class HomeController : Controller
     {
         Dictionary<(int, int), Point> Points = new Dictionary<(int, int), Point>();
         Dictionary<(int, int), Point> Dots = new Dictionary<(int, int), Point>();
-        (Item[][] R, Item[][] C) = (new Item[][] { }, new Item[][] { });
+        var (R, C) = (Array.Empty<Item[]>(), Array.Empty<Item[]>());
 
         //inputs
         (R, C) = await Library.Library.GetSourceData(data.sG);
@@ -185,7 +187,7 @@ public class HomeController : Controller
 
     public async Task<JsonResult> StreamGriddler([FromBody] SG data)
     {
-        (Item[][] R, Item[][] C) = (new Item[][] { }, new Item[][] { });
+        var (R, C) = (Array.Empty<Item[]>(), Array.Empty<Item[]>());
 
         //inputs
         (R, C) = await Library.Library.GetSourceData(data.sG);
@@ -251,7 +253,7 @@ public class HomeController : Controller
 
     public async Task<JsonResult> CreateTreeTest()
     {
-        (Item[][] R, Item[][] C) = (new Item[][] { }, new Item[][] { });
+        var (R, C) = (Array.Empty<Item[]>(), Array.Empty<Item[]>());
 
         //inputs
         (R, C) = await Library.Library.GetSourceData("Bird10x10");
@@ -263,7 +265,7 @@ public class HomeController : Controller
 
     public async Task<JsonResult> GetTreeTest([FromBody] SG data)
     {
-        (Item[][] R, Item[][] C) = (new Item[][] { }, new Item[][] { });
+        var (R, C) = (Array.Empty<Item[]>(), Array.Empty<Item[]>());
 
         //inputs
         (R, C) = await Library.Library.GetSourceData(data.sG);
@@ -276,15 +278,15 @@ public class HomeController : Controller
 
     public async Task<JsonResult> GetRequiredActionsTest()
     {
-        (Item[][] R, Item[][] C) = (new Item[][] { }, new Item[][] { });
+        var (R, C) = (Array.Empty<Item[]>(), Array.Empty<Item[]>());
 
         //inputs
         (R, C) = await Library.Library.GetSourceData("Bird10x10");
 
         Regex Regex = new Regex("([0-9]+)x([0-9]+)");
         Match Match = Regex.Match("Bird10x10");
-        int Width = int.Parse(Match.Groups[1].Value);
-        int Height = int.Parse(Match.Groups[2].Value);
+        int Width = int.Parse(Match.Groups[1].Value, CultureInfo.InvariantCulture);
+        int Height = int.Parse(Match.Groups[2].Value, CultureInfo.InvariantCulture);
         var Output = await Library.Library.GetOutputData("Bird10x10", Width, Height);
 
         IReadOnlyList<string> Actions = Logic.GetRequiredActions(R, C, Output.Item1, Output.Item2);
@@ -294,7 +296,7 @@ public class HomeController : Controller
 
     public async Task<JsonResult> IsTrueGriddlerTest(string g)
     {
-        (Item[][] R, Item[][] C) = (new Item[][] { }, new Item[][] { });
+        var (R, C) = (Array.Empty<Item[]>(), Array.Empty<Item[]>());
 
         //inputs
         (R, C) = await Library.Library.GetSourceData(g);
@@ -306,7 +308,7 @@ public class HomeController : Controller
 
     public async Task<JsonResult> LineCountsTest(string g)
     {
-        (Item[][] R, Item[][] C) = (new Item[][] { }, new Item[][] { });
+        var (R, C) = (Array.Empty<Item[]>(), Array.Empty<Item[]>());
 
         //inputs
         (R, C) = await Library.Library.GetSourceData(g);
@@ -340,14 +342,14 @@ public class HomeController : Controller
 
     public async Task<JsonResult> GetActionsChart([FromBody] SG data)
     {
-        (Item[][] R, Item[][] C) = (new Item[][] { }, new Item[][] { });
+        (Item[][] R, Item[][] C) = ([], []);
 
         string[] Griddlers = Library.Library.ListGriddlers();
         List<string> UsedActions = new List<string>(Griddlers.Length * 30);
         List<string> RequiredActions = new List<string>(Griddlers.Length * 30);
 
         int Count = 0;
-        HashSet<string> Exclude = (new string[] { "Acorns25x25", "Agile20x30", "Balanced20x30", "Beg20x20", "Boy25x25" }).ToHashSet();
+        HashSet<string> Exclude = (sourceArray).ToHashSet();
 
         foreach (string Griddler in Griddlers.Where(w => !Exclude.Contains(w)))
         {
@@ -363,8 +365,8 @@ public class HomeController : Controller
             {
                 Regex Regex = new Regex("([0-9]+)x([0-9]+)");
                 Match Match = Regex.Match(Griddler);
-                int Width = int.Parse(Match.Groups[1].Value);
-                int Height = int.Parse(Match.Groups[2].Value);
+                int Width = int.Parse(Match.Groups[1].Value, CultureInfo.InvariantCulture);
+                int Height = int.Parse(Match.Groups[2].Value, CultureInfo.InvariantCulture);
                 var Output = await Library.Library.GetOutputData(Griddler, Width, Height);
 
                 IReadOnlyList<string> ReqActions = Logic.GetRequiredActions(R, C, Output.Item1, Output.Item2);
@@ -391,8 +393,8 @@ public class HomeController : Controller
 
         foreach ((string, decimal) Item in B)
         {
-            if (ChartData.ContainsKey(Item.Item1))
-                ChartData[Item.Item1].Required = Item.Item2;
+            if (ChartData.TryGetValue(Item.Item1, out ChartData? value))
+                value.Required = Item.Item2;
             else
                 ChartData.Add(Item.Item1, new ChartData(Item.Item1, req: Item.Item2));
         }

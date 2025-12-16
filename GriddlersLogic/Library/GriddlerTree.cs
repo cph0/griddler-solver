@@ -26,7 +26,7 @@ public class TreeNode
     //private List<TreeNode> Excludes = new List<TreeNode>() { }; 
     [JsonIgnore]
     public TreeNode? Parent { get; set; }
-    public int CurrentNodePos { get; set; } = 0;
+    public int CurrentNodePos { get; set; }
 
     public string Name { get; private set; }
 
@@ -46,7 +46,7 @@ public class TreeNode
         SetNodes(points);
     }
 
-    public TreeNode(Point grp, Dictionary<(int, int), Point> points) : this(Enum.GetName(typeof(GriddlerPath.Action), grp.Action))
+    public TreeNode(Point grp, Dictionary<(int, int), Point> points) : this(Enum.GetName(grp.Action)!)
     {
         Points = points;
     }

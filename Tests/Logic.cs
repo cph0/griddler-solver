@@ -10,7 +10,9 @@ namespace Tests;
 
 public class LogicTestBase
 {
+#pragma warning disable CA1822 // Mark members as static
     protected async Task Save(string fileName,
+#pragma warning restore CA1822 // Mark members as static
                         Item[][] rows,
                         Item[][] cols,
                         Dictionary<(int, int), Point> points)

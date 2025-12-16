@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.IO;
 using System.Threading.Tasks;
+using System;
 
 namespace Griddlers.Library;
 
@@ -21,11 +22,11 @@ public class Library
     {
         var directory = new DirectoryInfo(
             currentPath ?? Directory.GetCurrentDirectory());
-        while (directory != null && !directory.GetFiles("*.sln").Any())
+        while (directory != null && directory.GetFiles("*.sln").Length == 0)
         {
             directory = directory.Parent;
         }
-        return directory;
+        return directory!;
     }
 
     public static string[] ListGriddlers()
@@ -36,26 +37,26 @@ public class Library
 
     public async static Task<(Item[][], Item[][])> GetSourceData(string fileName)
     {
-        Item[][] Rows = new Item[][] { };
-        Item[][] Cols = new Item[][] { };
+        var Rows = Array.Empty<Item[]>();
+        var Cols = Array.Empty<Item[]>();
 
         string File = $"{FileRoot}{fileName}.txt";
         using (StreamReader S = new StreamReader(File))
         {
-            string? RowsString = await S.ReadLineAsync();
-            string? ColsString = await S.ReadLineAsync();
-            string?[][] Rs = JsonConvert.DeserializeObject<string?[][]>(RowsString);
-            string?[][] Cs = JsonConvert.DeserializeObject<string?[][]>(ColsString);
+            string? RowsString = await S.ReadLineAsync() ?? "";
+            string? ColsString = await S.ReadLineAsync() ?? "";
+            string[][] Rs = JsonConvert.DeserializeObject<string[][]>(RowsString) ?? [];
+            string[][] Cs = JsonConvert.DeserializeObject<string[][]>(ColsString) ?? [];
             int Index = 0;
             Rows = new Item[Rs.GetLength(0)][];
-            foreach (string?[] Row in Rs)
+            foreach (string[] Row in Rs)
             {
                 Rows[Index] = Row.Select((s, i) => new Item(i, s)).ToArray();
                 Index++;
             }
             Index = 0;
             Cols = new Item[Cs.GetLength(0)][];
-            foreach (string?[] Col in Cs)
+            foreach (string[] Col in Cs)
             {
                 Cols[Index] = Col.Select((s, i) => new Item(i, s)).ToArray();
                 Index++;
@@ -76,8 +77,8 @@ public class Library
         {
             await S.ReadLineAsync();
             await S.ReadLineAsync();
-            string? colsString = await S.ReadLineAsync();
-            Points = JsonConvert.DeserializeObject<Point[]>(colsString);
+            string? colsString = await S.ReadLineAsync() ?? "";
+            Points = JsonConvert.DeserializeObject<Point[]>(colsString) ?? [];
         }
 
         Pts = Points.ToDictionary(k => (k.X, k.Y));

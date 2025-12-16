@@ -2,11 +2,11 @@
 
 public class Block : Range, ICanBeItem
 {
-    private readonly Item? _Item;
+    //private readonly Item? _Item;
 
     public string Colour { get; private set; }
     public bool Complete { get; set; }
-    public bool KnowItem => _Item.HasValue;
+    //public bool KnowItem => _Item.HasValue;
 
     public Block(int start, int end, string colour) : base(start, end)
     {

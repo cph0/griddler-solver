@@ -27,8 +27,8 @@ public class Gap : Range, ICanBeItem
     public bool Is(Item a)
         => Size == a.Value && Colour == a.Colour;
 
-    public bool CanBe(Item a)
-        => Size >= a.Value && Colour == a.Colour;
+    public bool CanBe(Item item)
+        => Size >= item.Value && Colour == item.Colour;
 
     public IEnumerable<Block> GetBlocks()
     {

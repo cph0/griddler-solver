@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Frozen;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -11,11 +12,11 @@ namespace Griddlers.Library;
 public class Logic
 {
     private static IEnumerator<Point>? Stream;
-    private static bool Streaming = false;
+    private static bool Streaming;
     private static IList<Point> StreamCache = new List<Point>();
-    private static int Current = 0;
+    private static int Current;
 
-    private static bool Staging = false;
+    private static bool Staging;
     private static readonly IList<TreeNode> Excludes = new List<TreeNode>();
 
     private readonly ISet<byte> RemovedActions = new HashSet<byte>();
@@ -249,7 +250,7 @@ public class Logic
     {
         bool RetVal = false;
         Logic L = new Logic();
-        L.RemovedActions.Add((byte)Enum.Parse(typeof(GriddlerPath.Action), action));
+        L.RemovedActions.Add((byte)Enum.Parse<GriddlerPath.Action>(action));
 
         var Output = L.RunNonStatic(rows, columns);
 
@@ -272,7 +273,7 @@ public class Logic
                                                            IReadOnlyDictionary<(int, int), Point> points,
                                                            IReadOnlyDictionary<(int, int), Point> dots)
     {
-        string[] AllActions = Enum.GetNames(typeof(GriddlerPath.Action));
+        string[] AllActions = Enum.GetNames<GriddlerPath.Action>();
         List<string> Actions = new List<string>(AllActions.Length);
 
         Parallel.ForEach(AllActions, (Action) =>
@@ -293,8 +294,8 @@ public class Logic
     {
         Logic L = new Logic();
         IEnumerable<Point> Points = L.RunI(rows, columns);
-        IEnumerable<string> Actions = (from p in Points
-                                       select Enum.GetName(typeof(GriddlerPath.Action), p.Action));
+        IEnumerable<string> Actions = from p in Points
+                                       select Enum.GetName(p.Action);
         return Actions.Distinct().ToList();
     }
 
@@ -670,7 +671,7 @@ public class Logic
                 else
                 {
                     points.TryAdd(Xy, NewPoint);
-                    line.AddPoint(Pos, colour, action);
+                    line.AddPoint(Pos, colour!, action);
                 }
             }
 
@@ -1098,8 +1099,8 @@ public class Logic
                     if (NextBlock != null)
                     {
                         int EndIndex = EqualityIndexE;
-                        if (Line.UniqueCount(NextBlock, out Item NextItem))
-                            EndIndex = NextItem.Index;
+                        if (Line.UniqueCount(NextBlock, out var NextItem))
+                            EndIndex = NextItem.Value.Index;
                         ItemRange R = Line.CreateRange(EqualityIndex, EndIndex - 1);
                         if (R.All(Block.IsOrCantBe)
                             && Line.IsolatedPart(Line[EndIndex], Block, NextBlock, false))
@@ -1220,9 +1221,9 @@ public class Logic
                 {
                     m = 0;
 
-                    if (Line.UniqueCount(Block, out Item Itm))
+                    if (Line.UniqueCount(Block, out var Itm))
                     {
-                        m = Itm.Value;
+                        m = Itm.Value.Value;
                         return true;
                     }
 
@@ -1278,9 +1279,9 @@ public class Logic
                         return true;
                     }
 
-                    if (Line.UniqueCount(Block, out Item Itm))
+                    if (Line.UniqueCount(Block, out var Itm))
                     {
-                        m = Itm.Value;
+                        m = Itm.Value.Value;
                         return true;
                     }
 
@@ -1319,10 +1320,10 @@ public class Logic
                         singleItem = Line.Where(Index, IndexE).FirstOrDefault().Value;
                         return true;
                     }
-                    else if (Ls.UniqueCount(Block, out Item Item)
-                            && Item.Index == EqualityIndex)
+                    else if (Ls.UniqueCount(Block, out var Item)
+                            && Item.Value.Index == EqualityIndex)
                     {
-                        singleItem = Item.Value;
+                        singleItem = Item.Value.Value;
                         return true;
                     }
 
@@ -1363,10 +1364,10 @@ public class Logic
                         singleItem = Line[Index].Value;
                         return true;
                     }
-                    else if (LsEnd.UniqueCount(Block, out Item item)
-                            && item.Index == EqualityIndexE)
+                    else if (LsEnd.UniqueCount(Block, out var item)
+                            && item.Value.Index == EqualityIndexE)
                     {
-                        singleItem = item.Value;
+                        singleItem = item.Value.Value;
                         return true;
                     }
 
@@ -1415,12 +1416,12 @@ public class Logic
                 }
 
                 //half Gap overlap backwards
-                bool HalfGapOverlapBackwards(out ItemRange r)
+                bool HalfGapOverlapBackwards([NotNullWhen(true)]out ItemRange? r)
                 {
-                    if (Ls.With(LsEnd).UniqueCount(Block, out Item item)
-                        && item.Index > Index)
+                    if (Ls.With(LsEnd).UniqueCount(Block, out var item)
+                        && item.Value.Index > Index)
                     {
-                        r = Line.CreateRange(Index, item.Index - 1);
+                        r = Line.CreateRange(Index, item.Value.Index - 1);
                         return true;
                     }
                     else if (ItemE.HasValue && Equality && IndexAtBlockE - 1 >= 0)
@@ -1432,7 +1433,7 @@ public class Logic
                     r = null;
                     return false;
                 };
-                if (HalfGapOverlapBackwards(out ItemRange r))
+                if (HalfGapOverlapBackwards(out var r))
                 {
                     int Sum = r.Sum();
                     var Space = Line.SpaceBetween(Gap, Block, Line[r.End]);
@@ -1465,12 +1466,12 @@ public class Logic
                 }
 
                 //half Gap overlap forwards
-                bool HalfGapOverlapForwards(out ItemRange r)
+                bool HalfGapOverlapForwards([NotNullWhen(true)]out ItemRange? r)
                 {
-                    if (Ls.With(LsEnd).UniqueCount(Block, out Item item)
-                        && item.Index < IndexE)
+                    if (Ls.With(LsEnd).UniqueCount(Block, out var item)
+                        && item.Value.Index < IndexE)
                     {
-                        r = Line.CreateRange(item.Index + 1, IndexE);
+                        r = Line.CreateRange(item.Value.Index + 1, IndexE);
                         return true;
                     }
                     else if (Item.HasValue && EqualityE
@@ -1725,7 +1726,7 @@ public class Logic
                                                           Gap.Start,
                                                           GriddlerPath.Action.TrialAndError,
                                                           Gap.Start,
-                                                          Item.Value.Colour))
+                                                          Item?.Colour))
                         {
                             Trials.Add((Point.X, Point.Y));
                             yield return Point;

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 
 namespace Griddlers.Library;
@@ -18,7 +19,9 @@ public class ItemRange
     private bool? _ItemsOneColour;
     private readonly Item[] _ItemsArray;
     private IEnumerable<Item> ItemsEnum => Where(Start, End);
+#pragma warning disable CA1707 // Identifiers should not contain underscores
     protected IEnumerable<Item> _Items => _UsingArray ? _ItemsArray : ItemsEnum;
+#pragma warning restore CA1707 // Identifiers should not contain underscores
     public int Start { get; private set; }
     public int End { get; private set; }
     public bool ItemsOneValue
@@ -161,13 +164,13 @@ public class ItemRange
         int LeftDotCount = 0;
         int RightDotCount = 0;
 
-        if (block is Block)
-            LeftDotCount = DotBetween(block as Block, item);
+        if (block is Block b)
+            LeftDotCount = DotBetween(b, item);
         else
             Start = block.Start - 1;
 
-        if (nextBlock is Block)
-            RightDotCount = DotBetween(nextBlock as Block, item);
+        if (nextBlock is Block nb)
+            RightDotCount = DotBetween(nb, item);
         else
             End = nextBlock.End + 1;
 
@@ -192,11 +195,11 @@ public class ItemRange
         return true;
     }
 
-    public bool UniqueCount(ICanBeItem block, out Item item)
+    public bool UniqueCount(ICanBeItem block, [NotNullWhen(true)] out Item? item)
     {
         bool Retval;
 
-        if (_UniqueCounts.TryGetValue((block.Size, block.Colour), out Item Out))
+        if (_UniqueCounts.TryGetValue((block.Size, block.Colour), out var Out))
         {
             item = Out;
             Retval = true;
@@ -205,7 +208,7 @@ public class ItemRange
         {
             Retval = UniqueCount(_Items, block, out item);
             if (Retval)
-                _UniqueCounts[(block.Size, block.Colour)] = item;
+                _UniqueCounts[(block.Size, block.Colour)] = item!.Value;
         }
 
         return Retval;
@@ -213,7 +216,7 @@ public class ItemRange
 
     public static bool UniqueCount(IEnumerable<Item> items,
                                    ICanBeItem block,
-                                   out Item item)
+                                   [NotNullWhen(true)] out Item? item)
     {
         Item[] Cache = items.AsArray();
         item = Cache.FirstOrDefault(block.CanBe);

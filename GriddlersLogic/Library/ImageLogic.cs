@@ -81,7 +81,7 @@ public static class ImageLogic
         List<List<int>> rows = new List<List<int>>();
         List<List<int>> columns = new List<List<int>>();
         (string jsonRows, string jsonCols) = (string.Empty, string.Empty);
-        byte[] data = new byte[] { };
+        var data = Array.Empty<byte>();
 
         using (MemoryStream s = new MemoryStream())
         {

@@ -1,4 +1,5 @@
-﻿using Griddlers.Database;
+﻿using System.Globalization;
+using Griddlers.Database;
 
 namespace Griddlers.Library
 {
@@ -18,7 +19,7 @@ namespace Griddlers.Library
             Index = index;
 
             string[] Parts = v.Split(".");
-            Value = int.Parse(Parts[0]);
+            Value = int.Parse(Parts[0], CultureInfo.InvariantCulture);
             bool Green = Parts.Length > 1 && Parts[1] == "1";
             Colour = Green ? "lightgreen" : "black";
         }

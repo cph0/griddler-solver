@@ -232,14 +232,14 @@ public class Line : ItemRange, IEnumerable<Item>
             if (LastBlock != null)
             {
                 int ToItem = Iei.Item1 + ((forward ? 1 : -1) * (Iei.ItemShift - 1));
-                if (UniqueCount(Where(ei, ToItem, true), LastBlock, out Item UniqueItem))
+                if (UniqueCount(Where(ei, ToItem, true), LastBlock, out var UniqueItem))
                 {
-                    int Itm = UniqueItem.Index;
+                    int Itm = UniqueItem.Value.Index;
                     bool Eq = Itm == ToItem;
 
                     if (!Eq)
                     {
-                        int Start = UniqueItem.Index + (forward ? 1 : -1);
+                        int Start = UniqueItem.Value.Index + (forward ? 1 : -1);
                         Itm += (forward ? 1 : -1) * SumWhile(Start,
                                                              gap,
                                                              LastBlock,
@@ -462,7 +462,7 @@ public class Line : ItemRange, IEnumerable<Item>
     public (bool, IDictionary<int, int>) IsLineIsolated()
     {
         //2,3,4,5//--00--0---0---- isolated 2,3,4 - invalid as could be 3,4,5
-        bool IsIsolated = true, NotSolid = false, RestIsolated = false;
+        bool IsIsolated = true;//, NotSolid = false, RestIsolated = false;
         bool AllOneColour = ItemsOneColour;
         int BlockCount = 0, CurrentItem = 0, ReachIndex = 0, StartItem = 0;
         Dictionary<int, bool> Isolations = new Dictionary<int, bool>();
@@ -489,13 +489,13 @@ public class Line : ItemRange, IEnumerable<Item>
                     CanJoin.TryAdd(Skip.BlockCount - 1, false);
                     CanJoin.TryAdd(Skip.BlockCount, false);
                     Pushes.TryAdd(Skip.BlockCount, CurrentItem + 1);
-                    RestIsolated = true;
+                    //RestIsolated = true;
                     IsIsolated = false;
                 }
                 else if (CurrentItem == LineItems - 1)
                 {
                     //does not reach & no more items => change isolations
-                    RestIsolated = false;
+                    //RestIsolated = false;
                     if (Isolations.ContainsKey(Skip.BlockCount))
                         Isolations.Remove(Skip.BlockCount);
                     if (Isolations.ContainsKey(Skip.BlockCount - 2)
